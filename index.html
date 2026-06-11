@@ -1,0 +1,2196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Cancha de Tenis · Cerros de la Alhambra</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%23c6e84b'/%3E%3Cpath d='M4 9c7 4 7 14 0 18M28 9c-7 4-7 14 0 18' fill='none' stroke='%2314564a' stroke-width='2.6'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --court:#14564a; --court-dark:#0e3e35; --court-soft:#e7f1ee;
+    --teal:#0e7490;
+    --wine:#7d2942;
+    --yellow:#f2c94c;
+    --ball:#c6e84b; --ball-dark:#a9cf2e;
+    --clay:#b9614a; --amber:#eaa53b; --lime:#84c23a;
+    --gray:#9aa0a6; --ink:#1c2a27; --muted:#67746f;
+    --line:#e4eae8; --bg:#f4f7f6; --card:#ffffff;
+    --danger:#d2533f; --ok:#2f9e6f; --now:#c1121f;
+    --shadow:0 1px 3px rgba(20,40,35,.08),0 8px 24px rgba(20,40,35,.06);
+    --radius:16px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg); color:var(--ink); -webkit-font-smoothing:antialiased;
+    line-height:1.45;
+  }
+  button{font-family:inherit;cursor:pointer;border:none;background:none}
+  .hidden{display:none !important}
+
+  /* ---------- SPLASH (evita el parpadeo del login al refrescar) ---------- */
+  #splash{
+    position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:60;
+    background:radial-gradient(120% 120% at 50% 0%,#1c6b5b 0%,#0e3e35 60%,#0a2f29 100%);
+  }
+  #splash .logo{width:64px;height:64px;border-radius:18px;background:var(--court);
+    display:flex;align-items:center;justify-content:center;animation:splashPulse 1.2s ease-in-out infinite}
+  #splash .logo svg{width:38px;height:38px}
+  @keyframes splashPulse{0%,100%{opacity:.5;transform:scale(.95)}50%{opacity:1;transform:scale(1)}}
+
+  /* ---------- LOGIN ---------- */
+  #login{
+    position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(120% 120% at 50% 0%,#1c6b5b 0%,#0e3e35 60%,#0a2f29 100%);
+    padding:24px;z-index:50;
+  }
+  .login-card{
+    width:100%;max-width:380px;background:var(--card);border-radius:24px;
+    padding:32px 28px;box-shadow:0 24px 60px rgba(0,0,0,.35);
+  }
+  .brand{display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:22px;text-align:center}
+  .logo{
+    width:58px;height:58px;border-radius:18px;background:var(--court);
+    display:flex;align-items:center;justify-content:center;position:relative;
+    box-shadow:inset 0 0 0 3px rgba(255,255,255,.12);
+  }
+  .logo svg{width:34px;height:34px}
+  .brand h1{font-size:19px;letter-spacing:-.3px}
+  .brand p{font-size:13px;color:var(--muted)}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px}
+  .field input{
+    width:100%;padding:13px 14px;border:1.5px solid var(--line);border-radius:12px;
+    font-size:15px;background:#fafcfb;transition:border .15s;
+  }
+  .field input:focus{outline:none;border-color:var(--court)}
+  .btn-primary{
+    width:100%;padding:14px;background:var(--court);color:#fff;border-radius:12px;
+    font-size:15px;font-weight:600;letter-spacing:.2px;transition:background .15s;
+  }
+  .btn-primary:hover{background:var(--court-dark)}
+  .btn-primary:disabled{opacity:.45;cursor:not-allowed;background:var(--court)}
+  select:disabled{opacity:.55;cursor:not-allowed}
+  .forgot{display:block;text-align:center;margin-top:14px;font-size:13px;color:var(--court);font-weight:500}
+  /* ---- ojito ver/ocultar contraseña ---- */
+  .pw-wrap{position:relative}
+  .pw-wrap input{width:100%;padding-right:46px !important}
+  .pw-eye{position:absolute;top:50%;right:7px;transform:translateY(-50%);width:34px;height:34px;display:flex;align-items:center;justify-content:center;color:var(--muted);border-radius:9px;transition:.15s}
+  .pw-eye:hover{color:var(--court);background:var(--court-soft)}
+  .pw-eye svg{width:20px;height:20px}
+  /* ---- estado "ingresando…" ---- */
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .spin{display:inline-block;width:15px;height:15px;border:2px solid rgba(255,255,255,.45);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:-2px;margin-right:9px}
+  .login-card.loading .field input,.login-card.loading .pw-eye,.login-card.loading .forgot{opacity:.4;pointer-events:none;transition:opacity .25s}
+  /* ---- animación premium de entrada al calendario ---- */
+  #login.bye{animation:loginBye .32s ease forwards}
+  @keyframes loginBye{to{opacity:0;transform:scale(1.06)}}
+  #app.enter{animation:appIn .6s cubic-bezier(.2,.75,.2,1)}
+  @keyframes appIn{0%{opacity:0;transform:scale(.965) translateY(10px)}100%{opacity:1;transform:none}}
+  /* animación premium de cerrar sesión */
+  #app.leaving{animation:appOut .42s cubic-bezier(.4,0,.6,1) forwards}
+  @keyframes appOut{to{opacity:0;transform:scale(.965) translateY(10px)}}
+  /* botón WhatsApp compacto (solo ícono) en la lista de usuarios */
+  .btn-wa-sm{padding:8px 11px}
+  .demo-note{margin-top:22px;padding-top:18px;border-top:1px solid var(--line);text-align:center}
+  .demo-note p{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px}
+  .demo-roles{display:flex;gap:8px;flex-wrap:wrap}
+  .demo-roles button{
+    flex:1;padding:10px 6px;border:1.5px solid var(--line);border-radius:11px;
+    font-size:12px;font-weight:600;color:var(--court);background:#fff;transition:.15s;
+  }
+  .demo-roles button:hover{border-color:var(--court);background:var(--court-soft)}
+
+  /* ---------- APP SHELL ---------- */
+  #app{display:none;min-height:100vh}
+  #app.show{display:block}
+
+  /* Desktop sidebar */
+  .sidebar{
+    position:fixed;left:0;top:0;bottom:0;width:248px;background:var(--court-dark);
+    color:#dfeae6;display:flex;flex-direction:column;padding:22px 16px;z-index:20;
+  }
+  .side-brand{display:flex;align-items:center;gap:11px;padding:4px 8px 22px}
+  .side-brand .logo{width:40px;height:40px;border-radius:12px}
+  .side-brand .logo svg{width:24px;height:24px}
+  .side-brand b{font-size:14.5px;color:#fff;letter-spacing:-.2px;line-height:1.2}
+  .side-brand span{font-size:11px;color:#9fc4ba}
+  .nav{display:flex;flex-direction:column;gap:3px;margin-top:6px}
+  .nav button{
+    display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:11px;
+    color:#cfe0db;font-size:14px;font-weight:500;width:100%;text-align:left;transition:.13s;
+  }
+  .nav button svg{width:19px;height:19px;flex:none;opacity:.85}
+  .nav button:hover{background:rgba(255,255,255,.07);color:#fff}
+  .nav button.active{background:var(--ball);color:var(--court-dark);font-weight:600}
+  .nav button.active svg{opacity:1}
+  .nav .badge{margin-left:auto;background:var(--danger);color:#fff;font-size:11px;font-weight:700;
+    min-width:19px;height:19px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 5px}
+  .nav button.active .badge{background:var(--court-dark);color:#fff}
+  .side-foot{margin-top:auto;border-top:1px solid rgba(255,255,255,.1);padding-top:14px}
+  .user-chip{display:flex;align-items:center;gap:11px;padding:6px 8px}
+  .avatar{width:36px;height:36px;border-radius:50%;background:var(--ball);color:var(--court-dark);
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex:none}
+  .user-chip .meta{overflow:hidden}
+  .user-chip b{display:block;font-size:13px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .user-chip span{font-size:11px;color:#9fc4ba}
+  .logout{margin-top:8px;width:100%;text-align:left;padding:9px 12px;border-radius:10px;color:#9fc4ba;font-size:13px}
+  .logout:hover{background:rgba(255,255,255,.07);color:#fff}
+
+  /* Main */
+  .main{margin-left:248px;min-height:100vh;display:flex;flex-direction:column}
+  .topbar{
+    display:flex;align-items:center;gap:16px;padding:20px 32px;background:var(--bg);
+    position:sticky;top:0;z-index:10;border-bottom:1px solid transparent;
+  }
+  .topbar h2{font-size:22px;letter-spacing:-.4px}
+  .topbar .sub{font-size:13px;color:var(--muted);margin-top:1px}
+  .topbar .spacer{flex:1}
+  .week-nav{display:flex;align-items:center;gap:4px;background:var(--card);border:1px solid var(--line);
+    border-radius:12px;padding:4px;box-shadow:var(--shadow)}
+  .week-nav button{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;color:var(--court)}
+  .week-nav button:hover{background:var(--court-soft)}
+  .week-nav .label{font-size:13px;font-weight:600;padding:0 10px;min-width:150px;text-align:center}
+  .btn-ghost{padding:10px 16px;border-radius:11px;background:var(--card);border:1px solid var(--line);
+    font-size:13.5px;font-weight:600;color:var(--court);box-shadow:var(--shadow);display:inline-flex;align-items:center;gap:7px}
+  .btn-ghost:hover{background:var(--court-soft)}
+  .btn-ghost svg{width:17px;height:17px}
+  .content{padding:8px 32px 40px;flex:1}
+
+  /* quota banner */
+  .quota{display:flex;align-items:center;gap:18px;background:var(--card);border:1px solid var(--line);border-left:4px solid var(--court);
+    border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow);margin-bottom:18px}
+  .qdots{display:flex;gap:9px;flex:none}
+  .qdot{width:30px;height:30px;border-radius:50%;border:2.5px solid var(--court);background:transparent;transition:background .2s;position:relative;overflow:hidden}
+  .qdot.on{background:var(--court)}
+  .qdot.half::after{content:'';position:absolute;top:0;left:0;bottom:0;width:50%;background:var(--court)}
+  .quota .qtext b{font-size:16px;color:var(--court);letter-spacing:-.2px}
+  .quota .qtext p{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.55}
+  .quota .legend{margin-left:auto;display:flex;gap:16px;flex-wrap:wrap}
+  .legend .lg{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+  .legend .lg .hicon{margin-right:0}
+  .legend .sw{width:13px;height:13px;border-radius:4px;flex:none}
+
+  /* ---------- CALENDAR BAR (opciones debajo de los días) ---------- */
+  .cal-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:2px 0 16px}
+  .cb-info{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .cb-actions{display:flex;align-items:center;gap:8px;margin-left:auto;flex-wrap:wrap}
+  .cb-chip{display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border-radius:999px;font-size:12.5px;font-weight:600;border:1px solid var(--line);background:var(--card);color:var(--muted)}
+  .cb-chip .bstar{color:var(--amber);font-size:14px}
+  .cb-cupo{cursor:pointer;box-shadow:var(--shadow)}
+  .cb-cupo .cb-k{color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-size:11px}
+  .cb-cupo .cb-v{color:var(--court);font-weight:700;font-size:13px}
+  .cb-cupo .cb-go{color:var(--court);font-weight:800;font-size:15px;line-height:1;margin-left:1px}
+  .cb-cupo:hover{border-color:var(--court)}
+  .cb-btn{display:inline-flex;align-items:center;gap:7px;padding:9px 15px;border-radius:12px;font-size:13px;font-weight:600;border:1.5px solid var(--line);background:var(--card);color:var(--court);box-shadow:var(--shadow);white-space:nowrap;transition:.15s}
+  .cb-btn svg{width:16px;height:16px;flex:none}
+  .cb-btn:hover{border-color:var(--court)}
+  .cb-btn.on{border-color:var(--court);background:var(--court-soft)}
+  .cb-btn.cb-rain{border-color:#cdd9ee;color:#33508a}
+  .cb-btn.cb-rain:hover{border-color:#5b7fc0}
+  .cb-btn.cb-rain.on{border-color:#5b7fc0;background:#e7eef7}
+  @media(max-width:820px){
+    .cb-actions{width:100%;margin-left:0}
+    .cb-btn{flex:1;justify-content:center;padding:11px 12px}
+  }
+
+  /* ---------- MENÚ DESPLEGABLE PREMIUM (reemplaza <select>) ---------- */
+  .psel{position:relative;margin-bottom:4px}
+  .psel-trigger{width:100%;display:flex;align-items:center;gap:10px;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;background:#fafcfb;font-size:15px;color:var(--ink);text-align:left;transition:border .15s,box-shadow .15s}
+  .psel-trigger .psel-val{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .psel-chev{width:18px;height:18px;color:var(--muted);transition:transform .2s;flex:none}
+  .psel-trigger:hover{border-color:var(--court)}
+  .psel.open .psel-trigger{border-color:var(--court);box-shadow:0 0 0 3px var(--court-soft);background:#fff}
+  .psel.open .psel-chev{transform:rotate(180deg);color:var(--court)}
+  .psel.dis .psel-trigger{opacity:.55;pointer-events:none;background:#f1f4f3}
+  .psel-menu{max-height:0;overflow:hidden;opacity:0;transform:translateY(-4px);transition:max-height .22s ease,opacity .18s ease,transform .18s ease}
+  .psel.open .psel-menu{max-height:260px;overflow:auto;opacity:1;transform:none;margin-top:8px;border:1.5px solid var(--line);border-radius:12px;box-shadow:0 12px 30px rgba(0,0,0,.1);background:var(--card);-webkit-overflow-scrolling:touch}
+  .psel-opt{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;font-size:14.5px;color:var(--ink);text-align:left;border-bottom:1px solid var(--line);transition:background .12s}
+  .psel-opt:last-child{border-bottom:none}
+  .psel-opt:hover{background:var(--court-soft)}
+  .psel-opt.on{color:var(--court);font-weight:700;background:#f3f8f5}
+  .psel-opt .psel-check{opacity:0;color:var(--court);font-weight:800;font-size:15px}
+  .psel-opt.on .psel-check{opacity:1}
+
+  /* ---------- CALENDAR HEADER (renglón, viejo) ---------- */
+  .cal-head{display:flex;align-items:center;gap:13px;flex-wrap:wrap;margin:2px 0 14px;font-size:13px}
+  .cal-head .ch-cupo{color:var(--ink)}
+  .cal-head .ch-cupo b{color:var(--court);font-weight:700}
+  .cal-head .ch-link{color:var(--court);font-weight:700;font-size:12.5px;white-space:nowrap}
+  .cal-head .ch-link:hover{text-decoration:underline}
+  .cal-head .ch-btn{display:inline-flex;align-items:center;gap:7px;padding:8px 13px;border-radius:11px;font-size:13px;font-weight:600;border:1.5px solid var(--line);background:var(--card);color:var(--court);box-shadow:var(--shadow);white-space:nowrap}
+  .cal-head .ch-btn.on{border-color:var(--court);background:var(--court-soft)}
+  .cal-head .ch-btn.ch-rain{border-color:#cdd9ee;color:#33508a}
+  .cal-head .ch-btn.ch-rain.rain-on{border-color:#5b7fc0;background:#e7eef7;color:#33508a}
+  .cal-head .ch-star{display:inline-flex;align-items:center;gap:5px;color:var(--muted);font-size:12.5px;white-space:nowrap;margin-left:auto}
+  .cal-head .ch-star .bstar{font-size:15px}
+
+  /* ---------- CUPO CARD (Mis reservas) ---------- */
+  .cupo-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;margin-bottom:18px}
+  .cupo-card .cc-big{font-size:18px;font-weight:700;color:var(--court);letter-spacing:-.2px}
+  .cupo-card .cc-sub{font-size:12.5px;color:var(--muted);margin-top:3px}
+  .cc-houses{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+  .cc-house{display:flex;align-items:center;gap:11px;padding:9px 12px;border:1px solid var(--line);border-radius:11px;background:#fafcfb}
+  .cc-house .cc-hic{width:28px;height:28px;border-radius:8px;background:var(--court-soft);display:flex;align-items:center;justify-content:center;flex:none}
+  .cc-house .cc-hic .hicon{fill:var(--court);width:15px;height:15px;margin:0}
+  .cc-house .cc-hn{flex:1;font-weight:600;font-size:13.5px;color:var(--ink)}
+  .cc-house .cc-hh{font-weight:700;font-size:13px;color:var(--court)}
+  .cc-house .cc-hh.none{color:var(--muted)}
+  .cc-rules{display:flex;flex-direction:column;gap:12px;margin-top:16px;border-top:1px solid var(--line);padding-top:15px}
+  .cc-rule{display:flex;gap:11px;align-items:flex-start}
+  .cc-rule .cc-ric{width:28px;height:28px;border-radius:8px;background:var(--court-soft);color:var(--court);display:flex;align-items:center;justify-content:center;flex:none;font-size:15px;font-weight:700}
+  .cc-rule .cc-ric.star{color:#f2b705;background:#fdf6e3}
+  .cc-rule b{font-size:13px;color:var(--ink);display:block;margin-bottom:1px}
+  .cc-rule>div span{font-size:12px;color:var(--muted);line-height:1.5}
+  .past-panel .row{opacity:.72}
+
+  /* ---------- WEEK GRID (desktop) ---------- */
+  .grid-wrap{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);overflow:hidden}
+  .wgrid{display:grid;grid-template-columns:64px repeat(7,1fr)}
+  .wgrid .gh{padding:12px 6px;text-align:center;border-bottom:1px solid var(--line);
+    border-left:1px solid var(--line);background:#fbfdfc;position:sticky;top:0}
+  .wgrid .gh:first-child{border-left:none}
+  .gh .dow{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:600}
+  .gh .dnum{font-size:17px;font-weight:700;margin-top:2px}
+  .gh.today .dnum{color:#fff;background:var(--court);width:30px;height:30px;border-radius:50%;
+    display:inline-flex;align-items:center;justify-content:center;font-size:14px}
+  .gh-month{display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;letter-spacing:.6px;color:var(--muted)}
+  .wgrid .hr{font-size:11px;color:var(--muted);text-align:right;padding:6px 8px 0 0;border-top:1px solid var(--line);font-weight:500}
+  .wgrid .cell{position:relative;border-top:1px solid var(--line);border-left:1px solid var(--line);min-height:38px;padding:3px}
+  .wgrid .cell.cell-past{opacity:.28}
+  .wgrid .cell.cell-past .slot{cursor:default}
+  .wgrid .hr.hr-now{color:var(--now);font-weight:700;position:relative}
+  .wgrid .hr.hr-now .now-tag{display:block;font-size:9px;font-weight:800;letter-spacing:.4px;color:var(--now);text-transform:uppercase;line-height:1;margin-bottom:1px}
+  .nowline{position:absolute;left:0;right:0;top:-1.5px;height:2.5px;background:var(--now);z-index:5;pointer-events:none}
+  .nowline.nl-today::before{content:'';position:absolute;left:-4px;top:50%;transform:translateY(-50%);width:9px;height:9px;border-radius:50%;background:var(--now);box-shadow:0 0 0 2px var(--card)}
+  .slot{position:relative;height:100%;min-height:32px;border-radius:7px;font-size:11px;display:flex;flex-direction:column;
+    justify-content:center;padding:3px 7px;line-height:1.25;transition:transform .08s,box-shadow .12s;overflow:hidden}
+  .rainmark{position:absolute;top:50%;right:8px;transform:translateY(-50%);width:14px;height:14px;stroke:var(--ink);pointer-events:none}
+  .slot b{font-weight:600;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .slot small{font-size:10px;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .s-free{background:#fff;border:1.5px dashed var(--ball-dark);color:var(--court);cursor:pointer}
+  .s-free:hover{background:var(--court-soft);transform:translateY(-1px);box-shadow:var(--shadow)}
+  .plus{font-weight:800;color:var(--ball-dark);margin-right:4px}
+  .cdot{display:inline-block;width:13px;height:13px;vertical-align:middle;margin:-2px 4px 1px 0;position:relative;flex:none}
+  .cdot::before{content:'';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:7px;height:7px;border-radius:50%;background:var(--ink)}
+  .slot .paren{font-weight:500;font-size:9.5px;opacity:.7}
+  .s-mine{background:var(--teal);color:#fff;cursor:pointer}
+  .s-mine .hicon,.h-mine .hicon{fill:#fff}
+  .mtime{position:absolute;top:50%;right:7px;transform:translateY(-50%);font-size:10px;font-weight:600;opacity:.92;white-space:nowrap}
+  .mtime.rn{right:25px}
+  .s-reserved{background:#fff;border:1.5px solid var(--ink);color:var(--ink)}
+  .s-reserved:hover{background:#fbfdfc}
+  .hicon{width:13px;height:13px;vertical-align:middle;margin:-2px 4px 1px 0;fill:var(--ink);flex:none}
+  .s-prof{background:#fff;border:1.5px solid var(--ink);color:var(--ink)}
+  .s-bonus{background:#fff;border:1.5px dashed var(--ball-dark);color:var(--court);cursor:pointer;position:relative}
+  .s-bonus:hover{background:var(--court-soft)}
+  .bstar{color:#f2b705}
+  .s-bonus .bstar{position:absolute;top:50%;right:8px;transform:translateY(-50%);font-size:12px}
+  .s-class{background:var(--amber);color:#5a3c07;cursor:pointer;box-shadow:0 0 0 2px rgba(234,165,59,.35)}
+  .s-open{background:var(--lime);color:#26430c;cursor:pointer;box-shadow:0 0 0 2px rgba(132,194,58,.35)}
+  .s-maint{background:#fff;border:1.5px solid var(--ink);color:var(--ink);cursor:pointer}
+  .s-rain{background:#f6f8fb;border:1px solid #e6ecf4;align-items:center;justify-content:center}
+  .rain-banner{background:#e7eef7;border:1px solid #cfe0f4;color:#33508a;border-radius:12px;padding:11px 15px;font-size:13px;margin-bottom:14px}
+  .btn-wa{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:9px 13px;border-radius:10px;background:#25d366;color:#fff;font-size:13px;font-weight:600;text-decoration:none;white-space:nowrap}
+  .btn-wa svg{width:17px;height:17px}
+  .btn-wa:hover{background:#1eb858}
+  .contact-row{display:flex;gap:10px;margin:7px 0 4px}
+  .contact-row .btn-call,.contact-row .btn-wa{flex:1}
+  .btn-call{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:11px 13px;border-radius:10px;background:var(--court);color:#fff;font-size:13.5px;font-weight:600;text-decoration:none;white-space:nowrap}
+  .btn-call svg{width:17px;height:17px}
+  .btn-call:hover{background:var(--court-dark)}
+  .contact-row .btn-wa{padding:11px 13px;font-size:13.5px}
+  .s-locked{background:#fafbfb;color:#c2c8c6;border:1px solid #eef1f0;cursor:not-allowed}
+  .slot-split{height:100%;min-height:32px;display:flex;flex-direction:row;gap:3px}
+  .half{position:relative;flex:1;border-radius:6px;font-size:10.5px;font-weight:600;display:flex;align-items:center;justify-content:flex-start;text-align:left;padding:2px 7px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;line-height:1.1}
+  .half.h-free{background:#fff;border:1.5px dashed var(--ball-dark);color:var(--court);cursor:pointer}
+  .half.h-free:hover{background:var(--court-soft)}
+  .half.h-mine{background:var(--teal);color:#fff;cursor:pointer}
+  .half.h-reserved{background:#fff;border:1.5px solid var(--ink);color:var(--ink)}
+  .half .hicon{width:12px;height:12px;margin-right:3px}
+  .half.h-prof{background:#fff;border:1.5px solid var(--ink);color:var(--ink)}
+  .half .cdot{width:12px;height:12px;margin-right:3px}
+  .half.h-bonus{background:#fff;border:1.5px dashed var(--ball-dark);color:var(--court);cursor:pointer;justify-content:space-between}
+  .half.h-bonus:hover{background:var(--court-soft)}
+  .half.h-na{background:#fafbfb;border:1px solid #eef1f0;color:#c2c8c6;justify-content:center;font-size:9px}
+  .wgrid.filtering .slot:not(.s-free):not(.s-bonus){opacity:.12;pointer-events:none}
+  .wgrid.filtering .half.h-mine,.wgrid.filtering .half.h-reserved,.wgrid.filtering .half.h-na,.wgrid.filtering .half.h-prof{opacity:.12;pointer-events:none}
+  .wgrid.filtering .half.h-free,.wgrid.filtering .half.h-bonus{box-shadow:0 0 0 2px rgba(169,207,46,.45)}
+  .wgrid.filtering .s-free,.wgrid.filtering .s-class,.wgrid.filtering .s-open{box-shadow:0 0 0 2px rgba(169,207,46,.45)}
+  .s-past{background:repeating-linear-gradient(45deg,#fafbfb,#fafbfb 5px,#f3f5f4 5px,#f3f5f4 10px);color:#c2c8c6;align-items:center}
+  .s-past span{font-size:13px;font-weight:600}
+  .slot.tag::after{content:attr(data-tag);position:absolute}
+
+  /* ---------- MOBILE ---------- */
+  .m-only{display:none}
+  .mobile-head{display:none}
+
+  /* ---------- LIST VIEWS ---------- */
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+  .panel-h{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .panel-h h3{font-size:15px}
+  .panel-h .spacer{flex:1}
+  .row{display:flex;align-items:center;gap:14px;padding:14px 18px;border-bottom:1px solid var(--line)}
+  .row:last-child{border-bottom:none}
+  .row .when{text-align:center;flex:none;width:56px}
+  .row .when .d{font-size:11px;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .row .when .h{font-size:16px;font-weight:700;color:var(--court)}
+  .row .info{flex:1}
+  .row .info b{font-size:14px;display:block}
+  .row .info span{font-size:12.5px;color:var(--muted)}
+  .pill{font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;white-space:nowrap}
+  .pill.green{background:var(--court-soft);color:var(--court)}
+  .pill.amber{background:#fdf0d9;color:#9a6c12}
+  .pill.lime{background:#eef6df;color:#4f7d1d}
+  .pill.gray{background:#eef1f0;color:#6b7370}
+  .btn-cancel{padding:8px 14px;border-radius:10px;border:1.5px solid #f0d4ce;color:var(--danger);font-size:13px;font-weight:600}
+  .btn-cancel:hover{background:#fdf1ef}
+  .btn-mini{padding:8px 14px;border-radius:10px;background:var(--court);color:#fff;font-size:13px;font-weight:600}
+  .btn-mini:hover{background:var(--court-dark)}
+  .empty{padding:48px 20px;text-align:center;color:var(--muted)}
+  .empty svg{width:42px;height:42px;opacity:.3;margin-bottom:10px}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:1100px){.grid2{grid-template-columns:1fr}}
+
+  /* notifications */
+  .notif{display:flex;gap:13px;padding:14px 18px;border-bottom:1px solid var(--line)}
+  .notif .ic{width:38px;height:38px;border-radius:11px;flex:none;display:flex;align-items:center;justify-content:center}
+  .notif .ic svg{width:19px;height:19px}
+  .notif.unread{background:#f8fbf6}
+  .notif .body b{font-size:14px}
+  .notif .body p{font-size:13.5px;color:#46524e;line-height:1.55;margin-top:3px}
+  .notif .body time{font-size:11px;color:var(--gray);display:block;margin-top:6px}
+  .notif-act{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .notif-act button{padding:8px 15px;border-radius:9px;font-size:13px;font-weight:600}
+  .notif-act .na-yes{background:var(--court);color:#fff}
+  .notif-act .na-yes:hover{background:var(--court-dark)}
+  .notif-act .na-no{background:#eef1f0;color:var(--muted)}
+  .notif-act .na-no:hover{background:#e2e6e4}
+  .notif-st{margin-top:9px;font-size:13px;font-weight:600;color:var(--muted)}
+  .notif-st.ok{color:var(--ok)}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--ball-dark);flex:none;margin-top:6px}
+  /* historial */
+  .hrow{display:flex;align-items:center;gap:13px;padding:13px 18px;border-bottom:1px solid var(--line)}
+  .hrow:last-child{border-bottom:none}
+  .hic{width:34px;height:34px;border-radius:10px;flex:none;display:flex;align-items:center;justify-content:center}
+  .hic.reserve{background:var(--court-soft);color:var(--court)}
+  .hic.cancel{background:#fdecea;color:var(--danger)}
+  .hinfo{flex:1;min-width:0}
+  .hinfo b{font-size:13.5px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .hinfo span{font-size:12.5px;color:var(--muted)}
+  .hrow time.hwhen{display:flex;flex-direction:column;align-items:flex-end;text-align:right;white-space:nowrap;flex:none;line-height:1.3}
+  .hrow .hw-d{font-size:11px;color:var(--gray);text-transform:capitalize}
+  .hrow .hw-t{font-size:12.5px;color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
+
+  /* admin forms */
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:18px}
+  .form-grid .field{margin:0}
+  .form-grid .full{grid-column:1/-1}
+  .field select{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:11px;font-size:14px;background:#fafcfb}
+  .seg{display:flex;gap:8px}
+  .seg button{flex:1;padding:11px;border:1.5px solid var(--line);border-radius:11px;font-size:13px;font-weight:600;color:var(--muted)}
+  .seg button.on{border-color:var(--court);background:var(--court-soft);color:var(--court)}
+  .seg-v{flex-direction:column}
+  .opt-list{display:flex;flex-direction:column;gap:8px}
+  .opt-card{display:flex;gap:11px;align-items:flex-start;text-align:left;padding:12px 13px;border:1.5px solid var(--line);border-radius:12px;background:#fff;transition:.13s;width:100%}
+  .opt-card:hover{border-color:var(--court)}
+  .opt-card.on{border-color:var(--court);background:var(--court-soft)}
+  .opt-dot{width:18px;height:18px;border-radius:50%;border:2px solid #cdd6d3;flex:none;margin-top:1px;transition:.13s}
+  .opt-card.on .opt-dot{border-color:var(--court);background:var(--court);box-shadow:inset 0 0 0 3px #fff}
+  .opt-txt b{display:block;font-size:13.5px;color:var(--ink)}
+  .opt-txt small{display:block;font-size:12px;color:var(--muted);margin-top:2px;font-weight:400;line-height:1.4}
+  .opt-card.on .opt-txt b{color:var(--court)}
+  .chk{display:inline-flex;align-items:center;gap:9px;cursor:pointer;font-size:13px;font-weight:600;color:var(--ink);user-select:none}
+  .chk-box{width:20px;height:20px;border-radius:6px;border:2px solid #cdd6d3;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:800;flex:none;transition:.13s}
+  .chk-box.on{background:var(--court);border-color:var(--court)}
+  .cupo-seg{display:inline-flex;gap:6px}
+  .cupo-seg button{min-width:42px;padding:9px 0;border:1.5px solid var(--line);border-radius:10px;font-size:14px;font-weight:700;color:var(--muted)}
+  .cupo-seg button.on{border-color:var(--court);background:var(--court-soft);color:var(--court)}
+  .lk-chip{padding:8px 13px;border:1.5px solid var(--line);border-radius:10px;font-size:13px;font-weight:600;color:var(--muted)}
+  .lk-chip.on{border-color:var(--court);background:var(--court-soft);color:var(--court)}
+  .hchips{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}
+  .hchip{font-size:12px;background:var(--court-soft);color:var(--court);padding:5px 10px;border-radius:8px;font-weight:500}
+  .hchip b{font-weight:700}
+  .rules{background:#f6f9f8;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:14px 0}
+  .rules b{font-size:12.5px;color:var(--ink)}
+  .rules ul{margin:8px 0 0;padding-left:18px}
+  .rules li{font-size:12px;color:var(--muted);margin-bottom:4px;line-height:1.4}
+  .rule-night{margin:9px 0 2px;background:#eef1fb;border-left:3px solid #5b6ee0;border-radius:8px;padding:9px 11px;font-size:12.5px;color:#33408a;font-weight:600;line-height:1.45}
+  .cupo-note{margin-top:11px;background:#fff7e6;border-left:3px solid var(--amber);border-radius:8px;padding:10px 12px;font-size:12.5px;color:#6b4e0a;font-weight:700}
+  .cupo-note p{margin-top:4px;line-height:1.5;color:#8a6a2a;font-weight:500}
+  .bonus-box{display:flex;gap:12px;align-items:center;background:#eef6df;border:1px solid #d4e7a8;border-radius:13px;padding:13px 15px;margin:14px 0}
+  .bonus-box .bonus-star{font-size:26px;line-height:1;color:var(--amber)}
+  .bonus-box b{font-size:14px;color:#3f5e12;display:block}
+  .bonus-box span{font-size:12.5px;color:#5d7a2c;line-height:1.45}
+  .fld-label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px}
+  .avail-cols{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start}
+  .avail-right{flex:1;min-width:240px;display:flex;flex-direction:column;gap:14px}
+  .sel-day{font-size:15px;font-weight:700;color:var(--court);text-transform:capitalize}
+  .dh-row{display:flex;gap:12px}
+  .dh-row .field{flex:1;margin:0}
+  .hint{font-size:12px;color:var(--muted);margin:12px 0 0}
+  /* mini calendario */
+  .minical{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px;width:280px;box-shadow:var(--shadow)}
+  .mc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .mc-head b{font-size:14px}
+  .mc-head button{width:30px;height:30px;border-radius:9px;color:var(--court);font-size:19px;line-height:1}
+  .mc-head button:hover:not(:disabled){background:var(--court-soft)}
+  .mc-head button:disabled{opacity:.25;cursor:not-allowed}
+  .mc-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+  .mc-dow span{text-align:center;font-size:10px;color:var(--muted);font-weight:700;padding:2px 0;text-transform:uppercase}
+  .mc-day{height:34px;border-radius:9px;font-size:13px;color:var(--ink);font-weight:500}
+  .mc-day:hover:not(:disabled):not(.mc-sel){background:var(--court-soft)}
+  .mc-dis{opacity:.22;cursor:not-allowed}
+  .mc-inrange{background:var(--court-soft);border-radius:0}
+  .mc-sel{background:var(--court);color:#fff;font-weight:700}
+
+  /* lights */
+  .lbulb{width:38px;height:38px;border-radius:11px;flex:none;display:flex;align-items:center;justify-content:center}
+  .lbulb svg{width:20px;height:20px}
+  .lbulb.on{background:#fdf0d9;color:var(--amber)}
+  .lbulb.off{background:#eef1f0;color:var(--muted)}
+
+  /* ---------- MODAL ---------- */
+  .modal-bg{position:fixed;inset:0;background:rgba(14,40,35,.45);backdrop-filter:blur(2px);
+    display:none;align-items:flex-end;justify-content:center;z-index:60;padding:0}
+  .modal-bg.show{display:flex}
+  .modal{background:var(--card);border-radius:22px 22px 0 0;width:100%;max-width:440px;padding:8px 22px 26px;
+    animation:up .25s ease;max-height:92vh;overflow-y:auto}
+  @keyframes up{from{transform:translateY(40px);opacity:.6}to{transform:translateY(0);opacity:1}}
+  .grab{width:38px;height:4px;border-radius:3px;background:var(--line);margin:8px auto 14px}
+  .modal h3{font-size:18px;margin-bottom:3px}
+  .modal .msub{font-size:13px;color:var(--muted);margin-bottom:18px}
+  .modal .opt-label{font-size:12px;font-weight:600;color:var(--muted);margin:14px 0 7px}
+  .modal .quota-mini{background:var(--court-soft);border-radius:12px;padding:12px 14px;font-size:13px;color:var(--court);
+    display:flex;align-items:center;gap:9px;margin:16px 0}
+  .modal .quota-mini svg{width:18px;height:18px;flex:none}
+  .modal-actions{display:flex;gap:10px;margin-top:8px}
+  .modal-actions .btn-primary{margin:0}
+  .btn-soft{flex:none;padding:14px 20px;border-radius:12px;background:#eef1f0;color:var(--muted);font-weight:600;font-size:15px}
+
+  /* toast */
+  #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
+    background:var(--ink);color:#fff;padding:13px 20px;border-radius:13px;font-size:14px;font-weight:500;
+    box-shadow:0 10px 30px rgba(0,0,0,.25);z-index:70;opacity:0;transition:.3s;display:flex;align-items:center;gap:9px}
+  #toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+  #toast svg{width:18px;height:18px;color:var(--ball);flex:none}
+  #toast.warn svg{color:#f5c451}
+
+  /* role switch (demo) */
+  .role-switch{position:fixed;top:14px;right:18px;z-index:40}
+  .ds-trigger{display:inline-flex;align-items:center;gap:8px;padding:7px 11px;border-radius:12px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);font-size:12.5px;font-weight:600;color:var(--ink)}
+  .ds-trigger .ds-tag{font-size:9px;font-weight:800;letter-spacing:.7px;color:#fff;background:var(--court);padding:2px 6px;border-radius:6px}
+  .ds-trigger .ds-ic{display:inline-flex;color:var(--court)}
+  .ds-trigger .chev{color:var(--gray);transition:transform .18s}
+  .role-switch.open .ds-trigger .chev{transform:rotate(180deg)}
+  .ds-menu{position:absolute;top:calc(100% + 7px);right:0;width:236px;background:var(--card);border:1px solid var(--line);border-radius:15px;box-shadow:0 14px 38px rgba(20,40,35,.18);padding:6px;animation:dsIn .16s ease}
+  @keyframes dsIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes fadeView{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+  .ds-grp{font-size:9.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--gray);padding:9px 9px 4px}
+  .ds-item{display:flex;align-items:center;gap:10px;width:100%;padding:8px 9px;border-radius:10px;text-align:left}
+  .ds-item:hover{background:var(--bg)}
+  .ds-item.on{background:var(--court-soft)}
+  .ds-item .ds-ic{width:30px;height:30px;border-radius:9px;background:var(--bg);display:flex;align-items:center;justify-content:center;color:var(--court);flex:none}
+  .ds-item.on .ds-ic{background:var(--court);color:#fff}
+  .ds-item .ds-tx{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.25}
+  .ds-item .ds-tx b{font-size:13px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ds-item .ds-tx span{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ds-item .chk{color:var(--court);flex:none}
+
+  /* ---------- RESPONSIVE: MOBILE NATIVE ---------- */
+  @media(max-width:820px){
+    .sidebar{display:none}
+    .main{margin-left:0;padding-bottom:74px}
+    .role-switch{top:auto;bottom:84px;right:12px}
+    .role-switch .ds-menu{top:auto;bottom:calc(100% + 7px)}
+    .topbar{display:none}
+    .mobile-head{display:block;position:sticky;top:0;z-index:15;background:var(--court-dark);color:#fff;
+      padding:14px 18px 16px}
+    .mh-top{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+    .mh-top .logo{width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.12)}
+    .mh-top .logo svg{width:20px;height:20px}
+    .mh-top b{font-size:15px}
+    .mh-top .mh-right{margin-left:auto;display:flex;align-items:center;gap:16px}
+    .mh-top .mh-bell{position:relative;color:#fff;display:flex;align-items:center}
+    .mh-top .mh-bell svg{width:23px;height:23px}
+    .mh-top .mh-bell .bdot{position:absolute;top:-2px;right:-2px;width:16px;height:16px;background:var(--danger);
+      border-radius:50%;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--court-dark)}
+    .mh-top .mh-acct{color:#fff;display:flex;align-items:center}
+    .mh-top .mh-acct svg{width:24px;height:24px}
+    .day-strip{display:flex;gap:6px;justify-content:space-between}
+    .day-strip button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 0;
+      border-radius:12px;color:#bcd6cf}
+    .day-strip button .dw{font-size:10px;text-transform:uppercase;font-weight:600}
+    .day-strip button .dn{font-size:16px;font-weight:700}
+    .day-strip button.on{background:var(--ball);color:var(--court-dark)}
+    .content{padding:14px 14px 20px}
+    /* encabezado del calendario en móvil: ordenado en dos renglones */
+    .cal-head{gap:9px 14px;margin:0 0 12px}
+    .cal-head .ch-cupo{flex-basis:100%;font-size:13.5px}
+    .cal-head .ch-star{margin-left:auto}
+    .m-only{display:block}
+    .grid-wrap{display:none}
+    .quota .legend{display:none}
+    .week-nav{display:none}
+    .grid2{gap:14px}
+    .modal-bg{align-items:flex-end}
+
+    /* mobile day list */
+    .mday{display:flex;flex-direction:column;gap:9px}
+    .mslot{display:flex;align-items:center;gap:13px;background:var(--card);border:1px solid var(--line);
+      border-radius:14px;padding:13px 15px;box-shadow:var(--shadow)}
+    .mslot .mt{flex:none;width:54px;text-align:center}
+    .mslot .mt .h{font-size:15px;font-weight:700;color:var(--court)}
+    .mslot .mt .h2{font-size:11px;color:var(--muted)}
+    .mslot .ml{flex:1;min-width:0}
+    .mslot .ml b{font-size:14px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .mslot .ml span{font-size:12px;color:var(--muted)}
+    .mslot .bar{width:4px;align-self:stretch;border-radius:3px;flex:none}
+    .mslot.free .bar{background:var(--ball-dark)} .mslot.free{cursor:pointer}
+    .mslot.mine .bar{background:var(--teal)} .mslot.mine{background:#e9f4f6}
+    .mslot.reserved .bar{background:var(--ink)} .mslot.reserved{background:var(--card)}
+    .mslot.prof .bar{background:var(--ink)} .mslot.prof{background:var(--card)}
+    .mslot.bonus .bar{background:var(--ball-dark)} .mslot.bonus{cursor:pointer}
+    .mslot.rain .bar{background:#5b7fc0} .mslot.rain{background:#eef3fb}
+    .mslot.maint .bar{background:var(--ink)} .mslot.maint{background:var(--card)}
+    .mslot.locked .bar{background:#e7eae9} .mslot.locked{opacity:.6}
+    .mslot.past{opacity:.45}
+    .mslot.m-faded{opacity:.32}
+    .m-now{display:flex;align-items:center;gap:9px;margin:2px 2px;color:var(--now);font-size:12px;font-weight:700}
+    .m-now::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--now);flex:none}
+    .m-now::after{content:'';flex:1;height:2px;background:var(--now);border-radius:2px;opacity:.55}
+    .mslot .chev{color:var(--ball-dark);flex:none}
+
+    /* bottom nav */
+    .tabbar{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--line);
+      display:flex;padding:7px 6px 10px;z-index:25;box-shadow:0 -2px 18px rgba(20,40,35,.06)}
+    .tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);
+      font-size:10.5px;font-weight:600;position:relative;padding:4px 0}
+    .tabbar button svg{width:23px;height:23px}
+    .tabbar button.active{color:var(--court)}
+    .tabbar button .tb{position:absolute;top:0;right:50%;margin-right:-22px;background:var(--danger);color:#fff;
+      font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 4px}
+    .form-grid{gap:12px}
+  }
+  @media(min-width:821px){ .mobile-head,.tabbar{display:none} }
+</style>
+</head>
+<body>
+
+<!-- ============ SPLASH (carga inicial) ============ -->
+<div id="splash"><div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#c6e84b" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M5 5c4 3 4 11 0 14M19 5c-4 3-4 11 0 14"/></svg></div></div>
+
+<!-- ============ LOGIN ============ -->
+<div id="login" style="display:none">
+  <div class="login-card" id="loginCard">
+    <div class="brand">
+      <div class="logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#c6e84b" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M5 5c4 3 4 11 0 14M19 5c-4 3-4 11 0 14"/></svg>
+      </div>
+      <h1>Cancha de Tenis</h1>
+      <p>Cerros de la Alhambra</p>
+    </div>
+    <div class="field"><label>Usuario o correo</label><input id="loginEmail" type="text" placeholder="usuario o tu@correo.com" autocomplete="username" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('loginPass').focus();}"></div>
+    <div class="field"><label>Contraseña</label>
+      <div class="pw-wrap"><input id="loginPass" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+        <button type="button" class="pw-eye" onclick="togglePw(this)" aria-label="Ver contraseña"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+    </div>
+    <button class="btn-primary" onclick="doLogin()">Ingresar</button>
+    <a class="forgot" onclick="doForgot()">¿Olvidaste tu clave?</a>
+    <div style="text-align:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);font-size:13.5px;color:var(--muted)">¿Primera vez? <a class="forgot" style="display:inline" onclick="showSignup(true)">Crear cuenta nueva</a></div>
+  </div>
+  <div class="login-card hidden" id="signupCard">
+    <div class="brand"><div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#c6e84b" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M5 5c4 3 4 11 0 14M19 5c-4 3-4 11 0 14"/></svg></div>
+      <h1>Crear cuenta</h1><p>La administradora aprobará tu solicitud</p></div>
+    <div class="field"><label>Nombre y apellido</label><input id="suName" placeholder="Nombre y apellido"></div>
+    <div class="field"><label>Número de casa</label><input id="suHouse" placeholder="Ej. 29A, 21B…"></div>
+    <div class="field"><label>Usuario <span style="font-weight:500;color:var(--muted)">(para entrar)</span></label><input id="suUser" placeholder="ej. pedro27" autocomplete="off"></div>
+    <div class="field"><label>Correo</label><input id="suEmail" type="email" placeholder="tu@correo.com"></div>
+    <div class="field"><label>Celular</label><input id="suPhone" type="tel" placeholder="300 123 4567"></div>
+    <div class="field"><label>Contraseña</label>
+      <div class="pw-wrap"><input id="suPass" type="password" placeholder="mínimo 6 caracteres" onkeydown="if(event.key==='Enter')submitSignup()">
+        <button type="button" class="pw-eye" onclick="togglePw(this)" aria-label="Ver contraseña"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+    </div>
+    <button class="btn-primary" onclick="submitSignup()">Enviar solicitud</button>
+    <a class="forgot" onclick="showSignup(false)">← Volver a ingresar</a>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="app">
+
+
+  <!-- DESKTOP SIDEBAR -->
+  <aside class="sidebar">
+    <div class="side-brand">
+      <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#c6e84b" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M5 5c4 3 4 11 0 14M19 5c-4 3-4 11 0 14"/></svg></div>
+      <div><b>Cancha de Tenis</b><br><span>Cerros de la Alhambra</span></div>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="side-foot">
+      <div class="user-chip">
+        <div class="avatar" id="avatar">AP</div>
+        <div class="meta"><b id="uname">Ana Pérez</b><span id="urole">Casa 12 · Miembro</span></div>
+      </div>
+      <button class="logout" onclick="openChangePassword()">Cambiar contraseña</button>
+      <button class="logout" onclick="logout()">Cerrar sesión</button>
+    </div>
+  </aside>
+
+  <!-- MOBILE HEADER -->
+  <div class="mobile-head">
+    <div class="mh-top">
+      <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#c6e84b" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M5 5c4 3 4 11 0 14M19 5c-4 3-4 11 0 14"/></svg></div>
+      <b id="mtitle">Reservas</b>
+      <div class="mh-right">
+        <button class="mh-bell" id="mhBell" onclick="go('notif')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+          <span class="bdot" id="mbell">2</span>
+        </button>
+        <button class="mh-acct" onclick="openAccount()" aria-label="Mi cuenta">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="day-strip" id="dayStrip"></div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <h2 id="ttitle">Calendario de reservas</h2>
+        <div class="sub" id="tsub">Una cancha · horario 5:00–23:00</div>
+      </div>
+      <div class="spacer"></div>
+      <div class="week-nav" id="weekNav">
+        <svg style="width:17px;height:17px;color:var(--court);margin-left:10px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5h18v16H3zM3 9h18M8 3v4M16 3v4"/></svg>
+        <span class="label" id="weekLabel" style="padding:8px 14px 8px 8px">Semana</span>
+      </div>
+      <button class="btn-ghost" id="topAction" onclick="topActionClick()"></button>
+    </div>
+    <div class="content" id="content"></div>
+  </div>
+
+  <!-- MOBILE TABBAR -->
+  <div class="tabbar" id="tabbar"></div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modal"></div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="data.js?v=20260611"></script>
+<script>
+/* ======================= DATA ======================= */
+const NOW = new Date(); // hora real (datos reales vía data.js)
+const DOW = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
+const DOWL = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const MON = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
+function ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function addDays(d,n){const x=new Date(d);x.setDate(x.getDate()+n);return x}
+function startOfWeek(d){const x=new Date(d);const g=(x.getDay()+6)%7;x.setDate(x.getDate()-g);x.setHours(0,0,0,0);return x}
+function dateAt(dateStr,h){const[Y,M,D]=dateStr.split('-').map(Number);return new Date(Y,M-1,D,h,0)}
+// Apertura semanal: reset domingo 20:00 abre la semana siguiente (lun–dom) + reinicia cupo
+function _resetBefore(now){let sun=new Date(now);sun.setDate(now.getDate()-now.getDay());sun.setHours(20,0,0,0);if(now<sun)sun.setDate(sun.getDate()-7);return sun;}
+const OPEN_WEEK_START=(function(){let r=_resetBefore(NOW);let m=new Date(r);m.setDate(r.getDate()+1);m.setHours(0,0,0,0);return m;})();
+const OPEN_WEEK_END=ymd(addDays(OPEN_WEEK_START,6));
+const AVAIL_MAX=ymd(addDays(OPEN_WEEK_START,13)); // fin de la próxima semana (admin/profe abren disponibilidad solo esta y la próxima)
+
+const HOURS = []; for(let h=4;h<=22;h++)HOURS.push(h); // operación 4:00 a 23:00
+// Festivos oficiales de Colombia 2026 (el profesor no asiste; esos días cuentan como cupo)
+let HOLIDAYS = new Set(['2026-01-01','2026-01-12','2026-03-23','2026-04-02','2026-04-03','2026-05-01','2026-05-18','2026-06-08','2026-06-15','2026-06-29','2026-07-20','2026-08-07','2026-08-17','2026-10-12','2026-11-02','2026-11-16','2026-12-08','2026-12-25']);
+function isHoliday(date){return HOLIDAYS.has(date);}
+const RULES = [
+  'La persona que reserva debe estar presente en la cancha.',
+  'Sal a tiempo para no interrumpir el turno del siguiente.',
+  'No uses la cancha si está encharcada (con charcos): por seguridad de quienes juegan y para cuidar la cancha.',
+  'No te subas a la malla para buscar pelotas (ni en los arbustos).',
+  'Cuida el equipamiento, las sillas y la mesa; no les des mal uso.',
+];
+function myHouses(){return (state.user&&state.user.houses&&state.user.houses.length)?state.user.houses:[state.user.house];}
+function hlabel(h){const ap=h<12?'am':'pm';let hh=h%12;if(hh===0)hh=12;return hh+(ap)}
+function hrange(h,dur){const e=new Date(0,0,0,h,0); e.setMinutes(e.getMinutes()+dur);
+  const eh=e.getHours(); return hlabel(h)+'–'+hlabel(eh)}
+
+// Reservable schedule by day-of-week + start hour
+function isReservable(dow,h){
+  if(dow>=1&&dow<=5) return (h>=5&&h<=6)||(h>=12&&h<=13)||(h>=17&&h<=22);
+  if(dow===6) return (h>=5&&h<=6)||(h>=12&&h<=22);
+  if(dow===0) return (h>=5&&h<=22);
+  return false;
+}
+function isProfessor(dow,h){
+  if(dow>=1&&dow<=5) return (h>=7&&h<=11)||(h>=14&&h<=16);
+  if(dow===6) return (h>=7&&h<=11);
+  return false;
+}
+// Horario base del profesor (por media hora). Lunes: no viene. Mar–Vie: 6:00–12:30 y 1:30–5:00. Sáb: 6:00–12:00. Dom: libre.
+function isProfHalf(dow,h,half){
+  if(dow===1) return false;                 // lunes: el profesor no asiste
+  if(dow>=2&&dow<=5){
+    if(h>=6&&h<=11) return true;            // 6:00–12:00
+    if(h===12) return half===0;             // 12:00–12:30
+    if(h===13) return half===1;             // 13:30–14:00
+    if(h>=14&&h<=16) return true;           // 14:00–17:00
+    return false;
+  }
+  if(dow===6) return h>=6&&h<=11;            // sábado 6:00–12:00
+  return false;                              // domingo libre
+}
+// El profesor puede auto-reservar el mediodía libre entre semana (12:30–1:30) que es de miembros
+function profWindow(date,h){const dow=parseYMD(date).getDay();return dow>=2&&dow<=5 && (h===12||h===13);}
+function canBookFree(date,h){ if(state.role==='admin') return false; return state.role==='prof' ? profWindow(date,h) : true;} // el admin no reserva (solo gestiona)
+
+let houses = [];          // etiquetas de casas, desde la base
+let houseIdByLabel = {};  // 'Casa 12' -> id (para reservar)
+let houseLabelById = {};  // id -> 'Casa 12' (para mostrar la casa solicitada)
+let users = [];
+function phoneFor(house){const u=users.find(x=>x.houses&&x.houses.includes(house));return u?u.phone:'573000000000';}
+// número para wa.me (agrega indicativo 57 a celulares colombianos de 10 dígitos)
+function waNum(phone){ let t=(phone||'').replace(/\D/g,''); if(t.length===10 && t[0]==='3') t='57'+t; return t; }
+// enlace de WhatsApp para avisar al residente que su cuenta quedó activa
+function appLink(){ return location.origin + location.pathname.replace(/index\.html$/,''); }
+function waNotifyLink(u){
+  const casa = (u.house && u.house!=='—') ? u.house : ((u.houses&&u.houses[0]) || 'vecino');
+  const cred = u.username ? `Tu usuario es: ${u.username}` : 'Puedes entrar con tu correo';
+  const msg = `Hola ${casa} 👋\n\nTe avisamos que tu cuenta para reservar la cancha de tenis de Cerros de la Alhambra ya está *activada*.\n\n${cred}\n\nEntra aquí: ${appLink()}`;
+  return `https://wa.me/${waNum(u.phone)}?text=${encodeURIComponent(msg)}`;
+}
+
+function D(off){return ymd(addDays(NOW,off))}
+let reservations = [];   // se llena desde la base
+let resId = 100;
+let notifId = 100;
+let CUPO = 2; // horas semanales por casa (configurable por el admin: 1–4)
+const CUPO_INFO = 'El cupo se reinicia cada domingo a las 8:00 p.m.<br>Los espacios que libera el profesor no consumen cupo.<br>Siempre puedes usar la cancha cuando esté libre, sin reservar y sin gastar cupo. Eso sí, si llega alguien que la reservó por la app, tendrás que cederla.';
+
+let released = [];   // huecos liberados por el profesor, desde la base
+let closures = [];   // cierres (mantenimiento/lluvia), desde la base
+let notifs = [];     // notificaciones, desde la base
+function visibleNotifs(){return notifs.filter(n=>{
+  if(n.roles && !n.roles.includes(state.role)) return false;
+  if(n.type==='rain' && n.house && isMember() && !myHouses().includes(n.house)) return false; // la solicitud por lluvia solo le llega al dueño afectado
+  return true;
+});}
+
+/* historial de actividad (solo admin y portería): quién reservó / canceló y cuándo */
+let actId = 100;
+let activity = [];   // historial, desde la base
+function logActivity(action,r){activity.unshift({id:++actId,action,name:r.name,house:r.house,date:r.date,h:r.h,min:r.min||0,dur:r.dur,type:r.type,ts:liveNow().getTime()});}
+
+/* ======================= STATE ======================= */
+let state = {
+  role:'member',
+  view:'calendar',
+  weekStart:startOfWeek(NOW),
+  mobileDay:ymd(NOW),
+  user:users[0],
+  onlyAvailable:false,
+  fullWeek:false,
+  demoProfile:'u1',
+  demoOpen:false,
+  availDate:ymd(NOW),
+  availMulti:false,
+  availRangeStart:ymd(NOW),
+  availRangeEnd:null,
+  maintMulti:false,
+  maintDate:ymd(NOW),
+  maintRangeStart:ymd(NOW),
+  maintRangeEnd:null,
+  rainUntil:null,
+  rainHours:0,
+  lastHouse:null,
+};
+function defaultMasterHouse(){
+  const hs=myHouses();
+  if(state.lastHouse && hs.includes(state.lastHouse) && houseUsed(state.lastHouse)<CUPO) return state.lastHouse; // recordar última si aún tiene cupo
+  return hs.find(h=>houseUsed(h)<CUPO) || hs[0]; // si no, la siguiente con cupo
+}
+
+const ROLE_LABEL={member:'Miembro',master:'Miembro',admin:'Administrador',prof:'Profesor',portero:'Portería'};
+
+/* ===== perfiles de la demo (selector arriba a la derecha) ===== */
+const DEMO_PROFILES=[
+  {key:'u1',     role:'member', uid:1, group:'Residentes', label:'Usuario 1',               short:'Usuario 1',    sub:'Carlos · Casa 5'},
+  {key:'u2',     role:'member', uid:4, group:'Residentes', label:'Usuario 2',               short:'Usuario 2',    sub:'Lucía · Casa 60'},
+  {key:'master', role:'master', uid:0, group:'Residentes', label:'Usuario con varias casas', short:'Varias casas', sub:'Ana · 4 casas'},
+  {key:'prof',   role:'prof',         group:'Operación',  label:'Profesor',                short:'Profesor',     sub:'Entrenador'},
+  {key:'portero',role:'portero',      group:'Operación',  label:'Portería',                short:'Portería',     sub:'Recepción'},
+  {key:'admin',  role:'admin',        group:'Operación',  label:'Administración',          short:'Administración',sub:'Gestión del condominio'},
+];
+const PROF_ICO={
+  u1:'<circle cx="12" cy="8" r="3.6"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/>',
+  u2:'<circle cx="12" cy="8" r="3.6"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/>',
+  master:'<path d="M3 11.5 12 4l9 7.5"/><path d="M6 10v10h12V10"/><path d="M10 20v-5h4v5"/>',
+  prof:'<circle cx="12" cy="12" r="9"/><path d="M5 5c4 3 4 11 0 14M19 5c-4 3-4 11 0 14"/>',
+  portero:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/>',
+  admin:'<path d="M3 21V9l9-6 9 6v12M9 21v-6h6v6"/>',
+};
+const CHEV_D=svgIco('<path d="M6 9l6 6 6-6"/>',15);
+const CHECK_I=svgIco('<path d="M20 6L9 17l-5-5"/>',16);
+function renderSwitcher(){
+  const el=document.getElementById('roleSwitch'); if(!el) return;
+  const cur=DEMO_PROFILES.find(p=>p.key===state.demoProfile)||DEMO_PROFILES[0];
+  let menu='';
+  if(state.demoOpen){
+    const grps=['Residentes','Operación'];
+    menu=`<div class="ds-menu" onclick="event.stopPropagation()">`+grps.map(g=>`<div class="ds-grp">${g}</div>`+
+      DEMO_PROFILES.filter(p=>p.group===g).map(p=>`<button class="ds-item${p.key===state.demoProfile?' on':''}" onclick="setProfile('${p.key}')">
+        <span class="ds-ic">${svgIco(PROF_ICO[p.key],17)}</span>
+        <span class="ds-tx"><b>${p.label}</b><span>${p.sub}</span></span>
+        ${p.key===state.demoProfile?`<span class="chk">${CHECK_I}</span>`:''}</button>`).join('')
+    ).join('')+`</div>`;
+  }
+  el.innerHTML=`<button class="ds-trigger" onclick="toggleDemo(event)"><span class="ds-tag">DEMO</span><span class="ds-ic">${svgIco(PROF_ICO[cur.key],16)}</span><span>${cur.short}</span><span class="chev">${CHEV_D}</span></button>${menu}`;
+  el.classList.toggle('open',state.demoOpen);
+}
+function toggleDemo(e){ if(e)e.stopPropagation(); state.demoOpen=!state.demoOpen; renderSwitcher(); }
+function setProfile(key){
+  const p=DEMO_PROFILES.find(x=>x.key===key)||DEMO_PROFILES[0];
+  state.demoProfile=p.key; state.demoOpen=false;
+  setRole(p.role, p.uid);
+}
+
+/* ======================= AUTH ======================= */
+/* ojito ver/ocultar contraseña */
+const EYE_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>';
+const EYE_OFF_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 4.2A11 11 0 0 1 12 4c6.5 0 10 7 10 7a18.4 18.4 0 0 1-3 3.7M6.6 6.6A18.2 18.2 0 0 0 2 11s3.5 7 10 7a11 11 0 0 0 4.2-.8M9.5 9.5a3 3 0 0 0 4.2 4.2M2 2l20 20"/></svg>';
+function togglePw(btn){
+  const inp=btn.parentElement.querySelector('input'); if(!inp) return;
+  const reveal=inp.type==='password';
+  inp.type=reveal?'text':'password';
+  btn.innerHTML=reveal?EYE_OFF_SVG:EYE_SVG;
+  btn.setAttribute('aria-label',reveal?'Ocultar contraseña':'Ver contraseña');
+}
+/* efecto "ingresando…" (atenúa el formulario + spinner en el botón) */
+function setLoginLoading(on){
+  const card=document.getElementById('loginCard'); if(!card) return;
+  card.classList.toggle('loading',on);
+  const btn=card.querySelector('.btn-primary');
+  if(btn){ if(on){ if(!btn.dataset.txt) btn.dataset.txt=btn.textContent; btn.innerHTML='<span class="spin"></span>Ingresando…'; btn.disabled=true; }
+           else { btn.textContent=btn.dataset.txt||'Ingresar'; btn.disabled=false; } }
+}
+async function doLogin(){
+  const ident=(document.getElementById('loginEmail').value||'').trim();
+  const pass=document.getElementById('loginPass').value||'';
+  if(!ident||!pass){ toast('Escribe tu usuario o correo y la contraseña.','warn'); return; }
+  setLoginLoading(true);
+  try{ await DB.Auth.signIn(ident,pass); await boot(); }
+  catch(e){ setLoginLoading(false); toast(e.message,'warn'); }
+}
+async function doForgot(){
+  const ident=(document.getElementById('loginEmail').value||'').trim();
+  if(!ident){ toast('Escribe tu usuario o correo arriba primero.','warn'); return; }
+  try{ await DB.Auth.resetPassword(ident); toast('Te enviamos un correo para restablecer tu clave.'); }
+  catch(e){ toast(e.message,'warn'); }
+}
+async function boot(){
+  let prof=null;
+  try{ prof=await DB.Auth.currentProfile(); }catch(e){}
+  if(!prof){ setLoginLoading(false); toast('No se pudo cargar tu perfil.','warn'); return; }
+  if(prof.status!=='active'){ setLoginLoading(false); showPending(); return; }
+  state.profile=prof;
+  await loadData();
+  const login=document.getElementById('login'), app=document.getElementById('app');
+  login.classList.add('bye');                                   // el login se va con un zoom suave
+  setTimeout(()=>{ login.style.display='none'; login.classList.remove('bye','loading'); }, 300);
+  app.classList.add('show','enter');                            // el calendario entra premium
+  render();
+  setTimeout(()=>app.classList.remove('enter'), 700);
+}
+function hideSplash(){ const s=document.getElementById('splash'); if(s) s.style.display='none'; }
+function showLogin(){ document.getElementById('login').style.display='flex'; hideSplash(); }
+function showPending(){
+  document.getElementById('login').style.display='flex'; hideSplash();
+  document.getElementById('loginCard').innerHTML =
+    '<div class="brand"><div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#c6e84b" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M5 5c4 3 4 11 0 14M19 5c-4 3-4 11 0 14"/></svg></div>'+
+    '<h1>Cuenta pendiente</h1><p>Tu cuenta aún no está activa. La administración debe aprobarla.</p></div>'+
+    '<button class="btn-primary" onclick="location.reload()">Volver</button>';
+}
+async function loadData(){
+  const prof=state.profile;
+  const b=await DB.fetchAll({id:prof.id, role:prof.role});
+  reservations=b.reservations||[]; released=b.releases||[];
+  const allClos=b.closures||[]; const rainC=allClos.find(c=>c.kind==='rain' && c.endTs>Date.now());
+  closures=allClos.filter(c=>c.kind!=='rain');                         // mantenimiento → maintAt
+  state.rainUntil = rainC ? rainC.endTs : null;                        // lluvia → marca/banner
+  state.rainHours = rainC ? Math.max(1,Math.round((rainC.endTs-rainC.startTs)/3600000)) : 0;
+  HOLIDAYS=b.holidays||new Set(); notifs=b.notifs||[]; activity=b.activity||[]; users=b.users||[];
+  houses=(b.houses||[]).map(h=>h.label); houseIdByLabel={}; houseLabelById={};
+  (b.houses||[]).forEach(h=>{ houseIdByLabel[h.label]=h.id; houseLabelById[h.id]=h.label; });
+  CUPO=b.cupo||2;
+  const myLabels=(b.myHouses||[]).map(h=>h.label);
+  state.role = prof.role==='member' ? (myLabels.length>1?'master':'member') : prof.role;
+  state.user = { name:prof.full_name||'(sin nombre)',
+    house: myLabels[0] || (prof.role==='admin'?'Administración':prof.role==='prof'?'Entrenador':prof.role==='portero'?'Recepción':'—'),
+    houses: myLabels, phone:prof.phone };
+  const init=(state.user.name||'?').split(' ').map(s=>s[0]).slice(0,2).join('');
+  document.getElementById('avatar').textContent=init;
+  document.getElementById('uname').textContent=state.user.name;
+  const houseText = state.role==='master' ? `${myLabels.length} casas` : state.user.house;
+  document.getElementById('urole').textContent = houseText+' · '+(ROLE_LABEL[state.role]||'');
+}
+async function logout(){
+  try{ closeModal(); }catch(e){}
+  const app=document.getElementById('app');
+  if(app && app.classList.contains('show')) app.classList.add('leaving');   // salida premium
+  try{ localStorage.removeItem('tcv'); await DB.Auth.signOut(); }catch(e){}
+  setTimeout(()=>location.reload(), 400);
+}
+
+/* ===== sesión persistente: al refrescar, si hay sesión, vuelve a entrar (sin re-login) ===== */
+async function autoBoot(){
+  try{
+    const prof = await DB.Auth.currentProfile();
+    if(!prof){ showLogin(); return; }                 // sin sesión → muestra el login
+    if(prof.status!=='active'){ showPending(); return; }
+    state.profile=prof;
+    await loadData();
+    try{ const v=localStorage.getItem('tcv'); if(v && navItems().some(i=>i.id===v)) state.view=v; }catch(e){}  // recuerda la pestaña
+    document.getElementById('login').style.display='none';
+    document.getElementById('app').classList.add('show');
+    render();
+    hideSplash();                                     // recién ahora quitamos el splash
+  }catch(e){ showLogin(); }
+}
+/* ===== recargar datos (para ver reservas nuevas) sin re-loguear ===== */
+async function refreshData(){
+  if(!state.profile) return;
+  if(!document.getElementById('app').classList.contains('show')) return;
+  if(document.getElementById('modalBg').classList.contains('show')) return;  // no interrumpir un modal abierto
+  try{ await loadData(); render(); }catch(e){}
+}
+/* ===== cuenta y cambio de contraseña ===== */
+function openAccount(){
+  const m=document.getElementById('modal');
+  m.innerHTML=`<div class="grab"></div><h3>${state.user&&state.user.name||'Mi cuenta'}</h3>
+    <div class="msub">${(state.user&&state.user.houses&&state.user.houses.join(', '))||(state.user&&state.user.house)||''}</div>
+    <button class="btn-primary" onclick="openChangePassword()">Cambiar contraseña</button>
+    <button class="btn-soft" style="width:100%;margin-top:10px" onclick="logout()">Cerrar sesión</button>`;
+  document.getElementById('modalBg').classList.add('show');
+}
+function openChangePassword(){
+  const inp='width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:11px;font-size:15px;background:#fafcfb';
+  const m=document.getElementById('modal');
+  m.innerHTML=`<div class="grab"></div><h3>Cambiar contraseña</h3>
+    <div class="opt-label">Nueva contraseña</div>
+    <div class="pw-wrap"><input id="np1" type="password" placeholder="mínimo 6 caracteres" style="${inp}"><button type="button" class="pw-eye" onclick="togglePw(this)" aria-label="Ver contraseña">${EYE_SVG}</button></div>
+    <div class="opt-label">Repite la contraseña</div>
+    <div class="pw-wrap"><input id="np2" type="password" placeholder="repítela" style="${inp}" onkeydown="if(event.key==='Enter')doChangePassword()"><button type="button" class="pw-eye" onclick="togglePw(this)" aria-label="Ver contraseña">${EYE_SVG}</button></div>
+    <div class="modal-actions"><button class="btn-soft" onclick="closeModal()">Cancelar</button>
+    <button class="btn-primary" onclick="doChangePassword()">Guardar</button></div>`;
+  document.getElementById('modalBg').classList.add('show');
+}
+async function doChangePassword(){
+  const a=document.getElementById('np1').value, b=document.getElementById('np2').value;
+  if((a||'').length<6){ toast('La contraseña debe tener al menos 6 caracteres.','warn'); return; }
+  if(a!==b){ toast('Las contraseñas no coinciden.','warn'); return; }
+  try{ await DB.Auth.updatePassword(a); closeModal(); toast('Contraseña actualizada'); }
+  catch(e){ toast(e.message,'warn'); }
+}
+function showSignup(show){
+  document.getElementById('loginCard').classList.toggle('hidden',show);
+  document.getElementById('signupCard').classList.toggle('hidden',!show);
+}
+async function submitSignup(){
+  const name=(document.getElementById('suName').value||'').trim();
+  const parts=name.split(/\s+/).filter(Boolean);
+  const esFamilia=/\b(familia|flia\.?)\b/i.test(name);
+  const house=(document.getElementById('suHouse').value||'').trim();
+  const email=(document.getElementById('suEmail').value||'').trim();
+  const username=(document.getElementById('suUser').value||'').trim().toLowerCase();
+  const phone=(document.getElementById('suPhone').value||'').trim();
+  const pass=document.getElementById('suPass').value||'';
+  if(parts.length<2||esFamilia){toast('Escribe tu nombre y apellido (no "Familia").','warn');return;}
+  if(!house){toast('Escribe tu número de casa.','warn');return;}
+  if(!houseValid(house)){toast('Casa inválida: usa solo números y letras (ej. 29A).','warn');return;}
+  if(!userValid(username)){toast('Usuario inválido: 3 a 20 letras o números (sin espacios).','warn');return;}
+  if(!/.+@.+\..+/.test(email)){toast('Escribe un correo válido.','warn');return;}
+  if(!phone){toast('Indica tu celular.','warn');return;}
+  if(pass.length<6){toast('La contraseña debe tener al menos 6 caracteres.','warn');return;}
+  const btn=event&&event.target; if(btn){btn.disabled=true;btn.textContent='Enviando…';}
+  try{
+    if(!(await DB.Auth.usernameAvailable(username))){ toast('Ese usuario ya está en uso. Elige otro.','warn'); if(btn){btn.disabled=false;btn.textContent='Enviar solicitud';} return; }
+    await DB.Auth.signUp({email,password:pass,full_name:name,phone,house,username});
+    document.getElementById('signupCard').classList.add('hidden');
+    document.getElementById('loginCard').classList.remove('hidden');
+    document.getElementById('loginCard').innerHTML =
+      '<div class="brand"><div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#c6e84b" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M5 5c4 3 4 11 0 14M19 5c-4 3-4 11 0 14"/></svg></div>'+
+      '<h1>¡Solicitud enviada!</h1><p>Tu cuenta para la casa '+house+' quedó pendiente. La administración la aprobará y podrás entrar con tu correo y contraseña.</p></div>'+
+      '<button class="btn-primary" onclick="location.reload()">Entendido</button>';
+  }catch(e){ toast(e.message,'warn'); if(btn){btn.disabled=false;btn.textContent='Enviar solicitud';} }
+}
+function isMember(){return state.role==='member'||state.role==='master';}
+function isStaff(){return state.role==='admin'||state.role==='portero';} // ven nombre del propietario y pueden contactarlo
+function setRole(role, uid){
+  state.role=role;
+  state.user = role==='admin'?{name:'Admin Condominio',house:'Administración'}
+             : role==='prof'?{name:'Profe Tenis',house:'Entrenador'}
+             : role==='portero'?{name:'Portería',house:'Recepción'}
+             : users[uid!=null?uid:(role==='master'?0:1)];
+  state.view='calendar';
+  state.lastHouse=null;
+  renderSwitcher();
+  const init = state.user.name.split(' ').map(s=>s[0]).slice(0,2).join('');
+  document.getElementById('avatar').textContent=init;
+  document.getElementById('uname').textContent=state.user.name;
+  const houseText = role==='master' ? `${state.user.houses.length} casas` : state.user.house;
+  document.getElementById('urole').textContent=houseText+' · '+ROLE_LABEL[role];
+  render();
+}
+
+/* ======================= NAV ======================= */
+function navItems(){
+  const cal={id:'calendar', label:'Calendario', icon:'cal'};
+  const notif={id:'notif', label:'Notificaciones', icon:'bell', badge:visibleNotifs().filter(n=>n.unread).length};
+  const hist={id:'history', label:'Historial', icon:'history'};
+  if(state.role==='portero') return [cal, {id:'lights', label:'Iluminación', icon:'bulb'}, hist, notif];
+  if(state.role==='admin') return [cal,
+    {id:'users', label:'Usuarios', icon:'users'},
+    {id:'avail', label:'Disponibilidad', icon:'clock'},
+    {id:'maint', label:'Mantenimiento', icon:'tool'},
+    hist];
+  if(state.role==='prof') return [cal, notif, {id:'avail', label:'Disponibilidad', icon:'clock'}];
+  return [cal, {id:'mine', label:'Mis reservas', icon:'check'}, notif];
+}
+const ICONS={
+  cal:'<path d="M3 5h18v16H3zM3 9h18M8 3v4M16 3v4"/>',
+  ball:'<circle cx="12" cy="12" r="9"/><path d="M5 5c4 3 4 11 0 14M19 5c-4 3-4 11 0 14"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/>',
+  check:'<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
+  bell:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/>',
+  users:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>',
+  tool:'<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.3 2.3-2-2 2.3-2.3z"/>',
+  bulb:'<path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/>',
+  history:'<path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7.5v5l3.5 2"/>',
+  rain:'<path d="M7 16a5 5 0 0 1-1-9.9A6 6 0 0 1 17.5 7 4.5 4.5 0 0 1 17 16M8 19v2M12 19v2M16 19v2"/>',
+};
+function go(view){ state.view=view; try{localStorage.setItem('tcv',view);}catch(e){} if(view==='notif'){ visibleNotifs().forEach(n=>n.unread=false); if(state.profile&&window.DB&&DB.markAllRead) DB.markAllRead(state.profile.id); } render(); scrollTop(); fadeContent(); }
+function scrollTop(){ window.scrollTo(0,0); document.documentElement.scrollTop=0; document.body.scrollTop=0; }
+function fadeContent(){ const c=document.getElementById('content'); if(!c)return; c.style.animation='none'; void c.offsetWidth; c.style.animation='fadeView .22s ease'; }
+
+/* ======================= RENDER ======================= */
+function render(){
+  // sidebar nav
+  const items=navItems();
+  document.getElementById('nav').innerHTML=items.map(it=>`
+    <button class="${state.view===it.id?'active':''}" onclick="go('${it.id}')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${ICONS[it.icon]}</svg>
+      <span>${it.label}</span>
+      ${it.badge?`<span class="badge">${it.badge}</span>`:''}
+    </button>`).join('');
+
+  // tabbar (mobile) — sin "Notificaciones" (se accede por la campana de arriba)
+  const tabs=items.filter(it=>it.id!=='notif').slice(0,5);
+  document.getElementById('tabbar').innerHTML=tabs.map(it=>`
+    <button class="${state.view===it.id?'active':''}" onclick="go('${it.id}')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${ICONS[it.icon]}</svg>
+      <span>${it.id==='mine'?'Reservas':it.label.split(' ')[0]}</span>
+      ${it.badge?`<span class="tb">${it.badge}</span>`:''}
+    </button>`).join('');
+
+  // bell count
+  const unread=visibleNotifs().filter(n=>n.unread).length;
+  document.getElementById('mbell').style.display=unread?'flex':'none';
+  document.getElementById('mbell').textContent=unread;
+  document.getElementById('mhBell').style.display=items.some(i=>i.id==='notif')?'':'none';
+
+  // titles
+  const titles={calendar:'Calendario de reservas',mine:'Mis reservas',lights:'Iluminación',
+    notif:'Notificaciones',users:'Gestión de usuarios',avail:'Disponibilidad en clases del profesor',maint:'Mantenimiento de la cancha',history:'Historial de actividad'};
+  document.getElementById('ttitle').textContent=titles[state.view];
+  document.getElementById('mtitle').textContent=titles[state.view];
+  const subs={calendar:'',mine:'Tus reservas y tu cupo de la semana',lights:'Horarios para prender y apagar las luces',notif:'Avisos de la cancha',users:'Crea y administra las cuentas',avail:state.role==='prof'?'Abre tus horarios para práctica libre o clase':'Abre horarios de clase del profesor',maint:'Cierra la cancha por reparaciones',history:'Quién reserva y cancela, y a qué hora'};
+  document.getElementById('tsub').textContent=subs[state.view]||'';
+  document.getElementById('weekNav').style.display='none';
+
+  // top action button
+  const ta=document.getElementById('topAction');
+  if(state.view==='users'){ta.style.display='inline-flex';ta.innerHTML=plusIcon()+'Nuevo usuario';ta.dataset.act='newuser';}
+  else ta.style.display='none';
+
+  // mobile day strip — solo en el calendario
+  renderDayStrip();
+  const ds=document.getElementById('dayStrip'); if(ds) ds.style.display = state.view==='calendar' ? 'flex' : 'none';
+
+  // content
+  const c=document.getElementById('content');
+  if(state.view==='calendar') c.innerHTML=viewCalendar();
+  else if(state.view==='mine') c.innerHTML=viewMine();
+  else if(state.view==='lights') c.innerHTML=viewLights();
+  else if(state.view==='notif') c.innerHTML=viewNotif();
+  else if(state.view==='users') c.innerHTML=viewUsers();
+  else if(state.view==='avail') c.innerHTML=viewAvail();
+  else if(state.view==='maint') c.innerHTML=viewMaint();
+  else if(state.view==='history') c.innerHTML=viewHistory();
+}
+function plusIcon(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>'}
+function topActionClick(){const a=document.getElementById('topAction').dataset.act; if(a==='newuser')openNewUser();}
+
+/* ---- slot category resolver ---- */
+function findRes(date,h){return reservations.find(r=>r.date===date&&r.h===h&&r.type!=='profclass')} // primera reserva normal de la hora (compat)
+function findReleasedHalf(date,h,half){return released.find(r=>r.date===date&&r.h===h&&r.half===half)}
+function maintAt(date,h){return closures.find(c=>{ if(date<c.start||date>c.end)return false; return c.allDay?true:(h>=c.fromH&&h<c.toH); })}
+// ocupa la media-hora "half" (0 = :00–:30, 1 = :30–:00) — ignora profclass (hora completa, aparte)
+function resAtHalf(date,h,half){
+  return reservations.find(r=>{
+    if(r.type==='profclass'||r.date!==date||r.h!==h) return false;
+    const a=(r.min||0)/30, b=((r.min||0)+r.dur)/30;
+    return half>=a && half<b;
+  });
+}
+function halfState(date,h,half){
+  const dow=dateAt(date,h).getDay();
+  const mc=maintAt(date,h); if(mc) return {kind:'maint',mc};
+  const pc=reservations.find(r=>r.date===date&&r.h===h&&r.type==='profclass'); if(pc) return {kind:'profclass',res:pc};
+  const r=resAtHalf(date,h,half); if(r) return {kind:(isMember()&&myHouses().includes(r.house))?'mine':'reserved',res:r};
+  const profHere = isProfHalf(dow,h,half) && !isHoliday(date); // festivos: el profesor no asiste
+  if(profHere){
+    const rel=findReleasedHalf(date,h,half);
+    if(rel) return {kind:rel.type==='class'?'class':'open',rel};
+    return {kind:'prof'};
+  }
+  if(h<4||h>22) return {kind:'na'};   // fuera de operación (4:00–23:00)
+  const startHalf=new Date(dateAt(date,h).getTime()+half*30*60000);
+  if(startHalf<NOW) return {kind:'past'};
+  if(date>OPEN_WEEK_END) return {kind:'locked'};
+  if(state.rainUntil && date===ymd(NOW)){const st=dateAt(date,h).getTime()+half*30*60000; if(st>=NOW.getTime() && st<state.rainUntil) return {kind:'rain'};}
+  return {kind:'free'};
+}
+function slotCat(date,h){
+  const s0=halfState(date,h,0), s1=halfState(date,h,1);
+  const sameRes=(s0.res&&s1.res)?s0.res.id===s1.res.id:(!s0.res&&!s1.res);
+  if(s0.kind===s1.kind && sameRes){
+    const k=s0.kind;
+    if(k==='mine'||k==='reserved'||k==='profclass') return {cat:k,res:s0.res};
+    if(k==='class'||k==='open') return {cat:k,rel:s0.rel};
+    if(k==='maint') return {cat:k,mc:s0.mc};
+    return {cat:k};
+  }
+  return {cat:'split', s0, s1};
+}
+function rangeLabel(h,min,dur){
+  const s=h*60+(min||0), e=s+dur;
+  const fmt=(t)=>{let H=Math.floor(t/60),M=t%60;const ap=H<12?'am':'pm';let hh=H%12;if(hh===0)hh=12;return hh+(M?':'+String(M).padStart(2,'0'):'')+ap;};
+  return fmt(s)+'–'+fmt(e);
+}
+function halfTimeLabel(h,half){let hh=h%12;if(hh===0)hh=12;return hh+(half?':30':'')+(h<12?'am':'pm');}
+
+/* ---- DESKTOP WEEK + MOBILE DAY ---- */
+const APP_START=Date.now();
+const HOUSE_ICON='<svg class="hicon" viewBox="0 0 24 24"><path d="M12 2.5 21.5 10.5 19 10.5 19 21 14 21 14 14.5 10 14.5 10 21 5 21 5 10.5 2.5 10.5Z"/></svg>';
+function houseNum(h){return String(h).replace(/^Casa\s*/i,'');} // el ícono de casa reemplaza la palabra "Casa" → solo el número
+function liveNow(){return new Date(NOW.getTime()+(Date.now()-APP_START));} // avanza en tiempo real desde el "ahora" de la demo
+/* ---- íconos propios (sin emojis) ---- */
+const RAIN_P='<path d="M7 16a5 5 0 0 1-1-9.9A6 6 0 0 1 17.5 7 4.5 4.5 0 0 1 17 16"/><path d="M8 19l-.7 1.7M12 19l-.7 1.7M15.5 19l-.7 1.7"/>';
+const CAL_P='<rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/>';
+const CLK_P='<circle cx="12" cy="12" r="9"/><path d="M12 7.5v4.7l3 1.8"/>';
+function svgIco(p,sz,col){return `<svg viewBox="0 0 24 24" fill="none" stroke="${col||'currentColor'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:${sz||15}px;height:${sz||15}px;vertical-align:-2.5px;flex:none">${p}</svg>`;}
+const RAIN_ICON=svgIco(RAIN_P,16), CAL_ICON=svgIco(CAL_P,15), CLK_ICON=svgIco(CLK_P,15);
+const REFRESH_P='<path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 4v4.5h-4.5"/>';
+const BALL_P='<circle cx="12" cy="12" r="9"/><path d="M5 5c4 3 4 11 0 14M19 5c-4 3-4 11 0 14"/>';
+function cupoRules(){
+  return `<div class="cc-rules">
+    <div class="cc-rule"><span class="cc-ric">${svgIco(REFRESH_P,15)}</span><div><b>Se reinicia cada semana</b><span>Tu cupo vuelve a llenarse el domingo a las 8:00 p.m.</span></div></div>
+    <div class="cc-rule"><span class="cc-ric star">★</span><div><b>Los horarios del profesor son gratis</b><span>Los marcados con ★ no descuentan tu cupo.</span></div></div>
+    <div class="cc-rule"><span class="cc-ric">${svgIco(BALL_P,15)}</span><div><b>Jugar en cancha libre no gasta cupo</b><span>Si está libre, juega sin reservar; pero si alguien la reservó por la app, debes cedérsela.</span></div></div>
+  </div>`;
+}
+function cupoCard(){
+  const hs=myHouses();
+  let body;
+  if(hs.length>1){
+    const total=hs.reduce((s,h)=>s+Math.max(0,CUPO-houseUsed(h)),0);
+    body=`<div class="cc-big">${cupoTxt(total)}</div>
+      <div class="cc-sub">Repartidas entre tus ${hs.length} casas · máx. ${fmtH(CUPO)} por casa</div>
+      <div class="cc-houses">${hs.map(h=>{const left=Math.max(0,CUPO-houseUsed(h));return `<div class="cc-house"><span class="cc-hic">${HOUSE_ICON}</span><span class="cc-hn">${h}</span><span class="cc-hh${left<=0?' none':''}">${left>0?fmtH(left)+' disp.':'Sin cupo'}</span></div>`;}).join('')}</div>`;
+  }else{
+    const left=Math.max(0,CUPO-houseUsed(hs[0]));
+    body=`<div class="cc-big">${cupoTxt(left)}</div><div class="cc-sub">${hs[0]} · máximo ${fmtH(CUPO)} por semana</div>`;
+  }
+  return `<div class="cupo-card">${body}${cupoRules()}</div>`;
+}
+function tickClock(){
+  // la línea NO se desliza por la tarjeta: se queda en el espacio sobre la hora actual y "salta" a la siguiente franja al cambiar la hora
+  const nl=document.getElementById('nowline');
+  if(nl && liveNow().getHours()!==+nl.dataset.h && state.view==='calendar') render();
+}
+function viewCalendar(){
+  return calHeader()+desktopGrid()+mobileDay();
+}
+function cupoTxt(n){
+  if(n<=0) return 'Sin cupo disponible';
+  const num=(n%1)?String(n).replace('.',','):String(n);
+  return 'Tienes '+num+(n===1?' hora disponible':' horas disponibles');
+}
+function rainBtn(){
+  const a=rainActive();
+  return `<button class="ch-btn ch-rain${a?' rain-on':''}" onclick="${a?'openRainAffected()':'openRainModal()'}">${RAIN_ICON}${a?'Modo lluvia activo':'Activar modo lluvia'}</button>`;
+}
+/* ===== Menú desplegable premium (reemplaza los <select> nativos) ===== */
+const PSEL_CHEV='<svg class="psel-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2"><path d="M6 9l6 6 6-6"/></svg>';
+function pesc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function pselItems(id,opts,curV){
+  return opts.map(o=>`<button type="button" class="psel-opt${String(o.v)===curV?' on':''}" data-v="${pesc(o.v)}" data-label="${pesc(o.label)}" onclick="pselPick('${id}',this)">${pesc(o.label)}<span class="psel-check">✓</span></button>`).join('');
+}
+function psel(id,opts,value,cb,dis){
+  opts=opts||[]; value=(value!=null&&value!=='')?String(value):(opts[0]?String(opts[0].v):'');
+  const cur=opts.find(o=>String(o.v)===value)||opts[0]||{v:'',label:'—'};
+  return `<div class="psel${dis?' dis':''}" id="ps_${id}" data-cb="${cb||''}">
+    <input type="hidden" id="${id}" value="${pesc(cur.v)}">
+    <button type="button" class="psel-trigger" onclick="pselToggle('${id}')"><span class="psel-val">${pesc(cur.label)}</span>${PSEL_CHEV}</button>
+    <div class="psel-menu">${pselItems(id,opts,String(cur.v))}</div>
+  </div>`;
+}
+function pselSet(id,opts,value){          // reconstruye opciones (para 'desde/hasta' dinámicos)
+  const w=document.getElementById('ps_'+id); if(!w) return;
+  opts=opts||[]; value=(value!=null&&value!=='')?String(value):(opts[0]?String(opts[0].v):'');
+  const cur=opts.find(o=>String(o.v)===value)||opts[0]||{v:'',label:'—'};
+  document.getElementById(id).value=cur.v;
+  w.querySelector('.psel-val').textContent=cur.label;
+  w.querySelector('.psel-menu').innerHTML=pselItems(id,opts,String(cur.v));
+}
+function pselToggle(id){
+  const w=document.getElementById('ps_'+id); if(!w||w.classList.contains('dis')) return;
+  const willOpen=!w.classList.contains('open');
+  document.querySelectorAll('.psel.open').forEach(el=>el.classList.remove('open'));
+  if(willOpen) w.classList.add('open');
+}
+function pselPick(id,el){
+  document.getElementById(id).value=el.dataset.v;
+  const w=document.getElementById('ps_'+id);
+  w.querySelector('.psel-val').textContent=el.dataset.label;
+  w.querySelectorAll('.psel-opt').forEach(o=>o.classList.toggle('on',o===el));
+  w.classList.remove('open');
+  const cb=w.dataset.cb; if(cb && typeof window[cb]==='function') window[cb]();
+}
+document.addEventListener('click',e=>{ if(!e.target.closest('.psel')) document.querySelectorAll('.psel.open').forEach(el=>el.classList.remove('open')); });
+const ROLE_OPTS=[{v:'member',label:'Residente'},{v:'portero',label:'Portería'},{v:'prof',label:'Profesor'},{v:'admin',label:'Administración'}];
+function apRoleChange(){const r=document.getElementById('apRole'),row=document.getElementById('apHouseRow');if(r&&row)row.style.display=r.value==='member'?'':'none';}
+function nuRoleChange(){const r=document.getElementById('nuRole'),row=document.getElementById('nuHouseRow');if(r&&row)row.style.display=r.value==='member'?'':'none';}
+
+function calHeader(){
+  let info='';
+  if(isMember()){
+    const hs=myHouses();
+    const left = hs.length>1 ? hs.reduce((s,h)=>s+Math.max(0,CUPO-houseUsed(h)),0) : Math.max(0,CUPO-houseUsed(hs[0]));
+    info += `<button class="cb-chip cb-cupo" onclick="go('mine')"><span class="cb-k">Cupo</span><span class="cb-v">${cupoTxt(left)}</span><span class="cb-go">›</span></button>`;
+  }
+  if(state.role!=='admin'){                              // el admin no reserva → no necesita la leyenda de ★
+    info += `<span class="cb-chip cb-star"><span class="bstar">★</span>No gasta cupo</span>`;
+  }
+  const week=`<button class="cb-btn${state.fullWeek?' on':''}" onclick="toggleFullWeek()">${state.fullWeek?CLK_ICON:CAL_ICON}<span>${state.fullWeek?'Desde ahora':'Toda la semana'}</span></button>`;
+  const a=rainActive();
+  const rain=(state.role==='admin'||state.role==='portero')
+    ? `<button class="cb-btn cb-rain${a?' on':''}" onclick="${a?'openRainAffected()':'openRainModal()'}">${RAIN_ICON}<span>${a?'Lluvia activa':'Modo lluvia'}</span></button>` : '';
+  return `<div class="cal-bar"><div class="cb-info">${info}</div><div class="cb-actions">${week}${rain}</div></div>`;
+}
+function toggleFullWeek(){state.fullWeek=!state.fullWeek;render();}
+function horasTexto(n){if(n<=0)return '';const f=Math.floor(n),half=(n-f)>=0.5;if(f===0)return 'media hora';const base=f===1?'una hora':f===2?'dos horas':f===3?'tres horas':f+' horas';return half?base+' y media':base;}
+function fmtH(n){if(n<=0)return '0 h';const f=Math.floor(n),half=(n-f)>=0.5;return (f>0?f:'')+(half?'½':'')+' h';}
+function cupoFrase(n){return n<=0?'sin cupo':((n<=1?'le queda ':'le quedan ')+horasTexto(n));}        // "Casa 12 · le queda media hora"
+function cupoFraseMember(n){return n<=0?'No te queda cupo':('Te '+(n<=1?'queda ':'quedan ')+horasTexto(n));} // "Te quedan dos horas y media"
+function houseUsed(house){
+  const ws=ymd(OPEN_WEEK_START), we=OPEN_WEEK_END;
+  return reservations.filter(r=>r.house===house&&r.type==='normal'&&r.date>=ws&&r.date<=we)
+    .reduce((s,r)=>s+r.dur/60,0);
+}
+function monthTag(){const a=state.weekStart,b=addDays(a,6);return a.getMonth()===b.getMonth()?MON[a.getMonth()].toUpperCase():(MON[a.getMonth()]+'/'+MON[b.getMonth()]).toUpperCase();}
+function desktopGrid(){
+  let head=`<div class="gh gh-month">${monthTag()}</div>`;
+  for(let i=0;i<7;i++){const d=addDays(state.weekStart,i);const today=ymd(d)===ymd(NOW);
+    head+=`<div class="gh ${today?'today':''}"><div class="dow">${DOW[d.getDay()]}</div><div class="dnum">${d.getDate()}</div></div>`;}
+  const faded=!state.fullWeek, lineHour=NOW.getHours(), todayYmd=ymd(NOW);
+  let weekHasToday=false; for(let i=0;i<7;i++){ if(ymd(addDays(state.weekStart,i))===todayYmd) weekHasToday=true; }
+  let rows='';
+  for(const h of HOURS){
+    const isLine=faded && weekHasToday && h===lineHour;   // solo en la semana actual
+    rows+=`<div class="hr${isLine?' hr-now':''}">${isLine?'<span class="now-tag">Ahora</span>':''}${hlabel(h)}</div>`;
+    for(let i=0;i<7;i++){
+      const d=addDays(state.weekStart,i);const date=ymd(d);
+      const past=faded && dateAt(date,h+1).getTime()<=NOW.getTime();
+      const todayCol=date===todayYmd;
+      // línea roja SÓLIDA con punto en hoy; línea tenue conectándola con la hora a
+      // través de los días ya pasados (la opacidad la da el difuminado del pasado);
+      // NADA en los días que todavía no llegan.
+      let lineEl='';
+      if(isLine && date<=todayYmd) lineEl = todayCol
+        ? `<div class="nowline nl-today" id="nowline" data-h="${h}"></div>`
+        : `<div class="nowline"></div>`;
+      const cls='cell'+(past?' cell-past':'');
+      rows+=`<div class="${cls}">${slotHTML(date,h)}${lineEl}</div>`;
+    }
+  }
+  return `<div class="grid-wrap"><div class="wgrid${state.onlyAvailable?' filtering':''}">${head}${rows}</div></div>`;
+}
+function halfCell(date,h,half,s){
+  const k=s.kind;
+  if(k==='mine'){const r=s.res;return `<div class="half h-mine" onclick="openMyRes(${r.id})" title="${rangeLabel(r.h,r.min,r.dur)}">${HOUSE_ICON}${houseNum(r.house)}${inRainWin(date,h,half)?RAINMARK:''}</div>`;}
+  if(k==='reserved'){const r=s.res;return `<div class="half h-reserved" ${isStaff()?`onclick="openAdminRes(${r.id})"`:''} title="${rangeLabel(r.h,r.min,r.dur)}${isStaff()?' · '+r.name:''}">${HOUSE_ICON}${houseNum(r.house)}${inRainWin(date,h,half)?RAINMARK:''}</div>`;}
+  if(k==='prof') return `<div class="half h-prof" title="Profesor"><span class="cdot cdot-black"></span>Profesor</div>`;
+  if(k==='class'||k==='open') return `<div class="half h-bonus" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'h${half}')"`:''} title="No gasta cupo${k==='class'?' · profesor disponible':''}"><span><span class="plus">+</span>Libre</span><span class="bstar">★</span></div>`;
+  if(k==='rain') return `<div class="half h-na">${svgIco(RAIN_P,12,'#5b7fc0')}</div>`;
+  if(k==='maint'||k==='past'||k==='locked'||k==='na') return `<div class="half h-na"></div>`;
+  if(!canBookFree(date,h)) return `<div class="half h-na"></div>`;
+  return `<div class="half h-free" onclick="openBook('${date}',${h},'h${half}')" title="Reservar ${rangeLabel(h,half*30,30)}"><span class="plus">+</span>Libre</div>`;
+}
+function slotHTML(date,h){
+  const sc=slotCat(date,h), cat=sc.cat, res=sc.res, mc=sc.mc;
+  if(cat==='maint') return `<div class="slot s-maint" title="${mc?mc.reason:'No disponible'}" onclick="toast(this.title)"><b><span class="cdot cdot-black"></span>No disponible</b></div>`;
+  if(cat==='profclass') return `<div class="slot s-prof" title="Profesor" ${state.role==='prof'?`onclick="openProfRes(${res.id})" style="cursor:pointer"`:''}><b><span class="cdot cdot-black"></span>Profesor</b></div>`;
+  if(cat==='mine') return `<div class="slot s-mine" onclick="openMyRes(${res.id})"><b>${HOUSE_ICON}${houseNum(res.house)}</b><span class="mtime${slotRain(date,h)?' rn':''}">${rangeLabel(res.h,res.min,res.dur)}</span>${slotRain(date,h)?RAINMARK:''}</div>`;
+  if(cat==='reserved') return `<div class="slot s-reserved" ${isStaff()?`onclick="openAdminRes(${res.id})" style="cursor:pointer"`:''}>${isStaff()?`<b>${HOUSE_ICON}${houseNum(res.house)}</b><small>${res.name}</small>`:`<b>${HOUSE_ICON}${houseNum(res.house)}</b>`}${slotRain(date,h)?RAINMARK:''}</div>`;
+  if(cat==='split') return `<div class="slot-split">${halfCell(date,h,0,sc.s0)}${halfCell(date,h,1,sc.s1)}</div>`;
+  if(cat==='class') return `<div class="slot s-bonus" title="No gasta cupo · profesor disponible" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'classfull')"`:''}><b><span class="plus">+</span>Libre</b><span class="bstar">★</span></div>`;
+  if(cat==='open') return `<div class="slot s-bonus" title="No gasta cupo" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'openfull')"`:''}><b><span class="plus">+</span>Libre</b><span class="bstar">★</span></div>`;
+  if(cat==='prof') return `<div class="slot s-prof" title="Profesor"><b><span class="cdot cdot-black"></span>Profesor</b></div>`;
+  if(cat==='rain') return `<div class="slot s-rain" title="Cerrada por lluvia · no disponible">${svgIco(RAIN_P,15,'#5b7fc0')}</div>`;
+  if(cat==='locked') return `<div class="slot s-locked" title="Se abre el domingo a las 8:00 pm">${svgIco('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',15)}</div>`;
+  if(cat==='past') return `<div class="slot s-past" title="Hora ya pasada"><span>—</span></div>`;
+  if(cat==='free') return `<div class="slot s-free" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'full')"`:''}><b><span class="plus">+</span>Libre</b></div>`;
+  return '';
+}
+
+/* MOBILE day view */
+function renderDayStrip(){
+  const strip=document.getElementById('dayStrip');
+  let html='';
+  for(let i=0;i<7;i++){const d=addDays(state.weekStart,i);const date=ymd(d);
+    html+=`<button class="${date===state.mobileDay?'on':''}" onclick="setDay('${date}')">
+      <span class="dw">${DOW[d.getDay()]}</span><span class="dn">${d.getDate()}</span></button>`;}
+  strip.innerHTML=html;
+}
+function setDay(date){state.mobileDay=date;render();scrollTop();fadeContent();}
+function mobileDay(){
+  const date=state.mobileDay;const d=dateAt(date,0);
+  const faded=!state.fullWeek, isToday=date===ymd(NOW), lineHour=NOW.getHours();
+  let rows='';
+  for(const h of HOURS){
+    const sc=slotCat(date,h);
+    if(sc.cat==='na') continue;
+    if(faded && isToday && h===lineHour) rows+=`<div class="m-now">Ahora · ${hlabel(lineHour)}</div>`;
+    const past=faded && dateAt(date,h+1).getTime()<=NOW.getTime();
+    const fade=(s)=> past ? s.replace('class="mslot','class="mslot m-faded') : s;
+    if(sc.cat==='split'){
+      [0,1].forEach(half=>{const s=half?sc.s1:sc.s0;
+        if(state.onlyAvailable && !['free','class','open'].includes(s.kind)) return;
+        rows+=fade(mHalf(date,h,half,s));});
+      continue;
+    }
+    if(state.onlyAvailable && !['free','class','open'].includes(sc.cat)) continue;
+    rows+=fade(mSlot(date,h,sc));
+  }
+  if(!rows) rows=`<div class="empty" style="padding:36px">${state.onlyAvailable?'No hay espacios disponibles este día.':'Sin horarios este día.'}</div>`;
+  return `<div class="m-only"><div class="mday">${rows}</div></div>`;
+}
+const M_CHEV='<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>';
+function mHalf(date,h,half,s){
+  const tt=`<div class="mt"><div class="h">${halfTimeLabel(h,half)}</div><div class="h2">30m</div></div>`;
+  const k=s.kind;
+  if(k==='mine'){const r=s.res;return `<div class="mslot mine" onclick="openMyRes(${r.id})"><div class="bar"></div>${tt}<div class="ml"><b>${HOUSE_ICON}${houseNum(r.house)}</b><span>30 min</span></div>${M_CHEV}</div>`;}
+  if(k==='reserved'){const r=s.res;return `<div class="mslot reserved" ${isStaff()?`onclick="openAdminRes(${r.id})"`:''}><div class="bar"></div>${tt}<div class="ml"><b>${HOUSE_ICON}${houseNum(r.house)}</b><span>${isStaff()?r.name:'Reservada'} · 30 min</span></div>${isStaff()?M_CHEV:''}</div>`;}
+  if(k==='prof') return `<div class="mslot prof"><div class="bar"></div>${tt}<div class="ml"><b>Profesor</b><span>30 min</span></div></div>`;
+  if(k==='class'||k==='open'){ if(!canBookFree(date,h)) return ''; return `<div class="mslot bonus" onclick="openBook('${date}',${h},'h${half}')"><div class="bar"></div>${tt}<div class="ml"><b><span class="bstar">★</span> Libre</b><span>No gasta cupo</span></div>${M_CHEV}</div>`; }
+  if(k!=='free') return '';
+  if(!canBookFree(date,h)) return '';
+  return `<div class="mslot free" onclick="openBook('${date}',${h},'h${half}')"><div class="bar"></div>${tt}<div class="ml"><b>Disponible</b><span>Toca para reservar</span></div>${M_CHEV}</div>`;
+}
+function mSlot(date,h,sc){
+  const cat=sc.cat,res=sc.res,mc=sc.mc;
+  const chev=M_CHEV;
+  const t=`<div class="mt"><div class="h">${hlabel(h)}</div><div class="h2">${halfTimeLabel(h+1,0)}</div></div>`;
+  if(cat==='free') return `<div class="mslot free" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'full')"`:''}><div class="bar"></div>${t}<div class="ml"><b>Disponible</b><span>${canBookFree(date,h)?'Toca para reservar':'No disponible'}</span></div>${canBookFree(date,h)?chev:''}</div>`;
+  if(cat==='profclass') return `<div class="mslot prof" ${state.role==='prof'?`onclick="openProfRes(${res.id})"`:''}><div class="bar"></div>${t}<div class="ml"><b>Profesor</b><span>${state.role==='prof'?'Tu clase · toca para cancelar':'Reservado para el profesor'}</span></div>${state.role==='prof'?chev:''}</div>`;
+  if(cat==='mine') return `<div class="mslot mine" onclick="openMyRes(${res.id})"><div class="bar"></div>${t}<div class="ml"><b>${HOUSE_ICON}${houseNum(res.house)}</b></div>${chev}</div>`;
+  if(cat==='reserved') return `<div class="mslot reserved" ${isStaff()?`onclick="openAdminRes(${res.id})"`:''}><div class="bar"></div>${t}<div class="ml"><b>${HOUSE_ICON}${houseNum(res.house)}</b><span>${isStaff()?res.name:'Reservada'}</span></div>${isStaff()?chev:''}</div>`;
+  if(cat==='prof') return `<div class="mslot prof"><div class="bar"></div>${t}<div class="ml"><b>Profesor</b><span>Reservado para el profesor</span></div></div>`;
+  if(cat==='class') return `<div class="mslot bonus" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'classfull')"`:''}><div class="bar"></div>${t}<div class="ml"><b><span class="bstar">★</span> Libre</b><span>No gasta cupo</span></div>${canBookFree(date,h)?chev:''}</div>`;
+  if(cat==='open') return `<div class="mslot bonus" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'openfull')"`:''}><div class="bar"></div>${t}<div class="ml"><b><span class="bstar">★</span> Libre</b><span>No gasta cupo</span></div>${canBookFree(date,h)?chev:''}</div>`;
+  if(cat==='maint') return `<div class="mslot maint"><div class="bar"></div>${t}<div class="ml"><b>No disponible</b><span>${mc?mc.reason:'Mantenimiento'}</span></div></div>`;
+  if(cat==='rain') return `<div class="mslot rain"><div class="bar"></div>${t}<div class="ml"><b>${svgIco(RAIN_P,15,'#5b7fc0')} Cerrada por lluvia</b><span>No disponible ahora</span></div></div>`;
+  if(cat==='locked') return `<div class="mslot locked"><div class="bar"></div>${t}<div class="ml"><b>Aún no habilitado</b><span>Abre el domingo 8pm</span></div></div>`;
+  if(cat==='past') return `<div class="mslot past"><div class="bar"></div>${t}<div class="ml"><b>—</b><span>Hora pasada</span></div></div>`;
+  return '';
+}
+
+/* ---- AVAILABLE LIST ---- */
+function viewAvailable(){
+  const list=[];
+  for(let off=0;off<8;off++){const d=addDays(NOW,off);const date=ymd(d);
+    for(const h of HOURS){const {cat}=slotCat(date,h);
+      if(cat==='free'||cat==='class'||cat==='open') list.push({date,h,cat,d});}}
+  if(!list.length) return emptyState('No hay horarios disponibles en los próximos 7 días.');
+  let rows=list.map(s=>{
+    const pill=s.cat==='class'?'<span class="pill amber">★ Clase / libre</span>'
+      :s.cat==='open'?'<span class="pill lime">● Juego libre</span>'
+      :'<span class="pill green">Disponible</span>';
+    const sub=s.cat==='class'?'Clase con el profe o juego libre · no gasta cupo'
+      :s.cat==='open'?'El profesor no asiste · no gasta cupo':'Reserva normal · usa tu cupo';
+    return `<div class="row">
+      <div class="when"><div class="d">${DOW[s.d.getDay()]} ${s.d.getDate()}</div><div class="h">${hlabel(s.h)}</div></div>
+      <div class="info"><b>${hrange(s.h,60)}</b><span>${sub}</span></div>
+      ${pill}
+      <button class="btn-mini" onclick="openBook('${s.date}',${s.h},'${s.cat}')">Reservar</button>
+    </div>`;}).join('');
+  return `<div class="panel"><div class="panel-h"><h3>Próximos 7 días</h3><div class="spacer"></div><span style="font-size:13px;color:var(--muted)">${list.length} espacios</span></div>${rows}</div>`;
+}
+
+/* ---- MY RESERVATIONS ---- */
+function viewMine(){
+  const hs=myHouses();
+  const mine=reservations.filter(r=>hs.includes(r.house));
+  const up=mine.filter(r=>dateAt(r.date,r.h)>=NOW).sort((a,b)=>dateAt(a.date,a.h)-dateAt(b.date,b.h));
+  const ws=ymd(OPEN_WEEK_START);
+  const past=mine.filter(r=>dateAt(r.date,r.h)<NOW && r.date>=ws && r.date<=OPEN_WEEK_END).sort((a,b)=>dateAt(b.date,b.h)-dateAt(a.date,a.h));
+  const card=(r)=>{
+    const d=dateAt(r.date,r.h);const fut=d>=NOW;const cancelable=(d-NOW)>(r.type==='class'?1:0.5)*3600000;
+    const typePill=r.type==='class'?'<span class="pill amber">Clase con profe</span>':r.type==='open'?'<span class="pill lime">Práctica libre</span>':'';
+    return `<div class="row">
+      <div class="when"><div class="d">${DOW[d.getDay()]} ${d.getDate()}</div><div class="h">${halfTimeLabel(r.h,(r.min||0)===30?1:0)}</div></div>
+      <div class="info"><b>${rangeLabel(r.h,r.min,r.dur)}</b><span>${r.house}${r.dur===30?' · 30 min':''}</span></div>
+      ${typePill}
+      ${fut?(cancelable?`<button class="btn-cancel" onclick="cancelRes(${r.id})">Cancelar</button>`:'<span class="pill gray">No cancelable</span>'):'<span class="pill gray">Pasada</span>'}
+    </div>`;};
+  let html=cupoCard();
+  html+=`<div class="panel"><div class="panel-h"><h3>Próximas reservas</h3></div>${up.length?up.map(card).join(''):emptyInline('No tienes reservas próximas')}</div>`;
+  html+=`<div class="panel past-panel" style="margin-top:16px"><div class="panel-h"><h3>Reservas anteriores de esta semana</h3></div>${past.length?past.map(card).join(''):emptyInline('No tienes reservas anteriores esta semana')}</div>`;
+  return html;
+}
+
+/* ---- PORTERO: ILUMINACIÓN ---- */
+function needsLight(h){return h<6||h>=18;}  // madrugada (4–6am) y noche (6–11pm)
+function viewLights(){
+  const ws=ymd(OPEN_WEEK_START), we=OPEN_WEEK_END;
+  const lit=reservations.filter(r=>needsLight(r.h) && r.date>=ws && r.date<=we);
+  const note=`<div class="quota" style="margin-bottom:18px"><div class="qdots"><span class="qdot on" style="display:flex;align-items:center;justify-content:center;color:#fff">${svgIco(ICONS.bulb,16,'#fff')}</span></div>
+    <div class="qtext"><b style="color:var(--ink)">Horarios de luces</b><p>A continuación se indican los horarios para prender y apagar las luces. Por favor, prende <b>10 minutos antes</b> del horario indicado y apaga <b>10 minutos después</b>.</p></div></div>`;
+  const byday={};lit.forEach(r=>{(byday[r.date]=byday[r.date]||[]).push(r);});
+  const dates=Object.keys(byday).sort();
+  let html=note, any=false;
+  dates.forEach(date=>{
+    const rs=byday[date].slice().sort((a,b)=>a.h-b.h);
+    const runs=[];
+    rs.forEach(r=>{const last=runs[runs.length-1];const end=r.h+Math.ceil(r.dur/60);
+      if(last && r.h===last.end){last.end=end;last.res.push(r);}
+      else runs.push({start:r.h,end,res:[r]});});
+    const future=runs.filter(run=>dateAt(date,run.end)>=NOW);
+    if(!future.length) return;
+    any=true;
+    const d=dateAt(date,0);const today=date===ymd(NOW);
+    html+=`<div class="panel" style="margin-bottom:16px"><div class="panel-h"><h3>${today?'Hoy · ':''}${DOWL[d.getDay()]} ${d.getDate()} de ${MON[d.getMonth()]}</h3></div>`;
+    future.forEach(run=>{ html+=lightRow('on',run)+lightRow('off',run); });
+    html+=`</div>`;
+  });
+  if(!any) return note+emptyState('No hay reservas que requieran luces esta semana.');
+  return html;
+}
+function lightRow(kind,run){
+  const on=kind==='on';
+  const h=on?run.start:run.end;
+  const span=`${hlabel(run.start)}–${hlabel(run.end)}`;
+  const houses=[...new Set(run.res.map(r=>r.house))].join(', ');
+  const detail=run.res.length>1?`${run.res.length} reservas seguidas · ${houses}`:`Reserva ${houses}`;
+  return `<div class="row">
+    <div class="lbulb ${on?'on':'off'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${ICONS.bulb}</svg></div>
+    <div class="when"><div class="h" style="color:${on?'var(--amber)':'var(--muted)'}">${hlabel(h)}</div></div>
+    <div class="info"><b>${on?'Prender luces':'Apagar luces'}</b><span>${detail} · ${span}</span></div>
+  </div>`;
+}
+
+/* ---- MODO LLUVIA (portería y administración) — botón en el calendario ---- */
+const WA_ICON='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.5 15.2L2 22l4.9-1.3A10 10 0 1 0 12 2m0 2a8 8 0 1 1-4.1 14.9l-.3-.2-2.9.8.8-2.8-.2-.3A8 8 0 0 1 12 4m4.4 10.5c-.2-.1-1.4-.7-1.6-.8s-.4-.1-.5.1-.6.8-.8 1-.3.2-.5.1a6.5 6.5 0 0 1-3.2-2.8c-.2-.4.2-.4.6-1.2.1-.2 0-.3 0-.5l-.7-1.7c-.2-.5-.4-.4-.5-.4h-.5a.9.9 0 0 0-.7.3 2.8 2.8 0 0 0-.9 2.1A4.9 4.9 0 0 0 7.4 13a11 11 0 0 0 4.2 3.7c2.5 1 2.5.7 3 .6a2.5 2.5 0 0 0 1.6-1.1 2 2 0 0 0 .1-1.1c0-.1-.2-.2-.5-.3z"/></svg>';
+const PHONE_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2 4.2 2 2 0 0 1 4 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.4-1.4a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>';
+function rainActive(){return !!state.rainUntil && state.rainUntil>NOW.getTime();}
+const RAINMARK=`<svg class="rainmark" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${RAIN_P}</svg>`;
+function inRainWin(date,h,half){ if(!rainActive()||date!==ymd(NOW)) return false; const st=dateAt(date,h).getTime()+half*30*60000; return st>=NOW.getTime() && st<state.rainUntil; }
+function slotRain(date,h){ return inRainWin(date,h,0)||inRainWin(date,h,1); }
+function rainAffected(){
+  const today=ymd(NOW);
+  return reservations.filter(r=>{
+    if(r.date!==today||r.type==='profclass') return false;
+    const start=dateAt(r.date,r.h).getTime()+(r.min||0)*60000, end=start+r.dur*60000;
+    return start<state.rainUntil && end>NOW.getTime();
+  }).sort((a,b)=>(a.h*60+(a.min||0))-(b.h*60+(b.min||0)));
+}
+function openRainModal(){
+  const modal=document.getElementById('modal');
+  modal.innerHTML=`<div class="grab"></div>
+    <h3>${RAIN_ICON} Activar modo lluvia</h3>
+    <div class="msub">La cancha se cierra esas horas y se pedirá a los afectados que cancelen su reserva.</div>
+    <div class="opt-label">¿Durante cuántas horas?</div>
+    <div class="seg" id="rainHrs">${[1,2,3,4].map(n=>`<button class="${n===4?'on':''}" data-h="${n}" onclick="segPick(this,'rainHrs')">${n} h</button>`).join('')}</div>
+    <div class="modal-actions"><button class="btn-soft" onclick="closeModal()">Cancelar</button>
+    <button class="btn-primary" onclick="doActivateRain()">Activar</button></div>`;
+  document.getElementById('modalBg').classList.add('show');
+}
+async function doActivateRain(){
+  const h=+document.querySelector('#rainHrs button.on').dataset.h;
+  closeModal();
+  try{ await DB.Rain.activate(h); await loadData(); render(); openRainAffected(); }
+  catch(e){ toast(e.message,'warn'); }
+}
+function waRainLink(r){
+  const first=r.name.split(' ')[0], quien=state.role==='portero'?'portería':'administración';
+  const msg=`Hola ${first}, está lloviendo y la ${quien} de Cerros de la Alhambra solicita que canceles tu reserva de hoy de ${rangeLabel(r.h,r.min,r.dur).replace('–',' a ')}. Por favor entra a la app, mira tus notificaciones y, si estás de acuerdo, cancélala. ¡Gracias!`;
+  return `https://wa.me/${phoneFor(r.house)}?text=${encodeURIComponent(msg)}`;
+}
+function openRainAffected(){
+  const list=rainAffected(), end=new Date(state.rainUntil);
+  const endLbl=`${(end.getHours()%12||12)}:${String(end.getMinutes()).padStart(2,'0')} ${end.getHours()<12?'a.m.':'p.m.'}`;
+  const modal=document.getElementById('modal');
+  modal.innerHTML=`<div class="grab"></div>
+    <h3>${RAIN_ICON} Modo lluvia activo</h3>
+    <div class="msub">Cancha cerrada por ${state.rainHours} ${state.rainHours===1?'hora':'horas'} (hasta ${endLbl}) · ${list.length} reserva${list.length===1?'':'s'} afectada${list.length===1?'':'s'}</div>
+    <p style="font-size:12.5px;color:var(--muted);margin:4px 0 12px">Ya se les notificó dentro de la app para que cancelen. Cada dueño cancela su propia reserva. También puedes avisarles por WhatsApp:</p>
+    ${list.length?list.map(r=>`<div class="row" style="padding:11px 4px">
+      <div class="info"><b>${r.house} · ${rangeLabel(r.h,r.min,r.dur)}</b><span>${r.name}</span></div>
+      <a class="btn-wa" href="${waRainLink(r)}" target="_blank" rel="noopener">${WA_ICON} WhatsApp</a>
+    </div>`).join(''):'<div class="empty" style="padding:24px">No hay reservas en esa franja.</div>'}
+    <div class="modal-actions"><button class="btn-soft" onclick="deactivateRain()">Desactivar lluvia</button>
+    <button class="btn-primary" onclick="closeModal()">Listo</button></div>`;
+  document.getElementById('modalBg').classList.add('show');
+}
+async function deactivateRain(){ closeModal(); try{ await DB.Rain.deactivate(); await loadData(); render(); toast('Modo lluvia desactivado · solicitudes retiradas'); }catch(e){ toast(e.message,'warn'); } }
+async function rainAccept(nid){
+  const n=notifs.find(x=>x.id===nid); if(!n)return;
+  try{ if(n.resId) await DB.cancel(n.resId); await DB.markNotif(n.id,'accepted'); await loadData(); render(); toast('Cancelaste tu reserva · tus horas volvieron a tu cupo'); }
+  catch(e){ toast(e.message,'warn'); }
+}
+async function rainReject(nid){
+  const n=notifs.find(x=>x.id===nid); if(!n)return;
+  try{ await DB.markNotif(n.id,'rejected'); await loadData(); render(); toast('Mantuviste tu reserva'); }
+  catch(e){ toast(e.message,'warn'); }
+}
+
+/* ---- HISTORIAL (admin y portería) ---- */
+function whenLabel(ts){
+  const d=new Date(ts);
+  const dia=`${DOWL[d.getDay()].slice(0,3)} ${d.getDate()} ${MON[d.getMonth()]}`;
+  let H=d.getHours();const ap=H<12?'a.m.':'p.m.';const hh=H%12||12;const mm=String(d.getMinutes()).padStart(2,'0');
+  return {dia, hora:`${hh}:${mm} ${ap}`};
+}
+function viewHistory(){
+  if(!activity.length) return emptyState('Aún no hay actividad registrada.');
+  const sorted=[...activity].sort((a,b)=>b.ts-a.ts);
+  const rows=sorted.map(e=>{
+    const d=dateAt(e.date,e.h), cancel=e.action==='cancel', w=whenLabel(e.ts);
+    const who=e.name===e.house?e.house:`${e.name} · ${e.house}`;
+    const extra=e.type==='class'?' (clase)':e.type==='open'?' (libre)':'';
+    const ico=cancel?'<path d="M18 6L6 18M6 6l12 12"/>':'<path d="M20 6L9 17l-5-5"/>';
+    return `<div class="hrow">
+      <div class="hic ${cancel?'cancel':'reserve'}">${svgIco(ico,16)}</div>
+      <div class="hinfo"><b>${who}</b><span><b style="color:${cancel?'var(--danger)':'var(--court)'};font-weight:700">${cancel?'Canceló':'Reservó'}</b> la reserva del ${DOWL[d.getDay()]} ${d.getDate()}, ${rangeLabel(e.h,e.min,e.dur)}${extra}</span></div>
+      <time class="hwhen"><span class="hw-d">${w.dia}</span><span class="hw-t">${w.hora}</span></time>
+    </div>`;}).join('');
+  return `<div class="panel">${rows}</div>`;
+}
+
+/* ---- NOTIFICATIONS ---- */
+function viewNotif(){
+  const ic={open:['var(--lime)','#eef6df','<circle cx="12" cy="12" r="9"/>'],
+    class:['var(--amber)','#fdf0d9','<path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.4L12 17l-6.3 4.4L8 14 2 9.4h7.6z"/>'],
+    maint:['var(--gray)','#eef1f0','<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.3 2.3-2-2 2.3-2.3z"/>'],
+    cancel:['var(--danger)','#fdecea','<path d="M18 6L6 18M6 6l12 12"/>'],
+    light:['var(--amber)','#fdf0d9','<path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/>'],
+    rain:['#5b7fc0','#e7eef7','<path d="M7 16a5 5 0 0 1-1-9.9A6 6 0 0 1 17.5 7 4.5 4.5 0 0 1 17 16M8 19v2M12 19v2M16 19v2"/>']};
+  const vis=visibleNotifs();
+  if(!vis.length) return emptyState('No tienes notificaciones.');
+  const rows=vis.map(n=>{const[col,bg,path]=ic[n.type];
+    let extra='';
+    if(n.type==='rain' && n.status==='pending') extra=`<div class="notif-act"><button class="na-yes" onclick="rainAccept(${n.id})">Aceptar y cancelar</button><button class="na-no" onclick="rainReject(${n.id})">Rechazar</button></div>`;
+    else if(n.type==='rain' && n.status==='accepted') extra=`<div class="notif-st ok">Cancelaste tu reserva. Tus horas volvieron a tu cupo.</div>`;
+    else if(n.type==='rain' && n.status==='rejected') extra=`<div class="notif-st">Mantuviste tu reserva. Si tienes dudas, comunícate con la ${n.by||'portería'}.</div>`;
+    return `<div class="notif ${n.unread?'unread':''}">
+      <div class="ic" style="background:${bg};color:${col}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${path}</svg></div>
+      <div class="body"><b>${n.title}</b><p>${n.body}</p>${extra}<time>${n.time}</time></div>
+      ${n.unread?'<span class="dot"></span>':''}
+    </div>`;}).join('');
+  return `<div class="panel">${rows}</div>`;
+}
+
+/* ---- ADMIN: USERS ---- */
+async function setCupo(n){ try{ await DB.Admin.setCupo(n); CUPO=n; render(); toast('Cupo semanal: '+n+(n===1?' hora':' horas')+' por casa'); }catch(e){ toast(e.message,'warn'); } }
+async function setUserActive(id, makeActive){ try{ await DB.Admin.setStatus(id, makeActive?'active':'inactive'); await loadData(); render(); toast(makeActive?'Usuario activado':'Usuario desactivado'); }catch(e){ toast(e.message,'warn'); } }
+function viewUsers(){
+  const cupoSeg=[1,2,3,4].map(n=>`<button class="${CUPO===n?'on':''}" onclick="setCupo(${n})">${n}</button>`).join('');
+  const settings=`<div class="panel" style="margin-bottom:18px"><div style="padding:16px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+    <div style="flex:1;min-width:170px"><b style="font-size:14px">Cupo semanal por casa</b><p style="font-size:12px;color:var(--muted);margin-top:2px">Horas que cada casa puede reservar por semana. Ajústalo según el uso de la cancha.</p></div>
+    <div class="seg cupo-seg">${cupoSeg}</div>
+  </div></div>`;
+  const roleEs={admin:'Administración',prof:'Profesor',portero:'Portería'};
+  const rows=users.length?users.map((u,i)=>{
+    const pedida = u.status==='pending' ? (u.requestedHouse||'') : '';
+    const correoTxt = u.email ? 'con correo: '+u.email : 'sin correo';
+    const sub = u.status==='pending'
+      ? ('Solicitud nueva'+(pedida?' · pidió '+pedida:'')+(u.username?' · @'+u.username:'')+' · '+correoTxt+(u.phone?' · '+u.phone:''))
+      : (u.houses.length?u.houses.join(', '):(roleEs[u.role]||'sin casa'))+(u.active?'':' · inactivo')+(u.username?' · @'+u.username:'')+(u.phone?' · '+u.phone:'');
+    return `<div class="row">
+    <div class="avatar" style="background:${u.active?'var(--ball)':'#e4eae8'};color:var(--court-dark)">${(u.name||'?').split(' ').map(s=>s[0]).slice(0,2).join('')}</div>
+    <div class="info"><b>${u.name} ${u.houses.length>1?'<span class="pill green" style="margin-left:4px">'+u.houses.length+' casas</span>':''}${u.status==='pending'?'<span class="pill amber" style="margin-left:4px">pendiente</span>':''}</b>
+      <span>${sub}</span></div>
+    ${(u.role==='member'&&u.status!=='pending')?`<button class="btn-ghost" style="box-shadow:none" onclick="openLinkHouses(${i})">Vincular casas</button>`:''}
+    ${(u.role==='member'&&u.active&&u.phone)?`<a class="btn-wa btn-wa-sm" href="${waNotifyLink(u)}" target="_blank" rel="noopener" title="Avisar por WhatsApp que su cuenta está activa" aria-label="Avisar por WhatsApp">${WA_ICON}</a>`:''}
+    ${u.status==='pending'
+      ? `<button class="btn-cancel" onclick="openReject(${i})">Rechazar</button>
+         <button onclick="openApprove(${i})" style="padding:8px 14px;border-radius:10px;border:none;background:var(--court);color:#fff;font-size:13px;font-weight:600;white-space:nowrap">Aprobar</button>`
+      : `<button class="btn-cancel" onclick="setUserActive('${u.id}', ${!u.active})">${u.active?'Desactivar':'Activar'}</button>`}
+  </div>`;}).join(''):'<div class="empty" style="padding:30px">Aún no hay cuentas.</div>';
+  return settings+`<div class="panel"><div class="panel-h"><h3>${users.length} usuarios</h3><div class="spacer"></div>
+    <button class="btn-mini" onclick="openNewUser()">+ Nuevo</button></div>${rows}</div>
+    <p style="font-size:12.5px;color:var(--muted);margin:14px 4px">Con "Vincular casas" asocias varias casas a una cuenta (usuario maestro). Las cuentas con varias casas comparten cupo de forma transparente — visible aquí para el administrador.</p>`;
+}
+function openLinkHouses(i){
+  const u=users[i];
+  const modal=document.getElementById('modal');
+  modal.innerHTML=`<div class="grab"></div>
+    <h3>Vincular casas</h3><div class="msub">${u.name} — selecciona las casas de esta cuenta</div>
+    <div id="lkList" style="display:flex;flex-wrap:wrap;gap:8px;margin:14px 0">
+      ${houses.map(hh=>`<button class="lk-chip ${u.houses.includes(hh)?'on':''}" data-h="${hh}" onclick="this.classList.toggle('on')">${hh}</button>`).join('')}
+    </div>
+    <div class="modal-actions"><button class="btn-soft" onclick="closeModal()">Cancelar</button>
+    <button class="btn-primary" onclick="saveLinkHouses(${i})">Guardar</button></div>`;
+  document.getElementById('modalBg').classList.add('show');
+}
+async function saveLinkHouses(i){
+  const sel=[...document.querySelectorAll('#lkList .lk-chip.on')].map(b=>b.dataset.h);
+  if(!sel.length){toast('Cada cuenta debe tener al menos una casa.','warn');return;}
+  const ids=sel.map(lbl=>houseIdByLabel[lbl]).filter(Boolean);
+  closeModal();
+  try{ await DB.Admin.setHouses(users[i].id, ids); await loadData(); render(); toast('Casas vinculadas a '+users[i].name); }
+  catch(e){ toast(e.message,'warn'); }
+}
+
+/* ===== Aprobar una solicitud de auto-registro ===== */
+const FORM_INP='width:100%;padding:11px 13px;border:1.5px solid var(--line);border-radius:11px;font-size:15px;background:#fafcfb;margin-bottom:4px';
+/* --- casas: validación y aviso en vivo (existe vs nueva) para no duplicar --- */
+function houseCode(v){ return (v||'').trim().replace(/^casa\s+/i,'').replace(/\s+/g,''); }       // "Casa 29 A" -> "29A"
+function houseValid(v){ const c=houseCode(v); return /^[0-9A-Za-z]+$/.test(c); }                  // solo números y letras
+function userValid(u){ return /^[a-z0-9._-]{3,20}$/.test((u||'').trim().toLowerCase()); }          // usuario: 3–20, sin espacios
+function canonHouse(v){ return (window.DB&&DB.normHouse)?DB.normHouse(v):('Casa '+houseCode(v).toUpperCase()); }
+function houseExists(canon){ return houses.some(h=>h.toLowerCase()===canon.toLowerCase()); }
+function houseHint(inputId, hintId){
+  const v=document.getElementById(inputId).value||''; const el=document.getElementById(hintId); if(!el) return;
+  const c=houseCode(v);
+  if(!c){ el.textContent=''; return; }
+  if(!houseValid(v)){ el.textContent='Solo números y letras (ej. 29A).'; el.style.color='#c0392b'; return; }
+  const canon=canonHouse(v);
+  if(houseExists(canon)){ el.textContent='✓ Casa existente: '+canon; el.style.color='var(--court)'; }
+  else { el.textContent='Se creará una casa nueva: '+canon; el.style.color='#b8860b'; }
+}
+function openApprove(i){
+  const u=users[i];
+  const m=document.getElementById('modal');
+  // Las solicitudes de auto-registro siempre son residentes (los roles fijos
+  // —portería, profesor, admin— se crean aparte), así que solo se confirma la casa.
+  m.innerHTML=`<div class="grab"></div><h3>Aprobar residente</h3>
+    <div class="msub">${u.name}${u.username?' · @'+u.username:''}${u.phone?' · '+u.phone:''}</div>
+    <div class="opt-label">Casa</div>
+    <input id="apHouse" style="${FORM_INP}" value="${(u.requestedHouse||'').replace(/"/g,'&quot;')}" placeholder="Ej. 29A, 21B…" oninput="houseHint('apHouse','apHint')">
+    <div id="apHint" style="font-size:12px;min-height:16px;margin-bottom:4px"></div>
+    <div class="modal-actions"><button class="btn-soft" onclick="closeModal()">Cancelar</button>
+    <button class="btn-primary" onclick="doApprove('${u.id}')">Aprobar</button></div>`;
+  document.getElementById('modalBg').classList.add('show');
+  houseHint('apHouse','apHint');
+}
+async function doApprove(id){
+  const house=(document.getElementById('apHouse').value||'').trim();
+  if(!house){toast('Escribe la casa del residente.','warn');return;}
+  if(!houseValid(house)){toast('Casa inválida: usa solo números y letras (ej. 29A).','warn');return;}
+  closeModal();
+  try{ await DB.Admin.approve(id, house, 'member'); await loadData(); render(); toast('Residente aprobado'); }
+  catch(e){ toast(e.message,'warn'); }
+}
+function openReject(i){
+  const u=users[i];
+  const m=document.getElementById('modal');
+  m.innerHTML=`<div class="grab"></div><h3>Rechazar solicitud</h3>
+    <div class="msub">¿Seguro que quieres rechazar la solicitud de <b>${u.name}</b>${u.requestedHouse?' (casa '+u.requestedHouse+')':''}? No podrá entrar. Si fue un error, luego puedes reactivarla con "Activar".</div>
+    <div class="modal-actions"><button class="btn-soft" onclick="closeModal()">Cancelar</button>
+    <button class="btn-cancel" onclick="doReject('${u.id}')">Rechazar</button></div>`;
+  document.getElementById('modalBg').classList.add('show');
+}
+async function doReject(id){
+  closeModal();
+  try{ await DB.Admin.setStatus(id,'inactive'); await loadData(); render(); toast('Solicitud rechazada'); }
+  catch(e){ toast(e.message,'warn'); }
+}
+
+/* ===== Crear cuenta desde el panel (admin) ===== */
+function genPass(){ return 'Tenis'+Math.floor(1000+Math.random()*9000); }
+function openNewUser(){
+  const m=document.getElementById('modal');
+  m.innerHTML=`<div class="grab"></div><h3>Crear cuenta</h3>
+    <div class="msub">Queda activa de inmediato. Comparte la clave temporal con la persona; podrá cambiarla al entrar.</div>
+    <div class="opt-label">Nombre y apellido</div><input id="nuName" style="${FORM_INP}" placeholder="Nombre y apellido">
+    <div class="opt-label">Usuario <span style="font-weight:500;color:var(--muted)">(para entrar)</span></div><input id="nuUser" style="${FORM_INP}" placeholder="ej. pedro27" autocomplete="off">
+    <div class="opt-label">Correo</div><input id="nuEmail" type="email" style="${FORM_INP}" placeholder="correo@ejemplo.com">
+    <div class="opt-label">Celular</div><input id="nuPhone" type="tel" style="${FORM_INP}" placeholder="300 123 4567">
+    <div class="opt-label">Rol</div>
+    ${psel('nuRole',ROLE_OPTS,'member','nuRoleChange')}
+    <div id="nuHouseRow"><div class="opt-label">Casa</div><input id="nuHouse" style="${FORM_INP}" placeholder="Ej. 29A, 21B…" oninput="houseHint('nuHouse','nuHint')">
+    <div id="nuHint" style="font-size:12px;min-height:16px;margin-bottom:4px"></div></div>
+    <div class="opt-label">Clave temporal</div><input id="nuPass" style="${FORM_INP}" value="${genPass()}">
+    <div class="modal-actions"><button class="btn-soft" onclick="closeModal()">Cancelar</button>
+    <button class="btn-primary" onclick="doCreateUser()">Crear cuenta</button></div>`;
+  document.getElementById('modalBg').classList.add('show');
+}
+async function doCreateUser(){
+  const name=(document.getElementById('nuName').value||'').trim();
+  const email=(document.getElementById('nuEmail').value||'').trim();
+  const username=(document.getElementById('nuUser').value||'').trim().toLowerCase();
+  const phone=(document.getElementById('nuPhone').value||'').trim();
+  const role=document.getElementById('nuRole').value;
+  const pass=(document.getElementById('nuPass').value||'').trim();
+  const house=role==='member'?(document.getElementById('nuHouse').value||'').trim():'';
+  if(name.split(/\s+/).filter(Boolean).length<2){toast('Escribe nombre y apellido.','warn');return;}
+  if(!/.+@.+\..+/.test(email)){toast('Escribe un correo válido.','warn');return;}
+  if(username&&!userValid(username)){toast('Usuario inválido: 3 a 20 letras o números (sin espacios).','warn');return;}
+  if(pass.length<6){toast('La clave debe tener al menos 6 caracteres.','warn');return;}
+  if(role==='member'&&!house){toast('Escribe la casa del residente.','warn');return;}
+  if(role==='member'&&!houseValid(house)){toast('Casa inválida: usa solo números y letras (ej. 29A).','warn');return;}
+  const btn=event&&event.target; if(btn){btn.disabled=true;btn.textContent='Creando…';}
+  try{
+    await DB.Admin.createUser({email,password:pass,full_name:name,phone,role,house,username});
+    await loadData(); render(); showCreated(name,email,pass);
+  }catch(e){ toast(e.message,'warn'); if(btn){btn.disabled=false;btn.textContent='Crear cuenta';} }
+}
+function showCreated(name,email,pass){
+  const m=document.getElementById('modal');
+  m.innerHTML=`<div class="grab"></div><h3>Cuenta creada</h3>
+    <div class="msub">Comparte estos datos con ${name.split(' ')[0]}:</div>
+    <div style="background:#f3f7f2;border:1px solid var(--line);border-radius:12px;padding:14px;margin:14px 0;font-size:14.5px;line-height:1.8">
+      <div><b>Correo:</b> ${email}</div><div><b>Clave temporal:</b> ${pass}</div></div>
+    <button class="btn-primary" onclick="closeModal()">Listo</button>`;
+  document.getElementById('modalBg').classList.add('show');
+}
+
+/* ---- helpers de formularios (disponibilidad por media hora) ---- */
+function profMinSlots(dow){const a=[];for(let h=4;h<=22;h++)for(const half of [0,1])if(isProfHalf(dow,h,half))a.push(h*60+half*30);return a;}
+function timeMin(m){let H=Math.floor(m/60),M=m%60;const ap=H<12?'am':'pm';let hh=H%12;if(hh===0)hh=12;return hh+':'+String(M).padStart(2,'0')+ap;}
+function refreshAvailTo(){
+  const dow=parseYMD(state.availDate).getDay();
+  const from=+document.getElementById('aFrom').value;
+  const ends=profMinSlots(dow).map(m=>m+30).filter(e=>e>from);
+  const cur=+document.getElementById('aTo').value;
+  pselSet('aTo', ends.map(m=>({v:m,label:timeMin(m)})), ends.includes(cur)?cur:(ends[0]||''));
+}
+/* ---- mini calendario (estilo aerolínea) ---- */
+let calView={};
+function parseYMD(s){const[Y,M,D]=s.split('-').map(Number);return new Date(Y,M-1,D);}
+function firstOfMonth(d){return new Date(d.getFullYear(),d.getMonth(),1);}
+function capMonth(d){const m=MESES[d.getMonth()];return m[0].toUpperCase()+m.slice(1)+' '+d.getFullYear();}
+function fmtLong(s){const d=parseYMD(s);return `${DOWL[d.getDay()]} ${d.getDate()} de ${MESES[d.getMonth()]}`;}
+function miniCal(id,opts){
+  const min=new Date(NOW.getFullYear(),NOW.getMonth(),NOW.getDate()), max=parseYMD(AVAIL_MAX);
+  if(!calView[id]) calView[id]=firstOfMonth(opts.anchor?parseYMD(opts.anchor):min);
+  const view=calView[id], canPrev=view>firstOfMonth(min), canNext=view<firstOfMonth(max);
+  let html=`<div class="minical"><div class="mc-head">
+      <button ${canPrev?'':'disabled'} onclick="calNav('${id}',-1)">‹</button>
+      <b>${capMonth(view)}</b>
+      <button ${canNext?'':'disabled'} onclick="calNav('${id}',1)">›</button>
+    </div>
+    <div class="mc-grid mc-dow">${['lu','ma','mi','ju','vi','sá','do'].map(x=>`<span>${x}</span>`).join('')}</div>
+    <div class="mc-grid">`;
+  const off=(new Date(view.getFullYear(),view.getMonth(),1).getDay()+6)%7;
+  const dim=new Date(view.getFullYear(),view.getMonth()+1,0).getDate();
+  for(let i=0;i<off;i++) html+=`<span></span>`;
+  for(let day=1;day<=dim;day++){
+    const dt=new Date(view.getFullYear(),view.getMonth(),day), ds=ymd(dt), dis=dt<min||dt>max;
+    let cls='mc-day';
+    if(dis) cls+=' mc-dis';
+    if(opts.rangeStart&&opts.rangeEnd&&ds>opts.rangeStart&&ds<opts.rangeEnd) cls+=' mc-inrange';
+    if((opts.selected&&opts.selected.includes(ds))||ds===opts.rangeStart||ds===opts.rangeEnd) cls+=' mc-sel';
+    html+=`<button class="${cls}" ${dis?'disabled':`onclick="${opts.onpick}('${ds}')"`}>${day}</button>`;
+  }
+  return html+`</div></div>`;
+}
+function calNav(id,dir){calView[id]=new Date(calView[id].getFullYear(),calView[id].getMonth()+dir,1);render();}
+function pickAvailDay(d){state.availDate=d;render();}
+function pickAvailRange(d){
+  if(!state.availRangeStart||state.availRangeEnd){state.availRangeStart=d;state.availRangeEnd=null;}
+  else if(d<state.availRangeStart){state.availRangeStart=d;}
+  else {state.availRangeEnd=d;}
+  render();
+}
+function toggleAvailMulti(e){if(e)e.preventDefault();state.availMulti=!state.availMulti;if(state.availMulti&&!state.availRangeStart)state.availRangeStart=ymd(NOW);render();}
+function pickMaintDay(d){state.maintDate=d;render();}
+function pickMaintRange(d){
+  if(!state.maintRangeStart||state.maintRangeEnd){state.maintRangeStart=d;state.maintRangeEnd=null;}
+  else if(d<state.maintRangeStart){state.maintRangeStart=d;}
+  else {state.maintRangeEnd=d;}
+  render();
+}
+function toggleMaintMulti(e){if(e)e.preventDefault();state.maintMulti=!state.maintMulti;if(state.maintMulti&&!state.maintRangeStart)state.maintRangeStart=ymd(NOW);render();}
+function allHourOpts(a,b,sel){let s='';for(let h=a;h<=b;h++)s+=`<option value="${h}" ${h===sel?'selected':''}>${hlabel(h)}</option>`;return s;}
+function hourArr(a,b){const r=[];for(let h=a;h<=b;h++)r.push({v:h,label:hlabel(h)});return r;}
+function refreshMaintTo(){
+  const from=+document.getElementById('cFrom').value;
+  const cur=+document.getElementById('cTo').value;
+  pselSet('cTo', hourArr(from+1,23), cur>from?cur:(from+1));
+}
+
+/* ---- ADMIN/PROF: DISPONIBILIDAD ---- */
+function viewAvail(){
+  const multi=state.availMulti;
+  const dow0=parseYMD(state.availDate).getDay(), slots=profMinSlots(dow0), noProf=!slots.length, from0=slots[0]||360;
+  const fromArr=noProf?[{v:'',label:'—'}]:slots.map(m=>({v:m,label:timeMin(m)}));
+  const toArr=noProf?[{v:'',label:'—'}]:slots.map(m=>m+30).filter(e=>e>from0).map(m=>({v:m,label:timeMin(m)}));
+  const checkbox=`<label class="chk" onclick="toggleAvailMulti(event)"><span class="chk-box ${multi?'on':''}">${multi?'✓':''}</span><span>El profesor va a faltar varios días</span></label>`;
+  const cal = multi
+    ? miniCal('availR',{rangeStart:state.availRangeStart,rangeEnd:state.availRangeEnd,onpick:'pickAvailRange',anchor:state.availRangeStart})
+    : miniCal('avail',{selected:[state.availDate],onpick:'pickAvailDay',anchor:state.availDate});
+  const rightTop = multi
+    ? `<div class="sel-day" style="font-size:14px">Desde: ${fmtLong(state.availRangeStart)}<br>Hasta: ${state.availRangeEnd?fmtLong(state.availRangeEnd):'<span style="color:var(--muted);font-weight:500">(elige el día final)</span>'}</div>`
+    : `<div class="sel-day">${fmtLong(state.availDate)}</div>`;
+  const hours = multi ? '' : `<div class="dh-row">
+            <div class="field"><label>Desde</label>${psel('aFrom',fromArr,from0,'refreshAvailTo',noProf)}</div>
+            <div class="field"><label>Hasta</label>${psel('aTo',toArr,(toArr[0]&&toArr[0].v),'',noProf)}</div>
+          </div>`;
+  const warn = (!multi&&noProf) ? `<p style="font-size:12.5px;color:var(--clay);background:#fbeee9;border-radius:10px;padding:10px 12px;margin:0">Ese día el profesor no tiene clases (ej. domingo). No hay horarios para abrir.</p>` : '';
+  const btnDis = (!multi&&noProf) ? 'disabled' : '';
+  let html=`<div class="panel"><div class="panel-h"><h3>Abrir disponibilidad en clases del profesor</h3><div class="spacer"></div>${checkbox}</div>
+    <div style="padding:18px">
+      <label class="fld-label">${multi?'Escoge el rango de días que el profesor faltará (toca inicio y fin)':'Escoge el día'}</label>
+      <div class="avail-cols">
+        <div>${cal}</div>
+        <div class="avail-right">
+          ${rightTop}
+          <div><label class="fld-label">¿El profesor estará?</label>
+            <div class="opt-list" id="aType">
+              <button class="opt-card on" data-t="open" onclick="segPick(this,'aType')">
+                <span class="opt-dot"></span>
+                <span class="opt-txt"><b>El profesor NO va a estar</b><small>La casa solo puede reservar para práctica libre (sin profesor). No se puede reservar clase.</small></span>
+              </button>
+              <button class="opt-card" data-t="class" onclick="segPick(this,'aType')">
+                <span class="opt-dot"></span>
+                <span class="opt-txt"><b>El profesor SÍ va a estar</b><small>La persona puede reservar clase con el profesor, o práctica libre (sin profesor).</small></span>
+              </button>
+            </div>
+          </div>
+          ${hours}
+          ${warn}
+        </div>
+      </div>
+      <button class="btn-primary" id="aBtn" onclick="doRelease()" ${btnDis} style="margin-top:18px">Abrir y avisar al condominio</button>
+      <p class="hint">${multi?'Se abre todo el horario del profesor en cada día del rango.':'Puedes abrir medias horas exactas (ej. 12:00–12:30, 1:30–2:00, 4:30–5:00). Mar–vie 6:00–12:30 y 1:30–5:00; sáb 6:00–12:00; lun, dom y festivos no tiene.'}</p>
+    </div></div>`;
+  if(released.length){
+    html+=`<div class="panel" style="margin-top:18px"><div class="panel-h"><h3>Disponibilidad abierta actualmente</h3></div>${
+      released.slice().sort((a,b)=>(a.date+String(a.h*2+a.half).padStart(3,'0'))<(b.date+String(b.h*2+b.half).padStart(3,'0'))?-1:1).map((r)=>{const d=dateAt(r.date,r.h);const idx=released.indexOf(r);const m=r.h*60+r.half*30;return `<div class="row">
+        <div class="when"><div class="d">${DOW[d.getDay()]} ${d.getDate()}</div><div class="h">${timeMin(m)}</div></div>
+        <div class="info"><b>${timeMin(m)}–${timeMin(m+30)}</b><span>${r.type==='class'?'El profesor sí va a estar':'El profesor no va a estar'}</span></div>
+        ${r.type==='class'?'<span class="pill amber">Profe disponible</span>':'<span class="pill lime">Práctica libre</span>'}
+        <button class="btn-cancel" onclick="unrelease(${idx})">Cerrar</button></div>`}).join('')}</div>`;
+  }
+  return html;
+}
+
+/* ---- ADMIN: MANTENIMIENTO ---- */
+function viewMaint(){
+  const multi=state.maintMulti;
+  const checkbox=`<label class="chk" onclick="toggleMaintMulti(event)"><span class="chk-box ${multi?'on':''}">${multi?'✓':''}</span><span>El mantenimiento dura más de un día</span></label>`;
+  const cal = multi
+    ? miniCal('maintR',{rangeStart:state.maintRangeStart,rangeEnd:state.maintRangeEnd,onpick:'pickMaintRange',anchor:state.maintRangeStart})
+    : miniCal('maint',{selected:[state.maintDate],onpick:'pickMaintDay',anchor:state.maintDate});
+  const rightTop = multi
+    ? `<div class="sel-day" style="font-size:14px">Desde: ${fmtLong(state.maintRangeStart)}<br>Hasta: ${state.maintRangeEnd?fmtLong(state.maintRangeEnd):'<span style="color:var(--muted);font-weight:500">(elige el día final)</span>'}</div>`
+    : `<div class="sel-day">${fmtLong(state.maintDate)}</div>`;
+  const hours = multi ? '' : `<div class="dh-row">
+            <div class="field"><label>Desde</label>${psel('cFrom',hourArr(5,22),8,'refreshMaintTo')}</div>
+            <div class="field"><label>Hasta</label>${psel('cTo',hourArr(9,23),12,'')}</div>
+          </div>`;
+  let html=`<div class="panel"><div class="panel-h"><h3>Cerrar la cancha por mantenimiento</h3><div class="spacer"></div>${checkbox}</div>
+    <div style="padding:18px">
+      <label class="fld-label">${multi?'Escoge el rango de días (toca inicio y fin)':'Escoge el día'}</label>
+      <div class="avail-cols">
+        <div>${cal}</div>
+        <div class="avail-right">
+          ${rightTop}
+          ${hours}
+          <div class="field"><label>Motivo</label><input id="cReason" placeholder="Ej. mantenimiento de la malla"></div>
+        </div>
+      </div>
+      <button class="btn-primary" style="margin-top:18px" onclick="doClose()">Cerrar cancha y notificar afectados</button>
+      <p class="hint">${multi?'Se cierran los días completos del rango.':'Cierra solo el rango de horas elegido ese día (cualquier hora, dentro o fuera de las clases del profesor).'} Las reservas afectadas se cancelan y se avisa a cada miembro.</p>
+    </div></div>`;
+  if(closures.length){
+    html+=`<div class="panel" style="margin-top:18px"><div class="panel-h"><h3>Cierres programados</h3></div>${
+      closures.map((c,i)=>`<div class="row"><div class="info"><b>${fmtRange(c.start,c.end)}${c.allDay?' · todo el día':' · '+hlabel(c.fromH)+'–'+hlabel(c.toH)}</b><span>${c.reason||'Mantenimiento'}</span></div>
+        <span class="pill gray">Cerrado</span><button class="btn-cancel" onclick="removeClosure(${i})">Reabrir</button></div>`).join('')}</div>`;
+  }
+  return html;
+}
+function fmtRange(s,e){const a=dateAt(s,0),b=dateAt(e,0);return s===e?`${DOWL[a.getDay()]} ${a.getDate()} ${MON[a.getMonth()]}`:`${a.getDate()} ${MON[a.getMonth()]} – ${b.getDate()} ${MON[b.getMonth()]}`;}
+async function removeClosure(i){ try{ await DB.Admin.deleteClosure(closures[i].id); await loadData(); render(); toast('Cierre eliminado · cancha reabierta'); }catch(e){ toast(e.message,'warn'); } }
+function segPick(btn,group){document.querySelectorAll('#'+group+' button').forEach(b=>b.classList.remove('on'));btn.classList.add('on');}
+
+/* ======================= MODAL / ACTIONS ======================= */
+function openProfBook(date,h){
+  const d=dateAt(date,h);
+  const modal=document.getElementById('modal');
+  modal.innerHTML=`<div class="grab"></div>
+    <h3>Reservar para clase</h3>
+    <div class="msub">${DOWL[d.getDay()]} ${d.getDate()} de ${MON[d.getMonth()]} · ${hrange(h,60)}</div>
+    <div class="quota-mini"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> Aparecerá como <b style="margin:0 4px">Profesor</b> (amarillo) para todos. No tienes límite de reservas; solo debe estar libre.</div>
+    <div class="modal-actions"><button class="btn-soft" onclick="closeModal()">Cancelar</button>
+    <button class="btn-primary" onclick="confirmProfBook('${date}',${h})">Confirmar reserva</button></div>`;
+  document.getElementById('modalBg').classList.add('show');
+}
+function confirmProfBook(date,h){
+  if(resAtHalf(date,h,0)||resAtHalf(date,h,1)){toast('Ese horario ya está reservado.','warn');closeModal();render();return;}
+  reservations.push({id:++resId,date,h,min:0,dur:60,house:'Clases',name:'Profe Tenis',type:'profclass'});
+  closeModal();render();toast('Clase reservada ✓');
+}
+function openProfRes(id){
+  const r=reservations.find(x=>x.id===id); if(!r||r.type!=='profclass')return;
+  const d=dateAt(r.date,r.h);
+  const modal=document.getElementById('modal');
+  modal.innerHTML=`<div class="grab"></div>
+    <h3>Tu clase</h3>
+    <div class="msub">${DOWL[d.getDay()]} ${d.getDate()} de ${MON[d.getMonth()]} · ${rangeLabel(r.h,r.min,r.dur)}</div>
+    <div class="quota-mini"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> Aparece como <b style="margin:0 4px">Profesor</b> (amarillo) para todos.</div>
+    <div class="modal-actions"><button class="btn-soft" onclick="closeModal()">Cerrar</button>
+    <button class="btn-primary" style="background:var(--danger)" onclick="cancelRes(${r.id})">Cancelar clase</button></div>`;
+  document.getElementById('modalBg').classList.add('show');
+}
+function openBook(date,h,ctx){
+  if(state.role==='admin') return;                 // el admin no hace reservas
+  if(state.role==='prof') return openProfBook(date,h);
+  const d=dateAt(date,h);
+  const isHalf=(ctx==='h0'||ctx==='h1');
+  const relHalf = isHalf ? findReleasedHalf(date,h, ctx==='h1'?1:0) : null; // media hora liberada por el profe
+  const isClass=(ctx==='classfull') || (relHalf&&relHalf.type==='class');
+  const isOpen=(ctx==='openfull') || (relHalf&&relHalf.type==='open');
+  const bonus=isClass||isOpen;
+  const isPortero=state.role==='portero';
+  const myHs=myHouses();
+  const hasSelect = isPortero || (isMember() && myHs.length>1);
+  const selHouses = isPortero ? houses : myHs;
+  const bookHouse = hasSelect ? (isPortero ? selHouses[0] : defaultMasterHouse()) : state.user.house;
+  const left = Math.max(0,CUPO-houseUsed(bookHouse));
+  const typeLabel = isClass?'Profesor disponible':isOpen?'Práctica libre':'Reserva';
+  const msubRange = isHalf?rangeLabel(h, ctx==='h1'?30:0, 30):rangeLabel(h,0,60);
+  let houseSelect = hasSelect ? `
+    <div class="opt-label">${isPortero?'¿A nombre de qué casa?':'¿A nombre de cuál de tus casas?'}</div>
+    ${psel('bkHouse', selHouses.map(hh=>{const lh=Math.max(0,CUPO-houseUsed(hh));return {v:hh,label:`${hh} · ${lh>0?fmtH(lh)+' disponible'+(lh>1?'s':''):'sin cupo'}`};}), bookHouse, 'updateBookHouse')}`:'';
+  let classChoice = isClass ? `
+    <div class="opt-label">¿Qué deseas?</div>
+    <div class="seg" id="useType">
+      <button class="on" data-u="class" onclick="segPick(this,'useType')">Tomar clase</button>
+      <button data-u="free" onclick="segPick(this,'useType')">Práctica libre</button>
+    </div>`:'';
+  let durChoice='';
+  if(ctx==='full'){
+    durChoice=`<div class="opt-label">Duración</div>
+      <div class="seg" id="durSeg">
+        <button class="on" data-d="60" onclick="segPick(this,'durSeg');document.getElementById('halfWrap').style.display='none'">1 hora</button>
+        <button data-d="30" onclick="segPick(this,'durSeg');document.getElementById('halfWrap').style.display='block'">30 min</button>
+      </div>
+      <div id="halfWrap" style="display:none">
+        <div class="opt-label">¿Cuál media hora?</div>
+        <div class="seg" id="halfSeg">
+          <button class="on" data-m="0" onclick="segPick(this,'halfSeg')">${rangeLabel(h,0,30)}</button>
+          <button data-m="30" onclick="segPick(this,'halfSeg')">${rangeLabel(h,30,30)}</button>
+        </div>
+      </div>`;
+  } else if(isHalf && !bonus){
+    durChoice=`<div class="quota-mini" style="background:#eef4f6;color:var(--court)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg> Reserva de <b style="margin:0 4px">30 minutos</b> · ${msubRange}.</div>`;
+  }
+  const quedaPhrase = hasSelect ? `${bookHouse} · ${cupoFrase(left)} esta semana` : `${cupoFraseMember(left)} esta semana`;
+  let quotaBox = bonus
+    ? `<div class="bonus-box"><span class="bonus-star">★</span><div><b>Este horario no gasta tu cupo</b><span>${isClass?'El profesor lo abrió y va a estar: puedes tomar clase o jugar libre, sin que te descuente cupo.':'El profesor no asiste a esta hora y la dejó libre: resérvala sin que te descuente cupo.'}</span></div></div>`
+    : `<div class="quota-mini"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg> <span id="bkPhrase">${quedaPhrase}</span></div>`;
+  const nightCallout = (h>=21||h<6) ? `<div class="rule-night">${svgIco('<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',15)} A esta hora hay vecinos durmiendo. Por favor, juega en silencio y evita gritos, ruido fuerte y música o parlantes a alto volumen.</div>` : '';
+  const rulesBox = `<div class="rules"><b>Antes de confirmar, recuerda:</b>${nightCallout}<ul>${RULES.map(r=>`<li>${r}</li>`).join('')}</ul></div>`;
+  const modal=document.getElementById('modal');
+  modal.innerHTML=`<div class="grab"></div>
+    <h3>${typeLabel}</h3>
+    <div class="msub">${DOWL[d.getDay()]} ${d.getDate()} de ${MON[d.getMonth()]} · ${msubRange}</div>
+    ${houseSelect}${classChoice}${durChoice}${quotaBox}${rulesBox}
+    <div class="modal-actions">
+      <button class="btn-soft" onclick="closeModal()">Cancelar</button>
+      <button class="btn-primary" onclick="confirmBook('${date}',${h},'${ctx}')">Confirmar reserva</button>
+    </div>`;
+  document.getElementById('modalBg').classList.add('show');
+}
+function updateBookHouse(){
+  const house=document.getElementById('bkHouse').value;
+  const left=Math.max(0,CUPO-houseUsed(house));
+  const p=document.getElementById('bkPhrase'); if(p)p.textContent=`${house} · ${cupoFrase(left)} esta semana`;
+}
+async function confirmBook(date,h,ctx){
+  let min=0,dur=60,type='normal';
+  if(ctx==='h0'){min=0;dur=30;}
+  else if(ctx==='h1'){min=30;dur=30;}
+  else if(ctx==='full'){const dEl=document.querySelector('#durSeg button.on');dur=dEl?+dEl.dataset.d:60;if(dur===30){const mEl=document.querySelector('#halfSeg button.on');min=mEl?+mEl.dataset.m:0;}}
+  else if(ctx==='openfull'){type='open';}
+  else if(ctx==='classfull'){const u=document.querySelector('#useType button.on');type=(u&&u.dataset.u==='free')?'open':'class';}
+  // media hora liberada por el profesor (bonus): toma el tipo de la liberación
+  let relHalf=null;
+  if(ctx==='h0'||ctx==='h1'){
+    relHalf=findReleasedHalf(date,h,min/30);
+    if(relHalf){
+      if(relHalf.type==='class'){const u=document.querySelector('#useType button.on');type=(u&&u.dataset.u==='free')?'open':'class';}
+      else type='open';
+    }
+  }
+  // determinar la casa
+  let house;
+  const hsel=document.getElementById('bkHouse');
+  house = hsel ? hsel.value : state.user.house;
+  const houseId=houseIdByLabel[house];
+  if(!houseId){ toast('No se encontró esa casa.','warn'); return; }
+  if(isMember()&&myHouses().length>1) state.lastHouse=house; // recordar última casa elegida
+  closeModal();
+  try{
+    await DB.book({houseId, date, h, min, dur, type});   // el servidor valida cupo, horario, choque
+    await loadData(); render();
+    toast(state.role==='portero'?('Reserva creada a nombre de '+house):(dur===30?'Reserva de 30 min confirmada':'Reserva confirmada'));
+  }catch(e){ await loadData(); render(); toast(e.message,'warn'); }
+}
+function mergeHour(date,h){
+  const r0=resAtHalf(date,h,0), r1=resAtHalf(date,h,1);
+  if(r0&&r1&&r0.id!==r1.id&&r0.house===r1.house&&r0.type==='normal'&&r1.type==='normal'){
+    reservations=reservations.filter(r=>r.id!==r0.id&&r.id!==r1.id);
+    reservations.push({id:++resId,date,h,min:0,dur:60,house:r0.house,name:r0.name,type:'normal'});
+  }
+}
+function openMyRes(id){
+  const r=reservations.find(x=>x.id===id);if(!r)return;
+  const d=dateAt(r.date,r.h);const limH=(r.type==='class'?1:0.5);const cancelable=(d-NOW)>limH*3600000;
+  const modal=document.getElementById('modal');
+  modal.innerHTML=`<div class="grab"></div>
+    <h3>Mi reserva</h3>
+    <div class="msub">${DOWL[d.getDay()]} ${d.getDate()} de ${MON[d.getMonth()]} · ${rangeLabel(r.h,r.min,r.dur)}</div>
+    <div class="quota-mini"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> A nombre de <b style="margin:0 4px">${r.house}</b>${myHouses().length>1?'(una de tus casas)':''}</div>
+    ${cancelable?`<div class="modal-actions"><button class="btn-soft" onclick="closeModal()">Cerrar</button><button class="btn-primary" style="background:var(--danger)" onclick="cancelRes(${r.id})">Cancelar reserva</button></div>`
+    :`<p style="font-size:13px;color:var(--muted);text-align:center;padding:6px 0 4px">Ya no se puede cancelar (faltan menos de ${limH===1?'1 hora':'30 minutos'}).</p><button class="btn-soft" style="width:100%" onclick="closeModal()">Cerrar</button>`}`;
+  document.getElementById('modalBg').classList.add('show');
+}
+async function cancelRes(id){
+  closeModal();
+  try{ await DB.cancel(id); await loadData(); render(); toast('Reserva cancelada · la hora volvió a tu cupo'); }
+  catch(e){ toast(e.message,'warn'); }
+}
+function openAdminRes(id){
+  const r=reservations.find(x=>x.id===id); if(!r)return;
+  const d=dateAt(r.date,r.h);
+  const typeTxt=r.type==='class'?' · clase':r.type==='open'?' · práctica libre':'';
+  const phone=phoneFor(r.house), first=r.name.split(' ')[0];
+  // si quien reservó tiene varias casas y la reservó a nombre de OTRA casa (distinta a la suya), se aclara de qué casa es la persona
+  const owner=users.find(u=>u.name===r.name);
+  const fromHouse=(owner&&owner.houses&&owner.houses.length>1&&owner.house!==r.house)?owner.house:null;
+  const quien=state.role==='portero'?'la portería':'la administración';
+  const msg=`Hola ${first}, te escribo de ${quien} de Cerros de la Alhambra por tu reserva de la cancha del ${fmtLong(r.date)} de ${rangeLabel(r.h,r.min,r.dur).replace('–',' a ')}.`;
+  const wa=`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+  const modal=document.getElementById('modal');
+  modal.innerHTML=`<div class="grab"></div>
+    <h3>Reserva · ${r.house}</h3>
+    <div class="msub">${DOWL[d.getDay()]} ${d.getDate()} de ${MON[d.getMonth()]} · ${rangeLabel(r.h,r.min,r.dur)}${typeTxt}</div>
+    <div class="quota-mini"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0M12 14a7 7 0 0 0-7 7h14a7 7 0 0 0-7-7"/></svg> La reservó <b style="margin:0 0 0 4px">${r.name}</b>${fromHouse?` <span style="color:var(--muted);margin:0 2px">de la</span> <b>${fromHouse}</b>`:''}</div>
+    <div class="opt-label">Contactar al propietario</div>
+    <div class="contact-row">
+      <a class="btn-call" href="tel:+${phone}">${PHONE_ICON} Llamar</a>
+      <a class="btn-wa" href="${wa}" target="_blank" rel="noopener">${WA_ICON} WhatsApp</a>
+    </div>
+    <div class="modal-actions">
+      ${state.role==='admin'
+        ? `<button class="btn-soft" onclick="closeModal()">Cerrar</button><button class="btn-primary" style="background:var(--danger)" onclick="cancelRes(${r.id})">Cancelar reserva</button>`
+        : `<button class="btn-soft" style="width:100%" onclick="closeModal()">Cerrar</button>`}
+    </div>`;
+  document.getElementById('modalBg').classList.add('show');
+}
+function openHalfSlot(date,m,t){ // abre una media-hora (m = minuto de inicio) si es del profesor; devuelve 1 si abrió
+  const h=Math.floor(m/60), half=(m%60)===30?1:0, dow=parseYMD(date).getDay();
+  if(!isProfHalf(dow,h,half)) return 0;
+  if(resAtHalf(date,h,half)) return 0;
+  reservations=reservations.filter(r=>!(r.date===date&&r.h===h&&r.type==='profclass')); // quita la clase del profe (amarillo)
+  if(released.find(r=>r.date===date&&r.h===h&&r.half===half)) return 0;
+  released.push({date,h,half,type:t}); return 1;
+}
+async function doRelease(){
+  const t=document.querySelector('#aType button.on').dataset.t;
+  const slots=[]; // {date,h,half}
+  if(state.availMulti){
+    const e=state.availRangeEnd||state.availRangeStart;
+    let d=parseYMD(state.availRangeStart), end=parseYMD(e);
+    while(d<=end){const date=ymd(d); for(const m of profMinSlots(d.getDay())) slots.push({date,h:Math.floor(m/60),half:(m%60)===30?1:0}); d=addDays(d,1);}
+  } else {
+    const date=state.availDate, from=+document.getElementById('aFrom').value, to=+document.getElementById('aTo').value, dow=parseYMD(date).getDay();
+    for(let m=from;m<to;m+=30){const h=Math.floor(m/60),half=(m%60)===30?1:0; if(isProfHalf(dow,h,half)) slots.push({date,h,half});}
+  }
+  if(!slots.length){ toast('No hay horas del profesor en ese rango','warn'); return; }
+  const have=new Set(released.map(r=>r.date+'|'+r.h+'|'+r.half));
+  const rows=slots.filter(s=>!have.has(s.date+'|'+s.h+'|'+s.half)).map(s=>{
+    const startISO=DB.toISO(s.date,s.h,s.half*30);
+    return {starts_at:startISO, ends_at:new Date(new Date(startISO).getTime()+30*60000).toISOString(), type:t};
+  });
+  try{
+    await DB.Admin.createReleases(rows);
+    await loadData(); render();
+    toast(rows.length?`Disponibilidad abierta (${rows.length} ${rows.length===1?'media hora':'medias horas'})`:'Esas horas ya estaban abiertas');
+  }catch(e){ toast(e.message,'warn'); }
+}
+async function unrelease(i){ try{ await DB.Admin.deleteRelease(released[i].relId); await loadData(); render(); toast('Hueco cerrado nuevamente'); }catch(e){ toast(e.message,'warn'); } }
+async function doClose(){
+  const reason=document.getElementById('cReason').value||'Mantenimiento';
+  let startISO,endISO,desc;
+  if(state.maintMulti){
+    const s=state.maintRangeStart, e=state.maintRangeEnd||state.maintRangeStart;
+    startISO=DB.toISO(s,0,0); endISO=DB.toISO(ymd(addDays(parseYMD(e),1)),0,0);
+    desc=`${fmtRange(s,e)} (todo el día)`;
+  } else {
+    const date=state.maintDate, from=+document.getElementById('cFrom').value, to=+document.getElementById('cTo').value;
+    startISO=DB.toISO(date,from,0); endISO=DB.toISO(date,to,0);
+    desc=`${fmtRange(date,date)} · ${hlabel(from)}–${hlabel(to)}`;
+  }
+  try{
+    await DB.Admin.clearReservationsInRange(startISO,endISO);   // cancela las reservas afectadas
+    await DB.Admin.createClosure(startISO,endISO,reason,'maintenance');
+    await loadData(); render();
+    toast('Cancha cerrada · '+desc);
+  }catch(e){ toast(e.message,'warn'); }
+}
+function closeModal(){document.getElementById('modalBg').classList.remove('show');}
+
+/* helpers */
+function shiftWeek(n){state.weekStart=addDays(state.weekStart,n*7);
+  const cur=new Date(state.mobileDay);state.mobileDay=ymd(addDays(cur,n*7));render();}
+function emptyState(msg){return `<div class="panel"><div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg><div>${msg}</div></div></div>`}
+function emptyInline(msg){return `<div class="empty" style="padding:30px">${msg}</div>`}
+function weekRangeText(){const a=state.weekStart,b=addDays(a,6);
+  const M=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  return a.getMonth()===b.getMonth()?`${a.getDate()} al ${b.getDate()} de ${M[b.getMonth()]}`:`${a.getDate()} de ${M[a.getMonth()]} al ${b.getDate()} de ${M[b.getMonth()]}`;}
+function toast(msg,type){const t=document.getElementById('toast');
+  const warn=type==='warn';
+  const icon=warn?'<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/>':'<path d="M20 6L9 17l-5-5"/>';
+  t.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icon}</svg>${msg}`;
+  t.classList.toggle('warn',warn);
+  t.classList.add('show');clearTimeout(window._tt);window._tt=setTimeout(()=>t.classList.remove('show'),2600);}
+
+/* reloj en vivo: actualiza la hora y la posición de la línea cada segundo */
+setInterval(tickClock,1000);
+/* recargar datos cada minuto y al volver a la app (para ver reservas nuevas) */
+setInterval(refreshData, 60000);
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) refreshData(); });
+window.addEventListener('focus', refreshData);
+/* al cargar la página: si hay sesión, entrar directo (no re-login al refrescar) */
+if(window.DB) autoBoot(); else showLogin();
+/* respaldo: si en 8 s seguimos en el splash (red lenta), mostrar el login */
+setTimeout(()=>{ const s=document.getElementById('splash');
+  if(s && s.style.display!=='none' && !document.getElementById('app').classList.contains('show')) showLogin();
+}, 8000);
+</script>
+</body>
+</html>
