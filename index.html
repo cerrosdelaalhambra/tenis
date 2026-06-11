@@ -945,6 +945,7 @@ async function loadData(){
   CUPO=b.cupo||2;
   const myLabels=(b.myHouses||[]).map(h=>h.label);
   state.role = prof.role==='member' ? (myLabels.length>1?'master':'member') : prof.role;
+  if(!navItems().some(i=>i.id===state.view)) state.view = navItems()[0].id;   // cae en una pestaña válida del rol
   state.user = { name:prof.full_name||'(sin nombre)',
     house: myLabels[0] || (prof.role==='admin'?'Administración':prof.role==='prof'?'Entrenador':prof.role==='portero'?'Recepción':'—'),
     houses: myLabels, phone:prof.phone };
@@ -1069,7 +1070,7 @@ function navItems(){
   const cal={id:'calendar', label:'Calendario', icon:'cal'};
   const notif={id:'notif', label:'Notificaciones', icon:'bell', badge:visibleNotifs().filter(n=>n.unread).length};
   const hist={id:'history', label:'Historial', icon:'history'};
-  if(state.role==='portero') return [cal, {id:'lights', label:'Iluminación', icon:'bulb'}, hist, notif];
+  if(state.role==='portero') return [{id:'lights', label:'Iluminación', icon:'bulb'}, {id:'rain', label:'Modo lluvia', icon:'rain'}];
   if(state.role==='admin') return [cal,
     {id:'users', label:'Usuarios', icon:'users'},
     {id:'avail', label:'Disponibilidad', icon:'clock'},
@@ -1121,11 +1122,11 @@ function render(){
   document.getElementById('mhBell').style.display=items.some(i=>i.id==='notif')?'':'none';
 
   // titles
-  const titles={calendar:'Calendario de reservas',mine:'Mis reservas',lights:'Iluminación',
+  const titles={calendar:'Calendario de reservas',mine:'Mis reservas',lights:'Iluminación',rain:'Modo lluvia',
     notif:'Notificaciones',users:'Gestión de usuarios',avail:'Disponibilidad en clases del profesor',maint:'Mantenimiento de la cancha',history:'Historial de actividad'};
   document.getElementById('ttitle').textContent=titles[state.view];
   document.getElementById('mtitle').textContent=titles[state.view];
-  const subs={calendar:'',mine:'Tus reservas y tu cupo de la semana',lights:'Horarios para prender y apagar las luces',notif:'Avisos de la cancha',users:'Crea y administra las cuentas',avail:state.role==='prof'?'Abre tus horarios para práctica libre o clase':'Abre horarios de clase del profesor',maint:'Cierra la cancha por reparaciones',history:'Quién reserva y cancela, y a qué hora'};
+  const subs={calendar:'',mine:'Tus reservas y tu cupo de la semana',lights:'Horarios para prender y apagar las luces',rain:'Cierra la cancha cuando esté lloviendo o encharcada',notif:'Avisos de la cancha',users:'Crea y administra las cuentas',avail:state.role==='prof'?'Abre tus horarios para práctica libre o clase':'Abre horarios de clase del profesor',maint:'Cierra la cancha por reparaciones',history:'Quién reserva y cancela, y a qué hora'};
   document.getElementById('tsub').textContent=subs[state.view]||'';
   document.getElementById('weekNav').style.display='none';
 
@@ -1143,6 +1144,7 @@ function render(){
   if(state.view==='calendar') c.innerHTML=viewCalendar();
   else if(state.view==='mine') c.innerHTML=viewMine();
   else if(state.view==='lights') c.innerHTML=viewLights();
+  else if(state.view==='rain') c.innerHTML=viewRain();
   else if(state.view==='notif') c.innerHTML=viewNotif();
   else if(state.view==='users') c.innerHTML=viewUsers();
   else if(state.view==='avail') c.innerHTML=viewAvail();
@@ -1483,6 +1485,21 @@ function viewMine(){
 }
 
 /* ---- PORTERO: ILUMINACIÓN ---- */
+/* ---- PORTERÍA: modo lluvia ---- */
+function viewRain(){
+  const active=rainActive();
+  let hasta='';
+  if(active){ const e=new Date(state.rainUntil); hasta=`${(e.getHours()%12||12)}:${String(e.getMinutes()).padStart(2,'0')} ${e.getHours()<12?'a.m.':'p.m.'}`; }
+  const ic=`<div style="width:66px;height:66px;border-radius:18px;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;background:#eef3fb">${svgIco(RAIN_P,32,'#33508a')}</div>`;
+  const body = active
+    ? `<h3 style="font-size:19px;margin-bottom:6px">Modo lluvia activo</h3>
+       <p style="font-size:14px;color:var(--muted);max-width:400px;margin:0 auto 20px;line-height:1.6">La cancha está cerrada por lluvia hasta las <b>${hasta}</b>. Ya se les avisó a quienes tenían reserva para que la cancelen.</p>
+       <button class="btn-cancel" onclick="openRainAffected()">Ver afectados / desactivar</button>`
+    : `<h3 style="font-size:19px;margin-bottom:6px">Modo lluvia</h3>
+       <p style="font-size:14px;color:var(--muted);max-width:400px;margin:0 auto 20px;line-height:1.6">Si está lloviendo y la cancha quedó encharcada, ciérrala aquí. Se les avisará a quienes tengan reserva en esas horas para que la cancelen.</p>
+       <button class="btn-primary" style="max-width:280px;margin:0 auto" onclick="openRainModal()">Activar modo lluvia</button>`;
+  return `<div class="panel"><div style="padding:36px 22px;text-align:center">${ic}${body}</div></div>`;
+}
 function needsLight(h){return h<6||h>=18;}  // madrugada (4–6am) y noche (6–11pm)
 function viewLights(){
   const ws=ymd(OPEN_WEEK_START), we=OPEN_WEEK_END;
@@ -1901,11 +1918,11 @@ function viewAvail(){
     </div></div>`;
   if(released.length){
     html+=`<div class="panel" style="margin-top:18px"><div class="panel-h"><h3>Disponibilidad abierta actualmente</h3></div>${
-      released.slice().sort((a,b)=>(a.date+String(a.h*2+a.half).padStart(3,'0'))<(b.date+String(b.h*2+b.half).padStart(3,'0'))?-1:1).map((r)=>{const d=dateAt(r.date,r.h);const idx=released.indexOf(r);const m=r.h*60+r.half*30;return `<div class="row">
-        <div class="when"><div class="d">${DOW[d.getDay()]} ${d.getDate()}</div><div class="h">${timeMin(m)}</div></div>
-        <div class="info"><b>${timeMin(m)}–${timeMin(m+30)}</b><span>${r.type==='class'?'El profesor sí va a estar':'El profesor no va a estar'}</span></div>
-        ${r.type==='class'?'<span class="pill amber">Profe disponible</span>':'<span class="pill lime">Práctica libre</span>'}
-        <button class="btn-cancel" onclick="unrelease(${idx})">Cerrar</button></div>`}).join('')}</div>`;
+      releasedRuns().map(run=>{const d=dateAt(run.date,0);return `<div class="row">
+        <div class="when"><div class="d">${DOW[d.getDay()]} ${d.getDate()}</div><div class="h">${timeMin(run.startM)}</div></div>
+        <div class="info"><b>${timeMin(run.startM)}–${timeMin(run.endM)}</b><span>${run.type==='class'?'El profesor sí va a estar':'El profesor no va a estar'}</span></div>
+        ${run.type==='class'?'<span class="pill amber">Profe disponible</span>':'<span class="pill lime">Práctica libre</span>'}
+        <button class="btn-cancel" onclick="unreleaseGroup('${run.ids.join(',')}')">Cerrar</button></div>`}).join('')}</div>`;
   }
   return html;
 }
@@ -2135,14 +2152,16 @@ function openHalfSlot(date,m,t){ // abre una media-hora (m = minuto de inicio) s
 }
 async function doRelease(){
   const t=document.querySelector('#aType button.on').dataset.t;
-  const slots=[]; // {date,h,half}
+  const slots=[]; let desc='';
   if(state.availMulti){
     const e=state.availRangeEnd||state.availRangeStart;
     let d=parseYMD(state.availRangeStart), end=parseYMD(e);
     while(d<=end){const date=ymd(d); for(const m of profMinSlots(d.getDay())) slots.push({date,h:Math.floor(m/60),half:(m%60)===30?1:0}); d=addDays(d,1);}
+    desc=fmtRange(state.availRangeStart,e)+' (horario del profesor)';
   } else {
     const date=state.availDate, from=+document.getElementById('aFrom').value, to=+document.getElementById('aTo').value, dow=parseYMD(date).getDay();
     for(let m=from;m<to;m+=30){const h=Math.floor(m/60),half=(m%60)===30?1:0; if(isProfHalf(dow,h,half)) slots.push({date,h,half});}
+    desc=`${fmtRange(date,date)} · ${timeMin(from)}–${timeMin(to)}`;
   }
   if(!slots.length){ toast('No hay horas del profesor en ese rango','warn'); return; }
   const have=new Set(released.map(r=>r.date+'|'+r.h+'|'+r.half));
@@ -2152,11 +2171,27 @@ async function doRelease(){
   });
   try{
     await DB.Admin.createReleases(rows);
+    if(rows.length) await DB.Admin.notifyRelease(t, desc);      // avisar a los residentes
     await loadData(); render();
-    toast(rows.length?`Disponibilidad abierta (${rows.length} ${rows.length===1?'media hora':'medias horas'})`:'Esas horas ya estaban abiertas');
+    toast(rows.length?`Disponibilidad abierta (${rows.length} ${rows.length===1?'media hora':'medias horas'}) · se avisó a los residentes`:'Esas horas ya estaban abiertas');
   }catch(e){ toast(e.message,'warn'); }
 }
 async function unrelease(i){ try{ await DB.Admin.deleteRelease(released[i].relId); await loadData(); render(); toast('Hueco cerrado nuevamente'); }catch(e){ toast(e.message,'warn'); } }
+// agrupa las medias horas liberadas contiguas (mismo día y tipo) en un solo rango
+function releasedRuns(){
+  const arr=released.map(r=>({date:r.date, m:r.h*60+r.half*30, type:r.type, id:r.relId}))
+    .sort((a,b)=> a.date<b.date?-1 : a.date>b.date?1 : a.m-b.m);
+  const runs=[];
+  arr.forEach(s=>{ const last=runs[runs.length-1];
+    if(last && last.date===s.date && last.type===s.type && last.endM===s.m){ last.endM=s.m+30; last.ids.push(s.id); }
+    else runs.push({date:s.date, type:s.type, startM:s.m, endM:s.m+30, ids:[s.id]}); });
+  return runs;
+}
+async function unreleaseGroup(idsStr){
+  const ids=[...new Set(String(idsStr).split(',').map(Number).filter(Boolean))];
+  try{ for(const id of ids) await DB.Admin.deleteRelease(id); await loadData(); render(); toast(ids.length>1?'Horario cerrado nuevamente':'Hueco cerrado nuevamente'); }
+  catch(e){ toast(e.message,'warn'); }
+}
 async function doClose(){
   const reason=document.getElementById('cReason').value||'Mantenimiento';
   let startISO,endISO,desc;
