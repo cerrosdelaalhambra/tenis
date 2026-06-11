@@ -230,7 +230,7 @@ async function getNotifications(role, profileId){
     .or(`profile_id.eq.${profileId},role.eq.${role}`).order('created_at',{ascending:false});
   return (data||[]).map(n=>({
     id:n.id, type:n.type, title:n.title, body:n.body,
-    roles: n.role ? [n.role] : ['member','master'],
+    roles: n.role==='member' ? ['member','master'] : (n.role ? [n.role] : ['member','master']),
     resId: n.reservation_id, house: n.houses && n.houses.label,
     status: n.status, unread: !n.read, time: relTime(n.created_at)
   }));
@@ -331,6 +331,8 @@ const Admin = {
     await sb.from('house_members').upsert({profile_id:profileId, house_id:houseId, is_primary:isPrimary}); },
   async createRelease(startISO,endISO,type){ const {error}=await sb.from('releases').insert({starts_at:startISO,ends_at:endISO,type}); if(error) throw mapError(error); },
   async createReleases(rows){ if(rows&&rows.length){ const {error}=await sb.from('releases').insert(rows); if(error) throw mapError(error); } },
+  // avisar a los residentes que se abrió un horario (no rompe si falla)
+  async notifyRelease(type, desc){ const {error}=await sb.rpc('notify_release',{p_type:type, p_desc:desc||''}); if(error) console.warn('notify_release:', error.message); },
   async deleteRelease(id){ if(id!=null){ const {error}=await sb.from('releases').delete().eq('id',id); if(error) throw mapError(error); } },
   async createClosure(startISO,endISO,reason,kind='maintenance'){
     const {error}=await sb.from('closures').insert({starts_at:startISO,ends_at:endISO,reason,kind}); if(error) throw mapError(error); },
