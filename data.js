@@ -14,8 +14,8 @@
  *
  *  👉 LLENA ESTOS DOS HUECOS (botón "Connect" del proyecto, o Settings → API / API Keys):
  * ========================================================================== */
-const SUPABASE_URL  = 'https://zpcpdetlvmsjbedudhmj.supabase.co';
-const SUPABASE_ANON = 'sb_publishable_hr5f5FI1f25odA8GdUXtkQ_0dYG_e8O';
+const SUPABASE_URL  = 'https://lknvospoabzkyljelcuy.supabase.co';
+const SUPABASE_ANON = 'sb_publishable_m1SllmJ_TksvKl8pRGA5RA_BlUjvE7S';
 
 /* ---------------------------------------------------------------------------- */
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
