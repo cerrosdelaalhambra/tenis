@@ -1034,6 +1034,7 @@ async function submitSignup(){
   if(pass.length<6){toast('La contraseña debe tener al menos 6 caracteres.','warn');return;}
   const btn=event&&event.target; if(btn){btn.disabled=true;btn.textContent='Enviando…';}
   try{
+    if(await DB.Auth.houseTaken(house)){ toast('La '+canonHouse(house)+' ya tiene una cuenta registrada. Si es tu casa y no tienes acceso, escribe a la administración.','warn'); if(btn){btn.disabled=false;btn.textContent='Enviar solicitud';} return; }
     if(!(await DB.Auth.usernameAvailable(username))){ toast('Ese usuario ya está en uso. Elige otro.','warn'); if(btn){btn.disabled=false;btn.textContent='Enviar solicitud';} return; }
     await DB.Auth.signUp({email,password:pass,full_name:name,phone,house,username});
     document.getElementById('signupCard').classList.add('hidden');

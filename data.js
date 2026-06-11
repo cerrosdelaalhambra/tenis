@@ -148,6 +148,12 @@ const Auth = {
     if(error) return true;                               // si falla la consulta, no bloquear (lo valida el índice único)
     return data!==false;
   },
+  // ¿esa casa ya existe (ya tiene cuenta)? — una casa = una cuenta
+  async houseTaken(label){
+    const norm=normHouse(label); if(!norm) return false;
+    const {data}=await sb.from('houses').select('id').ilike('label',norm).limit(1);
+    return !!(data && data.length);
+  },
   async signOut(){ await sb.auth.signOut(); },
   async resetPassword(identifier){
     const email=await resolveEmail(identifier);
