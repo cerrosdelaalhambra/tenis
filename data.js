@@ -314,9 +314,17 @@ const Admin = {
   async createUser(payload){
     const {data,error}=await sb.functions.invoke('admin-create-user',{body:payload});
     if(error){
-      let code='';
+      let code='', status='';
+      try{ status=error.context && error.context.status; }catch(_){}
       try{ const j=await error.context.json(); code=j&&j.error; }catch(_){}
-      throw createErr(code);
+      if(code && CREATE_ERR[code]) throw createErr(code);          // error conocido del servidor
+      // error sin código claro → dar pista del problema real
+      let msg='No se pudo crear la cuenta';
+      if(status) msg+=' (error '+status+')';
+      if(String(status)==='404' || !status) msg+='. Revisa que la función "admin-create-user" esté desplegada en Supabase (con ese nombre exacto).';
+      else if(String(status)==='401' || String(status)==='403') msg+='. Vuelve a entrar como administrador.';
+      else if(code) msg+='. ('+code+')';
+      throw new Error(msg);
     }
     if(data&&data.error) throw createErr(data.error);
     return data;
