@@ -924,12 +924,14 @@ async function boot(){
 }
 function hideSplash(){ const s=document.getElementById('splash'); if(s) s.style.display='none'; }
 function showLogin(){ document.getElementById('login').style.display='flex'; hideSplash(); }
+// cierra la sesión (p.ej. la auto-creada al registrarse) y vuelve al login limpio
+async function backToLogin(){ try{ localStorage.removeItem('tcv'); await DB.Auth.signOut(); }catch(e){} location.reload(); }
 function showPending(){
   document.getElementById('login').style.display='flex'; hideSplash();
   document.getElementById('loginCard').innerHTML =
     '<div class="brand"><div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#c6e84b" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M5 5c4 3 4 11 0 14M19 5c-4 3-4 11 0 14"/></svg></div>'+
     '<h1>Cuenta pendiente</h1><p>Tu cuenta aún no está activa. La administración debe aprobarla.</p></div>'+
-    '<button class="btn-primary" onclick="location.reload()">Volver</button>';
+    '<button class="btn-primary" onclick="backToLogin()">Volver al inicio</button>';
 }
 async function loadData(){
   const prof=state.profile;
@@ -1038,12 +1040,13 @@ async function submitSignup(){
     if(await DB.Auth.houseTaken(house)){ toast('La '+canonHouse(house)+' ya tiene una cuenta registrada. Si es tu casa y no tienes acceso, escribe a la administración.','warn'); if(btn){btn.disabled=false;btn.textContent='Enviar solicitud';} return; }
     if(!(await DB.Auth.usernameAvailable(username))){ toast('Ese usuario ya está en uso. Elige otro.','warn'); if(btn){btn.disabled=false;btn.textContent='Enviar solicitud';} return; }
     await DB.Auth.signUp({email,password:pass,full_name:name,phone,house,username});
+    try{ await DB.Auth.signOut(); }catch(e){}   // cerrar la sesión auto-creada (queda pendiente) para no atascarse
     document.getElementById('signupCard').classList.add('hidden');
     document.getElementById('loginCard').classList.remove('hidden');
     document.getElementById('loginCard').innerHTML =
       '<div class="brand"><div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#c6e84b" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M5 5c4 3 4 11 0 14M19 5c-4 3-4 11 0 14"/></svg></div>'+
       '<h1>¡Solicitud enviada!</h1><p>Tu cuenta para la casa '+house+' quedó pendiente. La administración la aprobará y podrás entrar con tu correo y contraseña.</p></div>'+
-      '<button class="btn-primary" onclick="location.reload()">Entendido</button>';
+      '<button class="btn-primary" onclick="backToLogin()">Volver al inicio</button>';
   }catch(e){ toast(e.message,'warn'); if(btn){btn.disabled=false;btn.textContent='Enviar solicitud';} }
 }
 function isMember(){return state.role==='member'||state.role==='master';}
