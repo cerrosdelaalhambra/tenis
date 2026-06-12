@@ -248,12 +248,19 @@ async function getActivity(){                       // historial (admin/porterí
 }
 
 async function getUsers(){                          // lista de cuentas (admin/portería)
-  const {data}=await sb.from('profiles')
-    .select('id,full_name,role,status,phone,requested_house,username,email, house_members(is_primary, houses(label))')
+  // IMPORTANTE: perfiles SIN cruce (el embed con house_members botaba a los
+  // perfiles sin casa, p.ej. los pendientes). Traemos las casas aparte y unimos.
+  const {data:profs,error}=await sb.from('profiles')
+    .select('id,full_name,role,status,phone,requested_house,username,email')
     .order('full_name');
-  return (data||[]).map(p=>{
-    const hl=(p.house_members||[]).map(hm=>hm.houses&&hm.houses.label).filter(Boolean);
-    const prim=(p.house_members||[]).find(hm=>hm.is_primary);
+  if(error) console.warn('getUsers:', error.message);
+  const {data:hm}=await sb.from('house_members').select('profile_id,is_primary, houses(label)');
+  const byProfile={};
+  (hm||[]).forEach(r=>{ (byProfile[r.profile_id]=byProfile[r.profile_id]||[]).push(r); });
+  return (profs||[]).map(p=>{
+    const mine=byProfile[p.id]||[];
+    const hl=mine.map(x=>x.houses&&x.houses.label).filter(Boolean);
+    const prim=mine.find(x=>x.is_primary);
     return { id:p.id, name:p.full_name||'(sin nombre)', role:p.role, phone:p.phone||'',
       active:p.status==='active', status:p.status, requestedHouse:p.requested_house||'', username:p.username||'',
       houses:hl, house:(prim&&prim.houses.label)||hl[0]||'—', email:p.email||'' };
