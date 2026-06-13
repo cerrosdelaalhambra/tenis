@@ -701,7 +701,7 @@
 <div id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="data.js?v=20260613"></script>
+<script src="data.js?v=20260613c"></script>
 <script>
 /* ======================= DATA ======================= */
 const NOW = new Date(); // hora real (datos reales vía data.js)
@@ -926,6 +926,35 @@ function hideSplash(){ const s=document.getElementById('splash'); if(s) s.style.
 function showLogin(){ document.getElementById('login').style.display='flex'; hideSplash(); }
 // cierra la sesión (p.ej. la auto-creada al registrarse) y vuelve al login limpio
 async function backToLogin(){ try{ localStorage.removeItem('tcv'); await DB.Auth.signOut(); }catch(e){} location.reload(); }
+/* ===== recuperar contraseña: llega por el enlace del correo → poner nueva clave ===== */
+function startRecovery(){
+  window.__recovery=true;
+  hideSplash();
+  const app=document.getElementById('app'); if(app) app.classList.remove('show','enter','leaving');
+  document.getElementById('login').style.display='flex';
+  const sc=document.getElementById('signupCard'); if(sc) sc.classList.add('hidden');
+  const lc=document.getElementById('loginCard'); lc.classList.remove('hidden');
+  const eye='<button type="button" class="pw-eye" onclick="togglePw(this)" aria-label="Ver contraseña">'+EYE_SVG+'</button>';
+  lc.innerHTML='<div class="brand"><div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#c6e84b" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M5 5c4 3 4 11 0 14M19 5c-4 3-4 11 0 14"/></svg></div>'+
+    '<h1>Nueva contraseña</h1><p>Escribe tu nueva contraseña para entrar.</p></div>'+
+    '<div class="field"><label>Nueva contraseña</label><div class="pw-wrap"><input id="rp1" type="password" placeholder="mínimo 6 caracteres">'+eye+'</div></div>'+
+    '<div class="field"><label>Repítela</label><div class="pw-wrap"><input id="rp2" type="password" placeholder="repítela" onkeydown="if(event.key===\'Enter\')doRecovery()">'+eye+'</div></div>'+
+    '<button class="btn-primary" onclick="doRecovery()">Guardar nueva contraseña</button>';
+}
+async function doRecovery(){
+  const a=document.getElementById('rp1').value, b=document.getElementById('rp2').value;
+  if((a||'').length<6){ toast('La contraseña debe tener al menos 6 caracteres.','warn'); return; }
+  if(a!==b){ toast('Las contraseñas no coinciden.','warn'); return; }
+  try{
+    await DB.Auth.updatePassword(a);
+    window.__recovery=false;
+    try{ localStorage.removeItem('tcv'); await DB.Auth.signOut(); }catch(e){}
+    document.getElementById('loginCard').innerHTML=
+      '<div class="brand"><div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#c6e84b" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M5 5c4 3 4 11 0 14M19 5c-4 3-4 11 0 14"/></svg></div>'+
+      '<h1>¡Contraseña actualizada!</h1><p>Ya puedes entrar con tu nueva contraseña.</p></div>'+
+      '<button class="btn-primary" onclick="backToLogin()">Entrar</button>';
+  }catch(e){ toast(e.message,'warn'); }
+}
 function showPending(){
   document.getElementById('login').style.display='flex'; hideSplash();
   document.getElementById('loginCard').innerHTML =
@@ -967,8 +996,10 @@ async function logout(){
 
 /* ===== sesión persistente: al refrescar, si hay sesión, vuelve a entrar (sin re-login) ===== */
 async function autoBoot(){
+  if(window.__recovery){ startRecovery(); return; }   // llegó por enlace de recuperación
   try{
     const prof = await DB.Auth.currentProfile();
+    if(window.__recovery){ startRecovery(); return; } // por si el evento llegó durante la carga
     if(!prof){ showLogin(); return; }                 // sin sesión → muestra el login
     if(prof.status!=='active'){ showPending(); return; }
     state.profile=prof;

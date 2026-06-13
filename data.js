@@ -21,6 +21,17 @@ const SUPABASE_ANON = 'sb_publishable_m1SllmJ_TksvKl8pRGA5RA_BlUjvE7S';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 const TZ = 'America/Bogota';
 
+// Recuperación de contraseña: cuando el usuario llega por el enlace del correo,
+// Supabase dispara este evento. Avisamos a la app para mostrar "nueva contraseña".
+try{
+  sb.auth.onAuthStateChange((event)=>{
+    if(event==='PASSWORD_RECOVERY' && typeof window!=='undefined'){
+      window.__recovery=true;
+      if(typeof window.startRecovery==='function') window.startRecovery();
+    }
+  });
+}catch(e){}
+
 /* ===== Helpers de fecha/hora (Colombia es UTC−5 fijo, sin horario de verano) ===== */
 // ISO (timestamptz) → partes en hora de Bogotá: {date:'YYYY-MM-DD', h, min}
 function bogotaParts(iso){
@@ -160,7 +171,8 @@ const Auth = {
   async resetPassword(identifier){
     const email=await resolveEmail(identifier);
     if(!email) throw new Error('No encontramos ese usuario o correo.');
-    await sb.auth.resetPasswordForEmail(email);
+    const redirectTo = (typeof location!=='undefined') ? (location.origin + location.pathname.replace(/index\.html$/,'')) : undefined;
+    await sb.auth.resetPasswordForEmail(email, redirectTo ? {redirectTo} : undefined);
   },
   async updatePassword(newPass){ const {error}=await sb.auth.updateUser({password:newPass}); if(error) throw new Error(error.message); },
   async currentProfile(){                          // {id,full_name,role,status,phone} o null
