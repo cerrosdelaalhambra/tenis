@@ -1105,7 +1105,7 @@ function navItems(){
   const cal={id:'calendar', label:'Calendario', icon:'cal'};
   const notif={id:'notif', label:'Notificaciones', icon:'bell', badge:visibleNotifs().filter(n=>n.unread).length};
   const hist={id:'history', label:'Historial', icon:'history'};
-  if(state.role==='portero') return [{id:'lights', label:'Iluminación', icon:'bulb'}, {id:'rain', label:'Modo lluvia', icon:'rain'}];
+  if(state.role==='portero') return [{id:'porteria', label:'Inicio', icon:'bulb'}];
   if(state.role==='admin') return [cal,
     {id:'users', label:'Usuarios', icon:'users'},
     {id:'avail', label:'Disponibilidad', icon:'clock'},
@@ -1150,6 +1150,11 @@ function render(){
       ${it.badge?`<span class="tb">${it.badge}</span>`:''}
     </button>`).join('');
 
+  // Portería: una sola pantalla, sin menú lateral ni barra inferior (máxima sencillez)
+  const soloUna = state.role==='portero';
+  document.getElementById('nav').style.display = soloUna ? 'none' : '';
+  document.getElementById('tabbar').style.display = soloUna ? 'none' : '';
+
   // bell count
   const unread=visibleNotifs().filter(n=>n.unread).length;
   document.getElementById('mbell').style.display=unread?'flex':'none';
@@ -1157,11 +1162,11 @@ function render(){
   document.getElementById('mhBell').style.display=items.some(i=>i.id==='notif')?'':'none';
 
   // titles
-  const titles={calendar:'Calendario de reservas',mine:'Mis reservas',lights:'Iluminación',rain:'Modo lluvia',
+  const titles={calendar:'Calendario de reservas',mine:'Mis reservas',lights:'Iluminación',rain:'Modo lluvia',porteria:'Cancha de tenis',
     notif:'Notificaciones',users:'Gestión de usuarios',avail:'Disponibilidad en clases del profesor',maint:'Mantenimiento de la cancha',history:'Historial de actividad'};
   document.getElementById('ttitle').textContent=titles[state.view];
   document.getElementById('mtitle').textContent=titles[state.view];
-  const subs={calendar:'',mine:'Tus reservas y tu cupo de la semana',lights:'Horarios para prender y apagar las luces',rain:'Cierra la cancha cuando esté lloviendo o encharcada',notif:'Avisos de la cancha',users:'Crea y administra las cuentas',avail:state.role==='prof'?'Abre tus horarios para práctica libre o clase':'Abre horarios de clase del profesor',maint:'Cierra la cancha por reparaciones',history:'Quién reserva y cancela, y a qué hora'};
+  const subs={calendar:'',mine:'Tus reservas y tu cupo de la semana',lights:'Horarios para prender y apagar las luces',rain:'Cierra la cancha cuando esté lloviendo o encharcada',porteria:'Luces de la cancha y modo lluvia',notif:'Avisos de la cancha',users:'Crea y administra las cuentas',avail:state.role==='prof'?'Abre tus horarios para práctica libre o clase':'Abre horarios de clase del profesor',maint:'Cierra la cancha por reparaciones',history:'Quién reserva y cancela, y a qué hora'};
   document.getElementById('tsub').textContent=subs[state.view]||'';
   document.getElementById('weekNav').style.display='none';
 
@@ -1180,6 +1185,7 @@ function render(){
   else if(state.view==='mine') c.innerHTML=viewMine();
   else if(state.view==='lights') c.innerHTML=viewLights();
   else if(state.view==='rain') c.innerHTML=viewRain();
+  else if(state.view==='porteria') c.innerHTML=viewPorteria();
   else if(state.view==='notif') c.innerHTML=viewNotif();
   else if(state.view==='users') c.innerHTML=viewUsers();
   else if(state.view==='avail') c.innerHTML=viewAvail();
@@ -1521,6 +1527,10 @@ function viewMine(){
 
 /* ---- PORTERO: ILUMINACIÓN ---- */
 /* ---- PORTERÍA: modo lluvia ---- */
+/* ---- Portería: todo en una sola pantalla (modo lluvia arriba + luces abajo) ---- */
+function viewPorteria(){
+  return `${viewRain()}<div style="height:16px"></div>${viewLights()}`;
+}
 function viewRain(){
   const active=rainActive();
   let hasta='';
