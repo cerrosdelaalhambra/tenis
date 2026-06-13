@@ -701,7 +701,7 @@
 <div id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="data.js?v=20260613d"></script>
+<script src="data.js?v=20260613e"></script>
 <script>
 /* ======================= DATA ======================= */
 const NOW = new Date(); // hora real (datos reales vía data.js)
@@ -1711,7 +1711,7 @@ function viewUsers(){
       ? `<button class="btn-cancel" onclick="openReject(${i})">Rechazar</button>
          <button onclick="openApprove(${i})" style="padding:8px 14px;border-radius:10px;border:none;background:var(--court);color:#fff;font-size:13px;font-weight:600;white-space:nowrap">Aprobar</button>`
       : (u.active
-         ? `<button class="btn-ghost" style="box-shadow:none" onclick="openSetPassword(${i})">Cambiar clave</button>
+         ? `${(u.role==='portero'||u.role==='prof')?`<button class="btn-ghost" style="box-shadow:none" onclick="openSetPassword(${i})">Cambiar clave</button>`:''}
             <button class="btn-cancel" onclick="setUserActive('${u.id}', false)">Desactivar</button>`
          : `<button class="btn-cancel" onclick="setUserActive('${u.id}', true)">Activar</button>
             <button class="btn-cancel" style="border-color:#eecaca;color:#b3261e;background:#fff" onclick="openDeleteUser(${i})">Eliminar</button>`)}
