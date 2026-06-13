@@ -701,7 +701,7 @@
 <div id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="data.js?v=20260612b"></script>
+<script src="data.js?v=20260613"></script>
 <script>
 /* ======================= DATA ======================= */
 const NOW = new Date(); // hora real (datos reales vía data.js)
@@ -993,7 +993,8 @@ function openAccount(){
   m.innerHTML=`<div class="grab"></div><h3>${state.user&&state.user.name||'Mi cuenta'}</h3>
     <div class="msub">${(state.user&&state.user.houses&&state.user.houses.join(', '))||(state.user&&state.user.house)||''}</div>
     <button class="btn-primary" onclick="openChangePassword()">Cambiar contraseña</button>
-    <button class="btn-soft" style="width:100%;margin-top:10px" onclick="logout()">Cerrar sesión</button>`;
+    <button class="btn-soft" style="width:100%;margin-top:10px" onclick="logout()">Cerrar sesión</button>
+    ${isMember()?`<button class="btn-soft" style="width:100%;margin-top:10px;color:#b3261e" onclick="openDeleteSelf()">Eliminar mi cuenta</button>`:''}`;
   document.getElementById('modalBg').classList.add('show');
 }
 function openChangePassword(){
@@ -1678,7 +1679,10 @@ function viewUsers(){
     ${u.status==='pending'
       ? `<button class="btn-cancel" onclick="openReject(${i})">Rechazar</button>
          <button onclick="openApprove(${i})" style="padding:8px 14px;border-radius:10px;border:none;background:var(--court);color:#fff;font-size:13px;font-weight:600;white-space:nowrap">Aprobar</button>`
-      : `<button class="btn-cancel" onclick="setUserActive('${u.id}', ${!u.active})">${u.active?'Desactivar':'Activar'}</button>`}
+      : (u.active
+         ? `<button class="btn-cancel" onclick="setUserActive('${u.id}', false)">Desactivar</button>`
+         : `<button class="btn-cancel" onclick="setUserActive('${u.id}', true)">Activar</button>
+            <button class="btn-cancel" style="border-color:#eecaca;color:#b3261e;background:#fff" onclick="openDeleteUser(${i})">Eliminar</button>`)}
   </div>`;}).join(''):'<div class="empty" style="padding:30px">Aún no hay cuentas.</div>';
   return settings+`<div class="panel"><div class="panel-h"><h3>${users.length} usuarios</h3><div class="spacer"></div>
     <button class="btn-mini" onclick="openNewUser()">+ Nuevo</button></div>${rows}</div>
@@ -1759,21 +1763,50 @@ async function doReject(id){
   try{ await DB.Admin.setStatus(id,'inactive'); await loadData(); render(); toast('Solicitud rechazada'); }
   catch(e){ toast(e.message,'warn'); }
 }
+/* ===== Eliminar cuenta (admin) ===== */
+function openDeleteUser(i){
+  const u=users[i];
+  const m=document.getElementById('modal');
+  m.innerHTML=`<div class="grab"></div><h3>Eliminar cuenta</h3>
+    <div class="msub">¿Seguro que quieres <b>eliminar definitivamente</b> la cuenta de <b>${u.name}</b>${u.username?' (@'+u.username+')':''}? Esto borra el usuario y sus reservas. <b>No se puede deshacer.</b></div>
+    <div class="modal-actions"><button class="btn-soft" onclick="closeModal()">Cancelar</button>
+    <button class="btn-cancel" onclick="doDeleteUser('${u.id}')">Eliminar</button></div>`;
+  document.getElementById('modalBg').classList.add('show');
+}
+async function doDeleteUser(id){
+  closeModal();
+  try{ await DB.Admin.deleteUser(id); await loadData(); render(); toast('Cuenta eliminada'); }
+  catch(e){ toast(e.message,'warn'); }
+}
+/* ===== Eliminar mi propia cuenta (el usuario) ===== */
+function openDeleteSelf(){
+  const m=document.getElementById('modal');
+  m.innerHTML=`<div class="grab"></div><h3>Eliminar mi cuenta</h3>
+    <div class="msub">¿Seguro que quieres <b>eliminar tu cuenta</b>? Se borrará tu usuario y tus reservas, y se cerrará la sesión. <b>No se puede deshacer.</b></div>
+    <div class="modal-actions"><button class="btn-soft" onclick="closeModal()">Cancelar</button>
+    <button class="btn-cancel" onclick="doDeleteSelf()">Eliminar mi cuenta</button></div>`;
+  document.getElementById('modalBg').classList.add('show');
+}
+async function doDeleteSelf(){
+  try{
+    await DB.Admin.deleteUser(state.profile.id);
+    try{ localStorage.removeItem('tcv'); await DB.Auth.signOut(); }catch(e){}
+    location.reload();
+  }catch(e){ toast(e.message,'warn'); }
+}
 
 /* ===== Crear cuenta desde el panel (admin) ===== */
 function genPass(){ return 'Tenis'+Math.floor(1000+Math.random()*9000); }
 function openNewUser(){
   const m=document.getElementById('modal');
-  m.innerHTML=`<div class="grab"></div><h3>Crear cuenta</h3>
+  m.innerHTML=`<div class="grab"></div><h3>Crear residente</h3>
     <div class="msub">Queda activa de inmediato. Comparte la clave temporal con la persona; podrá cambiarla al entrar.</div>
     <div class="opt-label">Nombre y apellido</div><input id="nuName" style="${FORM_INP}" placeholder="Nombre y apellido">
     <div class="opt-label">Usuario <span style="font-weight:500;color:var(--muted)">(para entrar)</span></div><input id="nuUser" style="${FORM_INP}" placeholder="ej. pedro27" autocomplete="off">
     <div class="opt-label">Correo</div><input id="nuEmail" type="email" style="${FORM_INP}" placeholder="correo@ejemplo.com">
     <div class="opt-label">Celular</div><input id="nuPhone" type="tel" style="${FORM_INP}" placeholder="300 123 4567">
-    <div class="opt-label">Rol</div>
-    ${psel('nuRole',ROLE_OPTS,'member','nuRoleChange')}
-    <div id="nuHouseRow"><div class="opt-label">Casa</div><input id="nuHouse" style="${FORM_INP}" placeholder="Ej. 29A, 21B…" oninput="houseHint('nuHouse','nuHint')">
-    <div id="nuHint" style="font-size:12px;min-height:16px;margin-bottom:4px"></div></div>
+    <div class="opt-label">Casa</div><input id="nuHouse" style="${FORM_INP}" placeholder="Ej. 29A, 21B…" oninput="houseHint('nuHouse','nuHint')">
+    <div id="nuHint" style="font-size:12px;min-height:16px;margin-bottom:4px"></div>
     <div class="opt-label">Clave temporal</div><input id="nuPass" style="${FORM_INP}" value="${genPass()}">
     <div class="modal-actions"><button class="btn-soft" onclick="closeModal()">Cancelar</button>
     <button class="btn-primary" onclick="doCreateUser()">Crear cuenta</button></div>`;
@@ -1784,15 +1817,15 @@ async function doCreateUser(){
   const email=(document.getElementById('nuEmail').value||'').trim();
   const username=(document.getElementById('nuUser').value||'').trim().toLowerCase();
   const phone=(document.getElementById('nuPhone').value||'').trim();
-  const role=document.getElementById('nuRole').value;
+  const role='member';   // el admin solo crea residentes (portería/profesor/admin son fijos, por SQL)
   const pass=(document.getElementById('nuPass').value||'').trim();
-  const house=role==='member'?(document.getElementById('nuHouse').value||'').trim():'';
+  const house=(document.getElementById('nuHouse').value||'').trim();
   if(name.split(/\s+/).filter(Boolean).length<2){toast('Escribe nombre y apellido.','warn');return;}
   if(!/.+@.+\..+/.test(email)){toast('Escribe un correo válido.','warn');return;}
   if(username&&!userValid(username)){toast('Usuario inválido: 3 a 20 letras o números (sin espacios).','warn');return;}
   if(pass.length<6){toast('La clave debe tener al menos 6 caracteres.','warn');return;}
-  if(role==='member'&&!house){toast('Escribe la casa del residente.','warn');return;}
-  if(role==='member'&&!houseValid(house)){toast('Casa inválida: usa solo números y letras (ej. 29A).','warn');return;}
+  if(!house){toast('Escribe la casa del residente.','warn');return;}
+  if(!houseValid(house)){toast('Casa inválida: usa solo números y letras (ej. 29A).','warn');return;}
   const btn=event&&event.target; if(btn){btn.disabled=true;btn.textContent='Creando…';}
   try{
     await DB.Admin.createUser({email,password:pass,full_name:name,phone,role,house,username});

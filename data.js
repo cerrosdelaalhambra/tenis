@@ -114,6 +114,8 @@ const CREATE_ERR = {
   USUARIO_INVALIDO:'Usuario inválido: 3 a 20 letras o números (sin espacios).',
   USUARIO_YA_EXISTE:'Ese usuario ya está en uso.',
   FALTA_CORREO_O_USUARIO:'Pon un correo o un usuario (al menos uno).',
+  ULTIMO_ADMIN:'No puedes eliminar al único administrador.',
+  FALTA_ID:'Falta indicar la cuenta a eliminar.',
   ERROR_AL_CREAR:'No se pudo crear la cuenta.'
 };
 function createErr(code){ return new Error(CREATE_ERR[code] || code || 'No se pudo crear la cuenta.'); }
@@ -332,6 +334,20 @@ const Admin = {
       else if(String(status)==='401' || String(status)==='403') msg+='. Vuelve a entrar como administrador.';
       else if(code) msg+='. ('+code+')';
       throw new Error(msg);
+    }
+    if(data&&data.error) throw createErr(data.error);
+    return data;
+  },
+  // Eliminar una cuenta (vía Edge Function con llave secreta). El admin borra a
+  // cualquiera; un usuario se borra a sí mismo pasando su propio id.
+  async deleteUser(profileId){
+    const {data,error}=await sb.functions.invoke('delete-user',{body:{user_id:profileId}});
+    if(error){
+      let code='', status='';
+      try{ status=error.context && error.context.status; }catch(_){}
+      try{ const j=await error.context.json(); code=j&&j.error; }catch(_){}
+      if(code && CREATE_ERR[code]) throw createErr(code);
+      throw new Error('No se pudo eliminar la cuenta'+(status?' (error '+status+')':'')+'. Revisa que la función "delete-user" esté desplegada en Supabase.');
     }
     if(data&&data.error) throw createErr(data.error);
     return data;
