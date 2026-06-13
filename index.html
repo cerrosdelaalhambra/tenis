@@ -150,6 +150,8 @@
   .user-chip span{font-size:11px;color:#9fc4ba}
   .logout{margin-top:8px;width:100%;text-align:left;padding:9px 12px;border-radius:10px;color:#9fc4ba;font-size:13px}
   .logout:hover{background:rgba(255,255,255,.07);color:#fff}
+  .logout.danger{color:#f0a6a6}
+  .logout.danger:hover{background:rgba(225,90,90,.16);color:#ffbcbc}
 
   /* Main */
   .main{margin-left:248px;min-height:100vh;display:flex;flex-direction:column}
@@ -654,9 +656,9 @@
         <div class="avatar" id="avatar">AP</div>
         <div class="meta"><b id="uname">Ana Pérez</b><span id="urole">Casa 12 · Miembro</span></div>
       </div>
+      <button class="logout danger" id="sideDelete" style="display:none" onclick="openDeleteSelf()">Eliminar mi cuenta</button>
       <button class="logout" onclick="openChangePassword()">Cambiar contraseña</button>
       <button class="logout" onclick="logout()">Cerrar sesión</button>
-      <button class="logout" id="sideDelete" style="display:none;color:#b3261e" onclick="openDeleteSelf()">Eliminar mi cuenta</button>
     </div>
   </aside>
 
@@ -1030,9 +1032,9 @@ function openAccount(){
   const m=document.getElementById('modal');
   m.innerHTML=`<div class="grab"></div><h3>${state.user&&state.user.name||'Mi cuenta'}</h3>
     <div class="msub">${(state.user&&state.user.houses&&state.user.houses.join(', '))||(state.user&&state.user.house)||''}</div>
-    <button class="btn-primary" onclick="openChangePassword()">Cambiar contraseña</button>
-    <button class="btn-soft" style="width:100%;margin-top:10px" onclick="logout()">Cerrar sesión</button>
-    ${isMember()?`<button class="btn-soft" style="width:100%;margin-top:10px;color:#b3261e" onclick="openDeleteSelf()">Eliminar mi cuenta</button>`:''}`;
+    ${isMember()?`<button class="btn-soft" style="width:100%;margin-top:10px;color:#c1121f" onclick="openDeleteSelf()">Eliminar mi cuenta</button>`:''}
+    <button class="btn-soft" style="width:100%;margin-top:10px" onclick="openChangePassword()">Cambiar contraseña</button>
+    <button class="btn-soft" style="width:100%;margin-top:10px" onclick="logout()">Cerrar sesión</button>`;
   document.getElementById('modalBg').classList.add('show');
 }
 function openChangePassword(){
