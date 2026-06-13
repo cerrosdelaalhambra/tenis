@@ -178,7 +178,8 @@ const Auth = {
   async currentProfile(){                          // {id,full_name,role,status,phone} o null
     const {data:{user}}=await sb.auth.getUser();
     if(!user) return null;
-    const {data}=await sb.from('profiles').select('id,full_name,role,status,phone,notif_seen_at').eq('id',user.id).single();
+    let {data,error}=await sb.from('profiles').select('id,full_name,role,status,phone,notif_seen_at').eq('id',user.id).single();
+    if(error){ const r=await sb.from('profiles').select('id,full_name,role,status,phone').eq('id',user.id).single(); data=r.data; } // por si aún no existe notif_seen_at
     return data || null;
   }
 };
@@ -408,10 +409,15 @@ const Rain = {
 };
 async function markNotif(id, status){ const {error}=await sb.from('notifications').update({status, read:true}).eq('id',id); if(error) throw mapError(error); }
 async function markAllRead(profileId){
-  // 1) marca las personales como leídas  2) avanza la marca de tiempo del usuario
-  //    (así las notificaciones por rol, que se comparten, tampoco vuelven a salir como nuevas)
-  await sb.from('notifications').update({read:true}).eq('profile_id',profileId).eq('read',false);
-  await sb.from('profiles').update({notif_seen_at:new Date().toISOString()}).eq('id',profileId);
+  // Marca todo como leído usando la HORA DEL SERVIDOR (la función RPC usa now()),
+  // así no hay desfase con el reloj del dispositivo y las notificaciones por rol
+  // (que se comparten) tampoco vuelven a salir como nuevas al recargar.
+  const {error}=await sb.rpc('notif_mark_all_read');
+  if(error){ // respaldo por si la función aún no está desplegada
+    console.warn('notif_mark_all_read:', error.message);
+    await sb.from('notifications').update({read:true}).eq('profile_id',profileId).eq('read',false);
+    await sb.from('profiles').update({notif_seen_at:new Date().toISOString()}).eq('id',profileId);
+  }
 }
 
 /* ===== API pública del módulo ===== */
