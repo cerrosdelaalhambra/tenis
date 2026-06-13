@@ -650,6 +650,7 @@
       </div>
       <button class="logout" onclick="openChangePassword()">Cambiar contraseña</button>
       <button class="logout" onclick="logout()">Cerrar sesión</button>
+      <button class="logout" id="sideDelete" style="display:none;color:#b3261e" onclick="openDeleteSelf()">Eliminar mi cuenta</button>
     </div>
   </aside>
 
@@ -701,7 +702,7 @@
 <div id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="data.js?v=20260613e"></script>
+<script src="data.js?v=20260613f"></script>
 <script>
 /* ======================= DATA ======================= */
 const NOW = new Date(); // hora real (datos reales vía data.js)
@@ -1154,6 +1155,9 @@ function render(){
   const soloUna = state.role==='portero';
   document.getElementById('nav').style.display = soloUna ? 'none' : '';
   document.getElementById('tabbar').style.display = soloUna ? 'none' : '';
+
+  // "Eliminar mi cuenta" en la barra lateral (web): solo residentes
+  const sd=document.getElementById('sideDelete'); if(sd) sd.style.display = isMember() ? '' : 'none';
 
   // bell count
   const unread=visibleNotifs().filter(n=>n.unread).length;

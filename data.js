@@ -178,7 +178,7 @@ const Auth = {
   async currentProfile(){                          // {id,full_name,role,status,phone} o null
     const {data:{user}}=await sb.auth.getUser();
     if(!user) return null;
-    const {data}=await sb.from('profiles').select('id,full_name,role,status,phone').eq('id',user.id).single();
+    const {data}=await sb.from('profiles').select('id,full_name,role,status,phone,notif_seen_at').eq('id',user.id).single();
     return data || null;
   }
 };
@@ -239,14 +239,17 @@ async function getMyReservations(myHouseIds){
     .in('house_id', myHouseIds).order('starts_at');
   return (data||[]).map(r=>mapReservation({...r, house_label:r.houses&&r.houses.label}));
 }
-async function getNotifications(role, profileId){
+async function getNotifications(role, profileId, seenAt){
   const {data}=await sb.from('notifications').select('*, houses(label)')
     .or(`profile_id.eq.${profileId},role.eq.${role}`).order('created_at',{ascending:false});
+  const seen = seenAt ? new Date(seenAt).getTime() : 0;   // marca de "todo leído" del usuario
   return (data||[]).map(n=>({
     id:n.id, type:n.type, title:n.title, body:n.body,
     roles: n.role==='member' ? ['member','master'] : (n.role ? [n.role] : ['member','master']),
     resId: n.reservation_id, house: n.houses && n.houses.label,
-    status: n.status, unread: !n.read, time: relTime(n.created_at)
+    // No leída solo si no está marcada y es más nueva que la marca del usuario.
+    // Así las notificaciones por rol (sin profile_id) tampoco reaparecen tras recargar.
+    status: n.status, unread: !n.read && new Date(n.created_at).getTime() > seen, time: relTime(n.created_at)
   }));
 }
 async function getActivity(){                       // historial (admin/portería)
@@ -286,7 +289,7 @@ async function fetchAll(profile){
   const myHouses = isMemberRole(profile.role) ? await getMyHouses(profile.id) : [];
   const [reservations, releases, closures, holidays, houses, cupo, notifs] = await Promise.all([
     getCalendar(profile.role), getReleases(), getClosures(), getHolidays(),
-    getHouses(), getCupo(), getNotifications(profile.role, profile.id)
+    getHouses(), getCupo(), getNotifications(profile.role, profile.id, profile.notif_seen_at)
   ]);
   const bundle = { profile, myHouses, reservations, releases, closures, holidays, houses, cupo, notifs };
   if(isMemberRole(profile.role)) bundle.mine = await getMyReservations(myHouses.map(h=>h.id));
@@ -404,7 +407,12 @@ const Rain = {
   async deactivate(){ const {error}=await sb.rpc('deactivate_rain'); if(error) throw mapError(error); }
 };
 async function markNotif(id, status){ const {error}=await sb.from('notifications').update({status, read:true}).eq('id',id); if(error) throw mapError(error); }
-async function markAllRead(profileId){ await sb.from('notifications').update({read:true}).eq('profile_id',profileId).eq('read',false); }
+async function markAllRead(profileId){
+  // 1) marca las personales como leídas  2) avanza la marca de tiempo del usuario
+  //    (así las notificaciones por rol, que se comparten, tampoco vuelven a salir como nuevas)
+  await sb.from('notifications').update({read:true}).eq('profile_id',profileId).eq('read',false);
+  await sb.from('profiles').update({notif_seen_at:new Date().toISOString()}).eq('id',profileId);
+}
 
 /* ===== API pública del módulo ===== */
 window.DB = {
