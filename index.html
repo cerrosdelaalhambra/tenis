@@ -533,6 +533,12 @@
       border-radius:50%;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--court-dark)}
     .mh-top .mh-acct{color:#fff;display:flex;align-items:center}
     .mh-top .mh-acct svg{width:24px;height:24px}
+    /* Cuando no hay tira de días (p. ej. portería), el header queda equilibrado */
+    .mobile-head.no-strip{padding-bottom:13px}
+    .mobile-head.no-strip .mh-top{margin-bottom:0}
+    /* Descripciones un poco más grandes y legibles en el celular */
+    .quota .qtext b{font-size:16.5px}
+    .quota .qtext p{font-size:14px;line-height:1.6}
     .day-strip{display:flex;gap:6px;justify-content:space-between}
     .day-strip button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 0;
       border-radius:12px;color:#bcd6cf}
@@ -1182,6 +1188,7 @@ function render(){
   // mobile day strip — solo en el calendario
   renderDayStrip();
   const ds=document.getElementById('dayStrip'); if(ds) ds.style.display = state.view==='calendar' ? 'flex' : 'none';
+  const mh=document.querySelector('.mobile-head'); if(mh) mh.classList.toggle('no-strip', state.view!=='calendar');
 
   // content
   const c=document.getElementById('content');
@@ -1542,10 +1549,10 @@ function viewRain(){
   const ic=`<div style="width:66px;height:66px;border-radius:18px;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;background:#eef3fb">${svgIco(RAIN_P,32,'#33508a')}</div>`;
   const body = active
     ? `<h3 style="font-size:19px;margin-bottom:6px">Modo lluvia activo</h3>
-       <p style="font-size:14px;color:var(--muted);max-width:400px;margin:0 auto 20px;line-height:1.6">La cancha está cerrada por lluvia hasta las <b>${hasta}</b>. Ya se les avisó a quienes tenían reserva para que la cancelen.</p>
+       <p style="font-size:15px;color:var(--muted);max-width:400px;margin:0 auto 20px;line-height:1.6">La cancha está cerrada por lluvia hasta las <b>${hasta}</b>. Ya se les avisó a quienes tenían reserva para que la cancelen.</p>
        <button class="btn-cancel" onclick="openRainAffected()">Ver afectados / desactivar</button>`
     : `<h3 style="font-size:19px;margin-bottom:6px">Modo lluvia</h3>
-       <p style="font-size:14px;color:var(--muted);max-width:400px;margin:0 auto 20px;line-height:1.6">Si está lloviendo y la cancha quedó encharcada, ciérrala aquí. Se les avisará a quienes tengan reserva en esas horas para que la cancelen.</p>
+       <p style="font-size:15px;color:var(--muted);max-width:400px;margin:0 auto 20px;line-height:1.6">Si está lloviendo y la cancha quedó encharcada, ciérrala aquí. Se les avisará a quienes tengan reserva en esas horas para que la cancelen.</p>
        <button class="btn-primary" style="max-width:280px;margin:0 auto" onclick="openRainModal()">Activar modo lluvia</button>`;
   return `<div class="panel"><div style="padding:36px 22px;text-align:center">${ic}${body}</div></div>`;
 }
