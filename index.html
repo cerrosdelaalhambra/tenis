@@ -710,7 +710,7 @@
 <div id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="data.js?v=20260613g"></script>
+<script src="data.js?v=20260613h"></script>
 <script>
 /* ======================= DATA ======================= */
 const NOW = new Date(); // hora real (datos reales vía data.js)
@@ -973,7 +973,7 @@ function showPending(){
 }
 async function loadData(){
   const prof=state.profile;
-  const b=await DB.fetchAll({id:prof.id, role:prof.role});
+  const b=await DB.fetchAll({id:prof.id, role:prof.role, notif_seen_at:prof.notif_seen_at}); // notif_seen_at = marca de "todo leído"
   reservations=b.reservations||[]; released=b.releases||[];
   const allClos=b.closures||[]; const rainC=allClos.find(c=>c.kind==='rain' && c.endTs>Date.now());
   closures=allClos.filter(c=>c.kind!=='rain');                         // mantenimiento → maintAt
@@ -1135,7 +1135,15 @@ const ICONS={
   history:'<path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7.5v5l3.5 2"/>',
   rain:'<path d="M7 16a5 5 0 0 1-1-9.9A6 6 0 0 1 17.5 7 4.5 4.5 0 0 1 17 16M8 19v2M12 19v2M16 19v2"/>',
 };
-function go(view){ state.view=view; try{localStorage.setItem('tcv',view);}catch(e){} if(view==='notif'){ visibleNotifs().forEach(n=>n.unread=false); if(state.profile&&window.DB&&DB.markAllRead) DB.markAllRead(state.profile.id); } render(); scrollTop(); fadeContent(); }
+function go(view){ state.view=view; try{localStorage.setItem('tcv',view);}catch(e){}
+  if(view==='notif'){
+    visibleNotifs().forEach(n=>n.unread=false);
+    if(state.profile&&window.DB&&DB.markAllRead){
+      // guarda la marca de servidor en memoria, para que el refresco automático no las reviva
+      Promise.resolve(DB.markAllRead(state.profile.id)).then(ts=>{ if(ts&&state.profile) state.profile.notif_seen_at=ts; }).catch(()=>{});
+    }
+  }
+  render(); scrollTop(); fadeContent(); }
 function scrollTop(){ window.scrollTo(0,0); document.documentElement.scrollTop=0; document.body.scrollTop=0; }
 function fadeContent(){ const c=document.getElementById('content'); if(!c)return; c.style.animation='none'; void c.offsetWidth; c.style.animation='fadeView .22s ease'; }
 

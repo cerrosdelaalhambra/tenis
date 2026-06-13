@@ -409,15 +409,18 @@ const Rain = {
 };
 async function markNotif(id, status){ const {error}=await sb.from('notifications').update({status, read:true}).eq('id',id); if(error) throw mapError(error); }
 async function markAllRead(profileId){
-  // Marca todo como leído usando la HORA DEL SERVIDOR (la función RPC usa now()),
-  // así no hay desfase con el reloj del dispositivo y las notificaciones por rol
-  // (que se comparten) tampoco vuelven a salir como nuevas al recargar.
-  const {error}=await sb.rpc('notif_mark_all_read');
+  // Marca todo como leído con la HORA DEL SERVIDOR y la devuelve, para que la app
+  // la guarde en memoria sin desfase de reloj. Así las notificaciones por rol
+  // (que se comparten) tampoco vuelven a salir como nuevas al recargar/refrescar.
+  const {data,error}=await sb.rpc('notif_mark_all_read');
   if(error){ // respaldo por si la función aún no está desplegada
     console.warn('notif_mark_all_read:', error.message);
+    const now=new Date().toISOString();
     await sb.from('notifications').update({read:true}).eq('profile_id',profileId).eq('read',false);
-    await sb.from('profiles').update({notif_seen_at:new Date().toISOString()}).eq('id',profileId);
+    await sb.from('profiles').update({notif_seen_at:now}).eq('id',profileId);
+    return now;
   }
+  return data; // timestamptz del servidor
 }
 
 /* ===== API pública del módulo ===== */
