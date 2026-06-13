@@ -350,6 +350,19 @@ const Admin = {
     if(data&&data.error) throw createErr(data.error);
     return data;
   },
+  // Cambiar la clave de otra cuenta (admin) — útil para portería/profesor.
+  async setPassword(profileId, password){
+    const {data,error}=await sb.functions.invoke('admin-set-password',{body:{user_id:profileId, password}});
+    if(error){
+      let code='', status='';
+      try{ status=error.context && error.context.status; }catch(_){}
+      try{ const j=await error.context.json(); code=j&&j.error; }catch(_){}
+      if(code && CREATE_ERR[code]) throw createErr(code);
+      throw new Error('No se pudo cambiar la clave'+(status?' (error '+status+')':'')+'. Revisa que la función "admin-set-password" esté desplegada.');
+    }
+    if(data&&data.error) throw createErr(data.error);
+    return data;
+  },
   // Eliminar una cuenta (vía Edge Function con llave secreta). El admin borra a
   // cualquiera; un usuario se borra a sí mismo pasando su propio id.
   async deleteUser(profileId){
