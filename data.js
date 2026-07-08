@@ -99,7 +99,12 @@ const ERR_MSG = {
   CASA_NO_TUYA:'Esa casa no está vinculada a tu cuenta.',
   FUERA_DE_VENTANA:'Ya no se puede cancelar (muy cerca de la hora).',
   SIN_PERMISO:'No tienes permiso para esta acción.',
-  NO_EXISTE:'La reserva ya no existe.'
+  NO_EXISTE:'La reserva ya no existe.',
+  PERM_DESHABILITADO:'Los horarios permanentes no están habilitados por ahora.',
+  SOLO_RESIDENTE:'Solo un residente puede solicitar un horario permanente.',
+  NO_ES_HORA_DEL_PROFESOR:'Un horario permanente solo se puede pedir en una hora del profesor.',
+  YA_SOLICITADO:'Ya existe una solicitud o un horario permanente para ese día y hora.',
+  YA_RESUELTA:'Esa solicitud ya fue atendida.'
 };
 function mapError(error){
   const raw=(error && (error.message||error.hint||'')) || '';
@@ -210,6 +215,17 @@ async function getProfFlexible(){
   const {data}=await sb.from('app_config').select('value').eq('key','prof_flexible').single();
   return data ? (data.value==='true') : false;
 }
+// Horarios permanentes (según RLS: el residente ve los suyos; profesor/admin todos). Resistente si la tabla no existe.
+async function getRecurring(){
+  const {data}=await sb.from('recurring_classes').select('id,house_id,profile_id,dow,start_min,end_min,status,created_at,houses(label)').order('created_at',{ascending:false});
+  return (data||[]).map(r=>({id:r.id, houseId:r.house_id, house:(r.houses&&r.houses.label)||'', profileId:r.profile_id, dow:r.dow, startMin:r.start_min, endMin:r.end_min, status:r.status}));
+}
+// Configuración de horarios permanentes: habilitado + a quién llegan las solicitudes.
+async function getPermConfig(){
+  const {data}=await sb.from('app_config').select('key,value').in('key',['perm_enabled','perm_route']);
+  const m={}; (data||[]).forEach(x=>m[x.key]=x.value);
+  return {enabled:m.perm_enabled==='true', route:m.perm_route||'both'};
+}
 async function getHolidays(){
   const {data}=await sb.from('holidays').select('day');
   return new Set((data||[]).map(r=>r.day));
@@ -257,7 +273,7 @@ async function getNotifications(role, profileId, seenAt){
   return (data||[]).map(n=>({
     id:n.id, type:n.type, title:n.title, body:n.body,
     roles: n.role==='member' ? ['member','master'] : (n.role ? [n.role] : ['member','master']),
-    resId: n.reservation_id, house: n.houses && n.houses.label,
+    resId: n.reservation_id, recId: n.recurring_id, house: n.houses && n.houses.label,
     // No leída solo si no está marcada y es más nueva que la marca del usuario.
     // Así las notificaciones por rol (sin profile_id) tampoco reaparecen tras recargar.
     status: n.status, unread: !n.read && new Date(n.created_at).getTime() > seen, time: relTime(n.created_at)
@@ -298,12 +314,13 @@ async function getUsers(){                          // lista de cuentas (admin/p
 // Trae TODO lo necesario para pintar, según el perfil logueado
 async function fetchAll(profile){
   const myHouses = isMemberRole(profile.role) ? await getMyHouses(profile.id) : [];
-  const [reservations, releases, closures, holidays, houses, cupo, notifs, profSchedule, profFlexible] = await Promise.all([
+  const [reservations, releases, closures, holidays, houses, cupo, notifs, profSchedule, profFlexible, recurring, permCfg] = await Promise.all([
     getCalendar(profile.role), getReleases(), getClosures(), getHolidays(),
     getHouses(), getCupo(), getNotifications(profile.role, profile.id, profile.notif_seen_at),
-    getProfSchedule(), getProfFlexible()
+    getProfSchedule(), getProfFlexible(), getRecurring(), getPermConfig()
   ]);
-  const bundle = { profile, myHouses, reservations, releases, closures, holidays, houses, cupo, notifs, profSchedule, profFlexible };
+  const bundle = { profile, myHouses, reservations, releases, closures, holidays, houses, cupo, notifs, profSchedule, profFlexible,
+                   recurring, permEnabled:permCfg.enabled, permRoute:permCfg.route };
   if(isMemberRole(profile.role)) bundle.mine = await getMyReservations(myHouses.map(h=>h.id));
   if(profile.role==='admin'||profile.role==='portero'){ bundle.activity = await getActivity(); bundle.users = await getUsers(); }
   return bundle;
@@ -325,12 +342,23 @@ async function cancel(id){
   const {error}=await sb.rpc('cancel_reservation',{p_id:id});
   if(error) throw mapError(error);
 }
+/* ===== Horarios permanentes (Etapa 3) ===== */
+async function requestRecurring(houseId, dow, startMin, endMin){
+  const {data,error}=await sb.rpc('request_recurring',{p_house:houseId, p_dow:dow, p_start_min:startMin, p_end_min:endMin});
+  if(error) throw mapError(error); return data;
+}
+async function decideRecurring(id, approve){ const {error}=await sb.rpc('decide_recurring',{p_id:id, p_approve:approve}); if(error) throw mapError(error); }
+async function cancelRecurring(id){ const {error}=await sb.rpc('cancel_recurring',{p_id:id}); if(error) throw mapError(error); }
+async function materializeRecurring(){ const {error}=await sb.rpc('materialize_recurring'); if(error) console.warn('materialize_recurring:', error.message); }
 
 /* ===== Acciones de gestión (hitos siguientes; aquí las simples) ===== */
 const Admin = {
   async setCupo(hours){ const {error}=await sb.from('app_config').update({value:String(hours)}).eq('key','weekly_cupo_hours'); if(error) throw mapError(error); },
   // Modo flexible del horario del profesor (interruptor global)
   async setProfFlexible(on){ const {error}=await sb.from('app_config').update({value:on?'true':'false'}).eq('key','prof_flexible'); if(error) throw mapError(error); },
+  // Horarios permanentes: habilitar y a quién llegan las solicitudes
+  async setPermEnabled(on){ const {error}=await sb.from('app_config').update({value:on?'true':'false'}).eq('key','perm_enabled'); if(error) throw mapError(error); },
+  async setPermRoute(route){ const {error}=await sb.from('app_config').update({value:route}).eq('key','perm_route'); if(error) throw mapError(error); },
   // Reemplaza TODO el horario del profesor por las filas dadas ([{dow,startMin,endMin}])
   async setProfSchedule(rows){
     const del=await sb.from('prof_schedule').delete().gte('dow',0);
@@ -449,6 +477,7 @@ async function markAllRead(profileId){
 window.DB = {
   Auth, Admin, Rain,
   fetchAll, book, cancel, markNotif, markAllRead,
+  requestRecurring, decideRecurring, cancelRecurring, materializeRecurring,
   getHouses, getMyHouses, getCalendar, getMyReservations, getNotifications, getActivity,
   // utilidades por si se necesitan en app.js:
   bogotaParts, toISO, isMemberRole, normHouse

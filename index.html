@@ -347,6 +347,10 @@
   .sched-del{color:#b3261e;font-size:14px;padding:4px 8px;border-radius:8px}
   .sched-del:hover{background:#fdecea}
   .sched-empty{font-size:12px;color:var(--muted);padding:2px 2px 4px}
+  .perm-note{background:#eef4fb;border:1px solid #cfe0f5;border-radius:12px;padding:11px 13px}
+  .perm-note b{display:block;font-size:13px;color:#2b567f;margin-bottom:2px}
+  .perm-note span{font-size:12.5px;color:var(--muted);line-height:1.5}
+  .seg.seg-wrap{flex-wrap:wrap}
   .half.h-bonus:hover{background:var(--court-soft)}
   .half.h-na{background:#fafbfb;border:1px solid #eef1f0;color:#c2c8c6;justify-content:center;font-size:9px}
   .wgrid.filtering .slot:not(.s-free):not(.s-bonus):not(.s-flex){opacity:.12;pointer-events:none}
@@ -730,7 +734,7 @@
 <div id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="data.js?v=20260614a"></script>
+<script src="data.js?v=20260614b"></script>
 <script>
 /* ======================= DATA ======================= */
 const NOW = new Date(); // hora real (datos reales vía data.js)
@@ -827,6 +831,9 @@ let closures = [];   // cierres (mantenimiento/lluvia), desde la base
 let notifs = [];     // notificaciones, desde la base
 let PROF_SCHEDULE = [];   // horario del profesor (editable por el admin); [] = usa el horario fijo de respaldo
 let PROF_FLEX = false;    // modo flexible: horas del profesor reservables por el residente
+let RECURRING = [];       // horarios permanentes (clases fijas), desde la base
+let PERM_ENABLED = false; // ¿se pueden solicitar horarios permanentes?
+let PERM_ROUTE = 'both';  // a quién llegan: 'prof' | 'admin' | 'both'
 function visibleNotifs(){return notifs.filter(n=>{
   if(n.roles && !n.roles.includes(state.role)) return false;
   if(n.type==='rain' && n.house && isMember() && !myHouses().includes(n.house)) return false; // la solicitud por lluvia solo le llega al dueño afectado
@@ -1008,6 +1015,7 @@ async function loadData(){
   state.rainHours = rainC ? Math.max(1,Math.round((rainC.endTs-rainC.startTs)/3600000)) : 0;
   HOLIDAYS=b.holidays||new Set(); notifs=b.notifs||[]; activity=b.activity||[]; users=b.users||[];
   PROF_SCHEDULE=b.profSchedule||[]; PROF_FLEX=!!b.profFlexible;
+  RECURRING=b.recurring||[]; PERM_ENABLED=!!b.permEnabled; PERM_ROUTE=b.permRoute||'both';
   houses=(b.houses||[]).map(h=>h.label); houseIdByLabel={}; houseLabelById={};
   (b.houses||[]).forEach(h=>{ houseIdByLabel[h.label]=h.id; houseLabelById[h.id]=h.label; });
   CUPO=b.cupo||2;
@@ -1040,6 +1048,7 @@ async function autoBoot(){
     if(!prof){ showLogin(); return; }                 // sin sesión → muestra el login
     if(prof.status!=='active'){ showPending(); return; }
     state.profile=prof;
+    try{ if(window.DB&&DB.materializeRecurring) await DB.materializeRecurring(); }catch(e){}  // crea las clases fijas de la semana (idempotente)
     await loadData();
     try{ const v=localStorage.getItem('tcv'); if(v && navItems().some(i=>i.id===v)) state.view=v; }catch(e){}  // recuerda la pestaña
     document.getElementById('login').style.display='none';
@@ -1120,6 +1129,7 @@ async function submitSignup(){
 }
 function isMember(){return state.role==='member'||state.role==='master';}
 function isStaff(){return state.role==='admin'||state.role==='portero';} // ven nombre del propietario y pueden contactarlo
+function profCanRelease(t){return state.role==='prof' && (t==='class'||t==='profclass');} // el profesor puede liberar clases
 function setRole(role, uid){
   state.role=role;
   state.user = role==='admin'?{name:'Admin Condominio',house:'Administración'}
@@ -1448,7 +1458,7 @@ function desktopGrid(){
 function halfCell(date,h,half,s){
   const k=s.kind;
   if(k==='mine'){const r=s.res;return `<div class="half h-mine" onclick="openMyRes(${r.id})" title="${rangeLabel(r.h,r.min,r.dur)}">${HOUSE_ICON}${houseNum(r.house)}${inRainWin(date,h,half)?RAINMARK:''}</div>`;}
-  if(k==='reserved'){const r=s.res;return `<div class="half h-reserved" ${isStaff()?`onclick="openAdminRes(${r.id})"`:''} title="${rangeLabel(r.h,r.min,r.dur)}${isStaff()?' · '+r.name:''}">${HOUSE_ICON}${houseNum(r.house)}${inRainWin(date,h,half)?RAINMARK:''}</div>`;}
+  if(k==='reserved'){const r=s.res;return `<div class="half h-reserved" ${(isStaff()||profCanRelease(r.type))?`onclick="openAdminRes(${r.id})"`:''} title="${rangeLabel(r.h,r.min,r.dur)}${isStaff()?' · '+r.name:''}">${HOUSE_ICON}${houseNum(r.house)}${inRainWin(date,h,half)?RAINMARK:''}</div>`;}
   if(k==='prof') return `<div class="half h-prof" title="Profesor"><span class="cdot cdot-black"></span>Profesor</div>`;
   if(k==='flex') return `<div class="half h-flex" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'flexh${half}')"`:''} title="Hora del profesor · reservable, con o sin profesor"><span><span class="cdot cdot-amber"></span>Profesor</span><span class="plus">+</span></div>`;
   if(k==='class'||k==='open') return `<div class="half h-bonus" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'h${half}')"`:''} title="No gasta cupo${k==='class'?' · profesor disponible':''}"><span><span class="plus">+</span>Libre</span><span class="bstar">★</span></div>`;
@@ -1462,7 +1472,7 @@ function slotHTML(date,h){
   if(cat==='maint') return `<div class="slot s-maint" title="${mc?mc.reason:'No disponible'}" onclick="toast(this.title)"><b><span class="cdot cdot-black"></span>No disponible</b></div>`;
   if(cat==='profclass') return `<div class="slot s-prof" title="Profesor" ${state.role==='prof'?`onclick="openProfRes(${res.id})" style="cursor:pointer"`:''}><b><span class="cdot cdot-black"></span>Profesor</b></div>`;
   if(cat==='mine') return `<div class="slot s-mine" onclick="openMyRes(${res.id})"><b>${HOUSE_ICON}${houseNum(res.house)}</b><span class="mtime${slotRain(date,h)?' rn':''}">${rangeLabel(res.h,res.min,res.dur)}</span>${slotRain(date,h)?RAINMARK:''}</div>`;
-  if(cat==='reserved') return `<div class="slot s-reserved" ${isStaff()?`onclick="openAdminRes(${res.id})" style="cursor:pointer"`:''}>${isStaff()?`<b>${HOUSE_ICON}${houseNum(res.house)}</b><small>${res.name}</small>`:`<b>${HOUSE_ICON}${houseNum(res.house)}</b>`}${slotRain(date,h)?RAINMARK:''}</div>`;
+  if(cat==='reserved') return `<div class="slot s-reserved" ${(isStaff()||profCanRelease(res.type))?`onclick="openAdminRes(${res.id})" style="cursor:pointer"`:''}>${isStaff()?`<b>${HOUSE_ICON}${houseNum(res.house)}</b><small>${res.name}</small>`:`<b>${HOUSE_ICON}${houseNum(res.house)}</b>`}${slotRain(date,h)?RAINMARK:''}</div>`;
   if(cat==='split') return `<div class="slot-split">${halfCell(date,h,0,sc.s0)}${halfCell(date,h,1,sc.s1)}</div>`;
   if(cat==='class') return `<div class="slot s-bonus" title="No gasta cupo · profesor disponible" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'classfull')"`:''}><b><span class="plus">+</span>Libre</b><span class="bstar">★</span></div>`;
   if(cat==='open') return `<div class="slot s-bonus" title="No gasta cupo" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'openfull')"`:''}><b><span class="plus">+</span>Libre</b><span class="bstar">★</span></div>`;
@@ -1512,7 +1522,7 @@ function mHalf(date,h,half,s){
   const tt=`<div class="mt"><div class="h">${halfTimeLabel(h,half)}</div><div class="h2">30m</div></div>`;
   const k=s.kind;
   if(k==='mine'){const r=s.res;return `<div class="mslot mine" onclick="openMyRes(${r.id})"><div class="bar"></div>${tt}<div class="ml"><b>${HOUSE_ICON}${houseNum(r.house)}</b><span>30 min</span></div>${M_CHEV}</div>`;}
-  if(k==='reserved'){const r=s.res;return `<div class="mslot reserved" ${isStaff()?`onclick="openAdminRes(${r.id})"`:''}><div class="bar"></div>${tt}<div class="ml"><b>${HOUSE_ICON}${houseNum(r.house)}</b><span>${isStaff()?r.name:'Reservada'} · 30 min</span></div>${isStaff()?M_CHEV:''}</div>`;}
+  if(k==='reserved'){const r=s.res;return `<div class="mslot reserved" ${(isStaff()||profCanRelease(r.type))?`onclick="openAdminRes(${r.id})"`:''}><div class="bar"></div>${tt}<div class="ml"><b>${HOUSE_ICON}${houseNum(r.house)}</b><span>${isStaff()?r.name:'Reservada'} · 30 min</span></div>${(isStaff()||profCanRelease(r.type))?M_CHEV:''}</div>`;}
   if(k==='prof') return `<div class="mslot prof"><div class="bar"></div>${tt}<div class="ml"><b>Profesor</b><span>30 min</span></div></div>`;
   if(k==='flex'){ if(!canBookFree(date,h)) return `<div class="mslot prof"><div class="bar"></div>${tt}<div class="ml"><b>Profesor</b><span>30 min</span></div></div>`; return `<div class="mslot flex" onclick="openBook('${date}',${h},'flexh${half}')"><div class="bar"></div>${tt}<div class="ml"><b>Profesor · reservar</b><span>Con o sin profesor · no gasta cupo</span></div>${M_CHEV}</div>`; }
   if(k==='class'||k==='open'){ if(!canBookFree(date,h)) return ''; return `<div class="mslot bonus" onclick="openBook('${date}',${h},'h${half}')"><div class="bar"></div>${tt}<div class="ml"><b><span class="bstar">★</span> Libre</b><span>No gasta cupo</span></div>${M_CHEV}</div>`; }
@@ -1527,7 +1537,7 @@ function mSlot(date,h,sc){
   if(cat==='free') return `<div class="mslot free" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'full')"`:''}><div class="bar"></div>${t}<div class="ml"><b>Disponible</b><span>${canBookFree(date,h)?'Toca para reservar':'No disponible'}</span></div>${canBookFree(date,h)?chev:''}</div>`;
   if(cat==='profclass') return `<div class="mslot prof" ${state.role==='prof'?`onclick="openProfRes(${res.id})"`:''}><div class="bar"></div>${t}<div class="ml"><b>Profesor</b><span>${state.role==='prof'?'Tu clase · toca para cancelar':'Reservado para el profesor'}</span></div>${state.role==='prof'?chev:''}</div>`;
   if(cat==='mine') return `<div class="mslot mine" onclick="openMyRes(${res.id})"><div class="bar"></div>${t}<div class="ml"><b>${HOUSE_ICON}${houseNum(res.house)}</b></div>${chev}</div>`;
-  if(cat==='reserved') return `<div class="mslot reserved" ${isStaff()?`onclick="openAdminRes(${res.id})"`:''}><div class="bar"></div>${t}<div class="ml"><b>${HOUSE_ICON}${houseNum(res.house)}</b><span>${isStaff()?res.name:'Reservada'}</span></div>${isStaff()?chev:''}</div>`;
+  if(cat==='reserved') return `<div class="mslot reserved" ${(isStaff()||profCanRelease(res.type))?`onclick="openAdminRes(${res.id})"`:''}><div class="bar"></div>${t}<div class="ml"><b>${HOUSE_ICON}${houseNum(res.house)}</b><span>${isStaff()?res.name:'Reservada'}</span></div>${(isStaff()||profCanRelease(res.type))?chev:''}</div>`;
   if(cat==='prof') return `<div class="mslot prof"><div class="bar"></div>${t}<div class="ml"><b>Profesor</b><span>Reservado para el profesor</span></div></div>`;
   if(cat==='flex') return `<div class="mslot flex" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'flexfull')"`:''}><div class="bar"></div>${t}<div class="ml"><b>Profesor · reservar</b><span>${canBookFree(date,h)?'Con o sin profesor · no gasta cupo':'Hora del profesor'}</span></div>${canBookFree(date,h)?chev:''}</div>`;
   if(cat==='class') return `<div class="mslot bonus" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'classfull')"`:''}><div class="bar"></div>${t}<div class="ml"><b><span class="bstar">★</span> Libre</b><span>No gasta cupo</span></div>${canBookFree(date,h)?chev:''}</div>`;
@@ -1578,6 +1588,10 @@ function viewMine(){
       ${fut?(cancelable?`<button class="btn-cancel" onclick="cancelRes(${r.id})">Cancelar</button>`:'<span class="pill gray">No cancelable</span>'):'<span class="pill gray">Pasada</span>'}
     </div>`;};
   let html=cupoCard();
+  const myPerm=RECURRING.filter(r=>r.status==='active');
+  if(myPerm.length){
+    html+=`<div class="panel" style="margin-bottom:16px"><div class="panel-h"><h3>Mis horarios permanentes</h3></div>${myPerm.map(r=>`<div class="row"><div class="info"><b>${SCHED_DOW_NAMES[r.dow]} ${schedMinLabel(r.startMin)}–${schedMinLabel(r.endMin)}</b><span>Clase fija con el profesor · ${r.house}</span></div><button class="btn-cancel" onclick="doCancelRecurring(${r.id})">Cancelar</button></div>`).join('')}</div>`;
+  }
   html+=`<div class="panel"><div class="panel-h"><h3>Próximas reservas</h3></div>${up.length?up.map(card).join(''):emptyInline('No tienes reservas próximas')}</div>`;
   html+=`<div class="panel past-panel" style="margin-top:16px"><div class="panel-h"><h3>Reservas anteriores de esta semana</h3></div>${past.length?past.map(card).join(''):emptyInline('No tienes reservas anteriores esta semana')}</div>`;
   return html;
@@ -1706,6 +1720,16 @@ async function rainReject(nid){
   try{ await DB.markNotif(n.id,'rejected'); await loadData(); render(); toast('Mantuviste tu reserva'); }
   catch(e){ toast(e.message,'warn'); }
 }
+async function permAccept(nid){
+  const n=notifs.find(x=>x.id===nid); if(!n||!n.recId)return;
+  try{ await DB.decideRecurring(n.recId,true); await loadData(); render(); toast('Horario permanente aprobado'); }
+  catch(e){ toast(e.message,'warn'); }
+}
+async function permReject(nid){
+  const n=notifs.find(x=>x.id===nid); if(!n||!n.recId)return;
+  try{ await DB.decideRecurring(n.recId,false); await loadData(); render(); toast('Solicitud rechazada'); }
+  catch(e){ toast(e.message,'warn'); }
+}
 
 /* ---- HISTORIAL (admin y portería) ---- */
 function whenLabel(ts){
@@ -1737,14 +1761,19 @@ function viewNotif(){
     maint:['var(--gray)','#eef1f0','<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.3 2.3-2-2 2.3-2.3z"/>'],
     cancel:['var(--danger)','#fdecea','<path d="M18 6L6 18M6 6l12 12"/>'],
     light:['var(--amber)','#fdf0d9','<path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/>'],
-    rain:['#5b7fc0','#e7eef7','<path d="M7 16a5 5 0 0 1-1-9.9A6 6 0 0 1 17.5 7 4.5 4.5 0 0 1 17 16M8 19v2M12 19v2M16 19v2"/>']};
+    rain:['#5b7fc0','#e7eef7','<path d="M7 16a5 5 0 0 1-1-9.9A6 6 0 0 1 17.5 7 4.5 4.5 0 0 1 17 16M8 19v2M12 19v2M16 19v2"/>'],
+    perm_req:['#3a6ea5','#e7eef7','<path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v4.5h-4.5"/>'],
+    perm_res:['var(--court)','#eef6df','<path d="M20 6L9 17l-5-5"/>']};
   const vis=visibleNotifs();
   if(!vis.length) return emptyState('No tienes notificaciones.');
-  const rows=vis.map(n=>{const[col,bg,path]=ic[n.type];
+  const rows=vis.map(n=>{const[col,bg,path]=ic[n.type]||ic.open;
     let extra='';
     if(n.type==='rain' && n.status==='pending') extra=`<div class="notif-act"><button class="na-yes" onclick="rainAccept(${n.id})">Aceptar y cancelar</button><button class="na-no" onclick="rainReject(${n.id})">Rechazar</button></div>`;
     else if(n.type==='rain' && n.status==='accepted') extra=`<div class="notif-st ok">Cancelaste tu reserva. Tus horas volvieron a tu cupo.</div>`;
     else if(n.type==='rain' && n.status==='rejected') extra=`<div class="notif-st">Mantuviste tu reserva. Si tienes dudas, comunícate con la ${n.by||'portería'}.</div>`;
+    else if(n.type==='perm_req' && n.status==='pending') extra=`<div class="notif-act"><button class="na-yes" onclick="permAccept(${n.id})">Aprobar</button><button class="na-no" onclick="permReject(${n.id})">Rechazar</button></div>`;
+    else if(n.type==='perm_req' && n.status==='accepted') extra=`<div class="notif-st ok">Aprobaste esta solicitud.</div>`;
+    else if(n.type==='perm_req' && n.status==='rejected') extra=`<div class="notif-st">Solicitud rechazada.</div>`;
     return `<div class="notif ${n.unread?'unread':''}">
       <div class="ic" style="background:${bg};color:${col}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${path}</svg></div>
       <div class="body"><b>${n.title}</b><p>${n.body}</p>${extra}<time>${n.time}</time></div>
@@ -1759,6 +1788,37 @@ async function setCupo(n){ try{ await DB.Admin.setCupo(n); CUPO=n; render(); toa
 async function setProfFlex(on){
   try{ await DB.Admin.setProfFlexible(on); PROF_FLEX=on; render();
     toast(on?'Modo flexible activado: los residentes ya pueden reservar horas del profesor':'Modo flexible apagado: horas del profesor exclusivas'); }
+  catch(e){ toast(e.message,'warn'); }
+}
+/* ===== Horarios permanentes (admin) ===== */
+async function setPermEnabled(on){
+  try{ await DB.Admin.setPermEnabled(on); PERM_ENABLED=on; render();
+    toast(on?'Horarios permanentes habilitados':'Horarios permanentes deshabilitados'); }
+  catch(e){ toast(e.message,'warn'); }
+}
+async function setPermRoute(r){
+  try{ await DB.Admin.setPermRoute(r); PERM_ROUTE=r; render();
+    toast('Las solicitudes irán a: '+(r==='prof'?'el profesor':r==='admin'?'la administración':'profesor y administración')); }
+  catch(e){ toast(e.message,'warn'); }
+}
+function recLabel(r){ return `${r.house||'Casa'} · ${SCHED_DOW_NAMES[r.dow]} ${schedMinLabel(r.startMin)}–${schedMinLabel(r.endMin)}`; }
+function openRecurringList(){
+  const act=RECURRING.filter(r=>r.status==='active');
+  const pen=RECURRING.filter(r=>r.status==='pending');
+  const actRows=act.length? act.map(r=>`<div class="row"><div class="info"><b>${recLabel(r)}</b><span>Clase fija con el profesor</span></div>
+      <button class="btn-cancel" onclick="doCancelRecurring(${r.id},true)">Cancelar</button></div>`).join('')
+    : '<div class="empty" style="padding:22px">Aún no hay clases fijas activas.</div>';
+  const penRows= pen.length? `<div class="opt-label" style="margin-top:14px">Por aprobar (${pen.length})</div>`+pen.map(r=>`<div class="row"><div class="info"><b>${recLabel(r)}</b><span>Pendiente · aprueba desde tus notificaciones</span></div></div>`).join('') : '';
+  const m=document.getElementById('modal');
+  m.innerHTML=`<div class="grab"></div><h3>Horarios permanentes</h3>
+    <div class="msub">Clases fijas semanales aprobadas. Cancelar detiene las próximas semanas (no borra las clases que ya pasaron).</div>
+    <div class="sched-wrap">${actRows}${penRows}</div>
+    <button class="btn-soft" style="width:100%;margin-top:6px" onclick="closeModal()">Cerrar</button>`;
+  document.getElementById('modalBg').classList.add('show');
+}
+async function doCancelRecurring(id, fromList){
+  if(!confirm('¿Cancelar este horario permanente? Se detendrá desde ahora en adelante.')) return;
+  try{ await DB.cancelRecurring(id); await loadData(); render(); if(fromList) openRecurringList(); toast('Horario permanente cancelado'); }
   catch(e){ toast(e.message,'warn'); }
 }
 const SCHED_DOW_NAMES=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
@@ -1809,6 +1869,9 @@ async function setUserActive(id, makeActive){ try{ await DB.Admin.setStatus(id, 
 function viewUsers(){
   const cupoSeg=[1,2,3,4].map(n=>`<button class="${CUPO===n?'on':''}" onclick="setCupo(${n})">${n}</button>`).join('');
   const flexSeg=`<div class="seg"><button class="${!PROF_FLEX?'on':''}" onclick="setProfFlex(false)">Apagado</button><button class="${PROF_FLEX?'on':''}" onclick="setProfFlex(true)">Activo</button></div>`;
+  const permSeg=`<div class="seg"><button class="${!PERM_ENABLED?'on':''}" onclick="setPermEnabled(false)">Apagado</button><button class="${PERM_ENABLED?'on':''}" onclick="setPermEnabled(true)">Activo</button></div>`;
+  const routeSeg=`<div class="seg"><button class="${PERM_ROUTE==='prof'?'on':''}" onclick="setPermRoute('prof')">Profesor</button><button class="${PERM_ROUTE==='admin'?'on':''}" onclick="setPermRoute('admin')">Admin</button><button class="${PERM_ROUTE==='both'?'on':''}" onclick="setPermRoute('both')">Ambos</button></div>`;
+  const permPend=RECURRING.filter(r=>r.status==='pending').length, permAct=RECURRING.filter(r=>r.status==='active').length;
   const settings=`<div class="panel" style="margin-bottom:18px">
     <div style="padding:16px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;border-bottom:1px solid var(--line)">
       <div style="flex:1;min-width:170px"><b style="font-size:14px">Cupo semanal por casa</b><p style="font-size:12px;color:var(--muted);margin-top:2px">Horas que cada casa puede reservar por semana.</p></div>
@@ -1818,10 +1881,23 @@ function viewUsers(){
       <div style="flex:1;min-width:210px"><b style="font-size:14px">Horas del profesor reservables</b><p style="font-size:12px;color:var(--muted);margin-top:2px">Si lo activas, los residentes pueden reservar las horas del profesor y eligen ir con o sin profesor. Si lo apagas, esas horas son exclusivas del profesor (como hoy).</p></div>
       ${flexSeg}
     </div>
-    <div style="padding:16px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+    <div style="padding:16px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;border-bottom:1px solid var(--line)">
       <div style="flex:1;min-width:210px"><b style="font-size:14px">Horario del profesor</b><p style="font-size:12px;color:var(--muted);margin-top:2px">Define los días y las horas en que el profesor está en la cancha.</p></div>
       <button class="btn-ghost" style="box-shadow:none" onclick="openProfSchedule()">Editar horario</button>
     </div>
+    <div style="padding:16px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap${PERM_ENABLED?';border-bottom:1px solid var(--line)':''}">
+      <div style="flex:1;min-width:210px"><b style="font-size:14px">Horarios permanentes (clases fijas)</b><p style="font-size:12px;color:var(--muted);margin-top:2px">Permite que los residentes soliciten una clase fija semanal con el profesor. Solo funciona con el modo flexible activo.</p></div>
+      ${permSeg}
+    </div>
+    ${PERM_ENABLED?`
+    <div style="padding:16px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;border-bottom:1px solid var(--line)">
+      <div style="flex:1;min-width:210px"><b style="font-size:14px">¿A quién llegan las solicitudes?</b><p style="font-size:12px;color:var(--muted);margin-top:2px">Con que uno apruebe basta.</p></div>
+      ${routeSeg}
+    </div>
+    <div style="padding:16px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <div style="flex:1;min-width:210px"><b style="font-size:14px">Clases fijas activas</b><p style="font-size:12px;color:var(--muted);margin-top:2px">${permAct} activa${permAct===1?'':'s'}${permPend?' · '+permPend+' por aprobar':''}.</p></div>
+      <button class="btn-ghost" style="box-shadow:none" onclick="openRecurringList()">Ver y gestionar</button>
+    </div>`:''}
   </div>`;
   const roleEs={admin:'Administración',prof:'Profesor',portero:'Portería'};
   const rows=users.length?users.map((u,i)=>{
@@ -2244,12 +2320,15 @@ function openBook(date,h,ctx){
       <button class="on" data-u="class" onclick="segPick(this,'useType')">Tomar clase</button>
       <button data-u="free" onclick="segPick(this,'useType')">Práctica libre</button>
     </div>`:'';
+  const permWho = PERM_ROUTE==='prof'?'el profesor':PERM_ROUTE==='admin'?'la administración':'el profesor o la administración';
   let flexChoice = isFlex ? `
     <div class="opt-label">¿Cómo vas a usar esta hora?</div>
-    <div class="seg" id="flexType">
-      <button class="on" data-u="con" onclick="segPick(this,'flexType')">Con profesor</button>
-      <button data-u="sin" onclick="segPick(this,'flexType')">Sin profesor</button>
-    </div>`:'';
+    <div class="seg seg-wrap" id="flexType">
+      <button class="on" data-u="con" onclick="flexPick(this)">Con profesor</button>
+      <button data-u="sin" onclick="flexPick(this)">Sin profesor</button>
+      ${PERM_ENABLED?`<button data-u="perm" onclick="flexPick(this)">Permanente</button>`:''}
+    </div>
+    <div id="permNote" style="display:none;margin-top:10px"><div class="perm-note"><b>Clase fija cada semana</b><span>Se repetirá todos los ${DOWL[dateAt(date,h).getDay()]} a esta hora. Debe aprobarlo ${permWho}. Al confirmar, envías la solicitud (aún no queda reservado).</span></div></div>`:'';
   let durChoice='';
   if(ctx==='full'){
     durChoice=`<div class="opt-label">Duración</div>
@@ -2280,9 +2359,15 @@ function openBook(date,h,ctx){
     ${houseSelect}${flexChoice}${classChoice}${durChoice}${quotaBox}${rulesBox}
     <div class="modal-actions">
       <button class="btn-soft" onclick="closeModal()">Cancelar</button>
-      <button class="btn-primary" onclick="confirmBook('${date}',${h},'${ctx}')">Confirmar reserva</button>
+      <button class="btn-primary" id="bkConfirm" onclick="confirmBook('${date}',${h},'${ctx}')">Confirmar reserva</button>
     </div>`;
   document.getElementById('modalBg').classList.add('show');
+}
+function flexPick(el){
+  segPick(el,'flexType');
+  const perm = el.dataset.u==='perm';
+  const note=document.getElementById('permNote'); if(note) note.style.display=perm?'block':'none';
+  const btn=document.getElementById('bkConfirm'); if(btn) btn.textContent=perm?'Solicitar horario permanente':'Confirmar reserva';
 }
 function updateBookHouse(){
   const house=document.getElementById('bkHouse').value;
@@ -2290,6 +2375,23 @@ function updateBookHouse(){
   const p=document.getElementById('bkPhrase'); if(p)p.textContent=`${house} · ${cupoFrase(left)} esta semana`;
 }
 async function confirmBook(date,h,ctx){
+  // Horario permanente: si se eligió "Permanente" en una hora flexible, se envía una SOLICITUD (no se reserva)
+  if(ctx.indexOf('flex')===0){
+    const u=document.querySelector('#flexType button.on');
+    if(u && u.dataset.u==='perm'){
+      const dow=dateAt(date,h).getDay();
+      let sm,em;
+      if(ctx==='flexfull'){sm=h*60;em=h*60+60;} else {sm=h*60+(ctx==='flexh1'?30:0);em=sm+30;}
+      const hsel=document.getElementById('bkHouse');
+      const house = hsel ? hsel.value : state.user.house;
+      const houseId=houseIdByLabel[house];
+      if(!houseId){ toast('No se encontró esa casa.','warn'); return; }
+      closeModal();
+      try{ await DB.requestRecurring(houseId, dow, sm, em); await loadData(); render(); toast('Solicitud enviada. Te avisaremos cuando la aprueben.'); }
+      catch(e){ toast(e.message,'warn'); }
+      return;
+    }
+  }
   let min=0,dur=60,type='normal';
   if(ctx==='h0'){min=0;dur=30;}
   else if(ctx==='h1'){min=30;dur=30;}
@@ -2369,6 +2471,8 @@ function openAdminRes(id){
     <div class="modal-actions">
       ${state.role==='admin'
         ? `<button class="btn-soft" onclick="closeModal()">Cerrar</button><button class="btn-primary" style="background:var(--danger)" onclick="cancelRes(${r.id})">Cancelar reserva</button>`
+        : profCanRelease(r.type)
+        ? `<button class="btn-soft" onclick="closeModal()">Cerrar</button><button class="btn-primary" onclick="cancelRes(${r.id})">Liberar esta clase</button>`
         : `<button class="btn-soft" style="width:100%" onclick="closeModal()">Cerrar</button>`}
     </div>`;
   document.getElementById('modalBg').classList.add('show');
