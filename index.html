@@ -1751,7 +1751,7 @@ async function doActivateRain(){
   catch(e){ toast(e.message,'warn'); }
 }
 function waRainLink(r){
-  const first=r.name.split(' ')[0], quien=state.role==='portero'?'portería':'administración';
+  const first=(r.name||'Residente').split(' ')[0], quien=state.role==='portero'?'portería':'administración';
   const msg=`Hola ${first}, está lloviendo y la ${quien} de Cerros de la Alhambra solicita que canceles tu reserva de hoy de ${rangeLabel(r.h,r.min,r.dur).replace('–',' a ')}. Por favor entra a la app, mira tus notificaciones y, si estás de acuerdo, cancélala. ¡Gracias!`;
   return `https://wa.me/${phoneFor(r.house)}?text=${encodeURIComponent(msg)}`;
 }
@@ -2503,7 +2503,7 @@ function openAdminRes(id){
   const r=reservations.find(x=>x.id===id); if(!r)return;
   const d=dateAt(r.date,r.h);
   const typeTxt=r.type==='class'?' · clase':r.type==='open'?' · práctica libre':'';
-  const phone=phoneFor(r.house), first=r.name.split(' ')[0];
+  const nm=r.name||'Residente', phone=phoneFor(r.house), first=nm.split(' ')[0];
   // si quien reservó tiene varias casas y la reservó a nombre de OTRA casa (distinta a la suya), se aclara de qué casa es la persona
   const owner=users.find(u=>u.name===r.name);
   const fromHouse=(owner&&owner.houses&&owner.houses.length>1&&owner.house!==r.house)?owner.house:null;
@@ -2514,7 +2514,7 @@ function openAdminRes(id){
   modal.innerHTML=`<div class="grab"></div>
     <h3>Reserva · ${r.house}</h3>
     <div class="msub">${DOWL[d.getDay()]} ${d.getDate()} de ${MON[d.getMonth()]} · ${rangeLabel(r.h,r.min,r.dur)}${typeTxt}</div>
-    <div class="quota-mini"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0M12 14a7 7 0 0 0-7 7h14a7 7 0 0 0-7-7"/></svg> La reservó <b style="margin:0 0 0 4px">${r.name}</b>${fromHouse?` <span style="color:var(--muted);margin:0 2px">de la</span> <b>${fromHouse}</b>`:''}</div>
+    <div class="quota-mini"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0M12 14a7 7 0 0 0-7 7h14a7 7 0 0 0-7-7"/></svg> La reservó <b style="margin:0 0 0 4px">${nm}</b>${fromHouse?` <span style="color:var(--muted);margin:0 2px">de la</span> <b>${fromHouse}</b>`:''}</div>
     <div class="opt-label">Contactar al propietario</div>
     <div class="contact-row">
       <a class="btn-call" href="tel:+${phone}">${PHONE_ICON} Llamar</a>
