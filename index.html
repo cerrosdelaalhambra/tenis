@@ -1139,6 +1139,7 @@ const ICONS={
   rain:'<path d="M7 16a5 5 0 0 1-1-9.9A6 6 0 0 1 17.5 7 4.5 4.5 0 0 1 17 16M8 19v2M12 19v2M16 19v2"/>',
 };
 function go(view){ state.view=view; try{localStorage.setItem('tcv',view);}catch(e){}
+  if(view==='avail') state.schedDraft=null;   // el editor de horario se reinicia con lo guardado al entrar
   if(view==='notif'){
     visibleNotifs().forEach(n=>n.unread=false);
     if(state.profile&&window.DB&&DB.markAllRead){
@@ -1798,19 +1799,18 @@ async function doCancelRecurring(id, fromList){
 const SCHED_DOW_NAMES=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 function schedMinLabel(m){const h=Math.floor(m/60),mm=m%60;const ap=h<12?'am':'pm';let hh=h%12;if(hh===0)hh=12;return hh+(mm?':'+String(mm).padStart(2,'0'):'')+ap;}
 function schedFallbackRows(){ const r=[]; [2,3,4,5].forEach(d=>{r.push({dow:d,startMin:360,endMin:750});r.push({dow:d,startMin:810,endMin:1020});}); r.push({dow:6,startMin:360,endMin:720}); return r; }
-function openProfSchedule(){
+function initSchedDraft(){
   const src=(PROF_SCHEDULE&&PROF_SCHEDULE.length)?PROF_SCHEDULE:schedFallbackRows();
   state.schedDraft={}; for(let d=0;d<7;d++) state.schedDraft[d]=[];
   src.forEach(r=>{ (state.schedDraft[r.dow]=state.schedDraft[r.dow]||[]).push({startMin:r.startMin,endMin:r.endMin}); });
   for(let d=0;d<7;d++) state.schedDraft[d].sort((a,b)=>a.startMin-b.startMin);
-  renderSchedEditor();
-  document.getElementById('modalBg').classList.add('show');
 }
-function renderSchedEditor(){
+function schedEditorHTML(){
+  if(!state.schedDraft) initSchedDraft();
   const opts=[]; for(let m=240;m<=1380;m+=30) opts.push(m);
   const optHtml=(sel)=>opts.map(m=>`<option value="${m}"${m===sel?' selected':''}>${schedMinLabel(m)}</option>`).join('');
   const order=[1,2,3,4,5,6,0];
-  const days=order.map(d=>{
+  return order.map(d=>{
     const rgs=state.schedDraft[d]||[];
     const rows=rgs.length? rgs.map((rg,i)=>`<div class="sched-row">
         <select onchange="schedSet(${d},${i},'startMin',this.value)">${optHtml(rg.startMin)}</select>
@@ -1821,22 +1821,16 @@ function renderSchedEditor(){
       : `<div class="sched-empty">Sin horario (el profesor no asiste)</div>`;
     return `<div class="sched-day"><div class="sched-dh"><b>${SCHED_DOW_NAMES[d]}</b><button class="sched-add" onclick="schedAdd(${d})">+ Agregar</button></div>${rows}</div>`;
   }).join('');
-  const modal=document.getElementById('modal');
-  modal.innerHTML=`<div class="grab"></div><h3>Horario del profesor</h3>
-    <div class="msub">Días y horas en que el profesor está en la cancha. Se aplica al calendario y a las reservas.</div>
-    <div class="sched-wrap">${days}</div>
-    <div class="modal-actions"><button class="btn-soft" onclick="closeModal()">Cancelar</button>
-    <button class="btn-primary" onclick="saveProfSchedule()">Guardar horario</button></div>`;
 }
-function schedAdd(d){ (state.schedDraft[d]=state.schedDraft[d]||[]).push({startMin:360,endMin:420}); renderSchedEditor(); }
-function schedDel(d,i){ state.schedDraft[d].splice(i,1); renderSchedEditor(); }
+function schedRerender(){ const el=document.getElementById('schedInline'); if(el) el.innerHTML=schedEditorHTML(); }
+function schedAdd(d){ (state.schedDraft[d]=state.schedDraft[d]||[]).push({startMin:360,endMin:420}); schedRerender(); }
+function schedDel(d,i){ state.schedDraft[d].splice(i,1); schedRerender(); }
 function schedSet(d,i,k,v){ if(state.schedDraft[d]&&state.schedDraft[d][i]) state.schedDraft[d][i][k]=+v; }
 async function saveProfSchedule(){
   const rows=[]; let bad=false;
   for(let d=0;d<7;d++){ (state.schedDraft[d]||[]).forEach(r=>{ if(r.endMin<=r.startMin) bad=true; else rows.push({dow:d,startMin:r.startMin,endMin:r.endMin}); }); }
   if(bad){ toast('Revisa: la hora de fin debe ser mayor que la de inicio.','warn'); return; }
-  closeModal();
-  try{ await DB.Admin.setProfSchedule(rows); await loadData(); render(); toast('Horario del profesor actualizado'); }
+  try{ await DB.Admin.setProfSchedule(rows); state.schedDraft=null; await loadData(); render(); toast('Horario del profesor actualizado'); }
   catch(e){ toast(e.message,'warn'); }
 }
 async function setUserActive(id, makeActive){ try{ await DB.Admin.setStatus(id, makeActive?'active':'inactive'); await loadData(); render(); toast(makeActive?'Usuario activado':'Usuario desactivado'); }catch(e){ toast(e.message,'warn'); } }
@@ -2165,10 +2159,13 @@ function viewAvail(){
           </div>`;
   const warn = (!multi&&noProf) ? `<p style="font-size:12.5px;color:var(--clay);background:#fbeee9;border-radius:10px;padding:10px 12px;margin:0">Ese día el profesor no tiene clases (ej. domingo). No hay horarios para abrir.</p>` : '';
   const btnDis = (!multi&&noProf) ? 'disabled' : '';
-  const schedPanel = state.role==='admin' ? `<div class="panel" style="margin-bottom:16px"><div style="padding:16px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-      <div style="flex:1;min-width:210px"><b style="font-size:14px">Horario del profesor</b><p style="font-size:12px;color:var(--muted);margin-top:2px">Define los días y las horas en que el profesor está en la cancha.</p></div>
-      <button class="btn-ghost" style="box-shadow:none" onclick="openProfSchedule()">Editar horario</button>
-    </div></div>` : '';
+  const schedPanel = state.role==='admin' ? `<div class="panel" style="margin-bottom:16px">
+      <div class="panel-h"><h3>Horario del profesor</h3><div class="spacer"></div><button class="btn-mini" onclick="saveProfSchedule()">Guardar</button></div>
+      <div style="padding:4px 18px 14px">
+        <p style="font-size:12px;color:var(--muted);margin:0 0 10px">Días y horas en que el profesor está en la cancha. Agrega o quita rangos y toca "Guardar".</p>
+        <div id="schedInline">${schedEditorHTML()}</div>
+      </div>
+    </div>` : '';
   let html=schedPanel+`<div class="panel"><div class="panel-h"><h3>Abrir disponibilidad en clases del profesor</h3><div class="spacer"></div>${checkbox}</div>
     <div style="padding:18px">
       <label class="fld-label">${multi?'Escoge el rango de días que el profesor faltará (toca inicio y fin)':'Escoge el día'}</label>
