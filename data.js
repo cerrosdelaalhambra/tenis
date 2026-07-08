@@ -200,6 +200,16 @@ async function getCupo(){
   const {data}=await sb.from('app_config').select('value').eq('key','weekly_cupo_hours').single();
   return data ? Number(data.value) : 2;
 }
+// Horario del profesor (editable). Si la tabla aún no existe, devuelve [] y la app usa el horario fijo de respaldo.
+async function getProfSchedule(){
+  const {data}=await sb.from('prof_schedule').select('dow,start_min,end_min').order('dow').order('start_min');
+  return (data||[]).map(r=>({dow:r.dow, startMin:r.start_min, endMin:r.end_min}));
+}
+// Bandera del modo flexible. Si no existe, devuelve false (comportamiento actual).
+async function getProfFlexible(){
+  const {data}=await sb.from('app_config').select('value').eq('key','prof_flexible').single();
+  return data ? (data.value==='true') : false;
+}
 async function getHolidays(){
   const {data}=await sb.from('holidays').select('day');
   return new Set((data||[]).map(r=>r.day));
@@ -288,11 +298,12 @@ async function getUsers(){                          // lista de cuentas (admin/p
 // Trae TODO lo necesario para pintar, según el perfil logueado
 async function fetchAll(profile){
   const myHouses = isMemberRole(profile.role) ? await getMyHouses(profile.id) : [];
-  const [reservations, releases, closures, holidays, houses, cupo, notifs] = await Promise.all([
+  const [reservations, releases, closures, holidays, houses, cupo, notifs, profSchedule, profFlexible] = await Promise.all([
     getCalendar(profile.role), getReleases(), getClosures(), getHolidays(),
-    getHouses(), getCupo(), getNotifications(profile.role, profile.id, profile.notif_seen_at)
+    getHouses(), getCupo(), getNotifications(profile.role, profile.id, profile.notif_seen_at),
+    getProfSchedule(), getProfFlexible()
   ]);
-  const bundle = { profile, myHouses, reservations, releases, closures, holidays, houses, cupo, notifs };
+  const bundle = { profile, myHouses, reservations, releases, closures, holidays, houses, cupo, notifs, profSchedule, profFlexible };
   if(isMemberRole(profile.role)) bundle.mine = await getMyReservations(myHouses.map(h=>h.id));
   if(profile.role==='admin'||profile.role==='portero'){ bundle.activity = await getActivity(); bundle.users = await getUsers(); }
   return bundle;
@@ -318,6 +329,17 @@ async function cancel(id){
 /* ===== Acciones de gestión (hitos siguientes; aquí las simples) ===== */
 const Admin = {
   async setCupo(hours){ const {error}=await sb.from('app_config').update({value:String(hours)}).eq('key','weekly_cupo_hours'); if(error) throw mapError(error); },
+  // Modo flexible del horario del profesor (interruptor global)
+  async setProfFlexible(on){ const {error}=await sb.from('app_config').update({value:on?'true':'false'}).eq('key','prof_flexible'); if(error) throw mapError(error); },
+  // Reemplaza TODO el horario del profesor por las filas dadas ([{dow,startMin,endMin}])
+  async setProfSchedule(rows){
+    const del=await sb.from('prof_schedule').delete().gte('dow',0);
+    if(del.error) throw mapError(del.error);
+    if(rows&&rows.length){
+      const ins=await sb.from('prof_schedule').insert(rows.map(r=>({dow:r.dow, start_min:r.startMin, end_min:r.endMin})));
+      if(ins.error) throw mapError(ins.error);
+    }
+  },
   async setStatus(profileId, status){ const {error}=await sb.from('profiles').update({status}).eq('id',profileId); if(error) throw mapError(error); },
   async approveUser(profileId){ return Admin.setStatus(profileId,'active'); },
   // Busca una casa por etiqueta (sin distinguir mayúsculas) o la crea. Devuelve su id.
