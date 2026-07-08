@@ -183,18 +183,13 @@ const Auth = {
   async currentProfile(){                          // {id,full_name,role,status,phone} o null
     const {data:{user}}=await sb.auth.getUser();
     if(!user) return null;
-    let {data,error}=await sb.from('profiles').select('id,full_name,role,status,phone,notif_seen_at,notif_email,notif_enabled,notif_prefs').eq('id',user.id).single();
-    if(error){ const r=await sb.from('profiles').select('id,full_name,role,status,phone').eq('id',user.id).single(); data=r.data; } // por si aún no existen las columnas nuevas
-    if(data) data.authEmail = user.email;   // correo de ingreso (por defecto para avisos)
+    let {data,error}=await sb.from('profiles').select('id,full_name,role,status,phone,notif_seen_at,notif_prefs').eq('id',user.id).single();
+    if(error){ const r=await sb.from('profiles').select('id,full_name,role,status,phone').eq('id',user.id).single(); data=r.data; } // por si aún no existe notif_prefs
     return data || null;
   },
-  // Ajustes de avisos del residente. Actualiza solo los campos presentes.
-  async setNotifSettings(profileId, patch){
-    const upd={};
-    if('email'   in patch) upd.notif_email   = patch.email;
-    if('enabled' in patch) upd.notif_enabled = patch.enabled;
-    if('prefs'   in patch) upd.notif_prefs   = patch.prefs;
-    const {error}=await sb.from('profiles').update(upd).eq('id',profileId);
+  // Preferencias de avisos push del residente (qué tipos quiere recibir)
+  async setNotifSettings(profileId, {prefs}){
+    const {error}=await sb.from('profiles').update({notif_prefs:prefs}).eq('id',profileId);
     if(error) throw mapError(error);
   }
 };
