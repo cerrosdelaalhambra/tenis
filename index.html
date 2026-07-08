@@ -539,32 +539,12 @@
   #toast.warn svg{color:#f5c451}
 
   /* role switch (demo) */
-  .role-switch{position:fixed;top:14px;right:18px;z-index:40}
-  .ds-trigger{display:inline-flex;align-items:center;gap:8px;padding:7px 11px;border-radius:12px;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);font-size:12.5px;font-weight:600;color:var(--ink)}
-  .ds-trigger .ds-tag{font-size:9px;font-weight:800;letter-spacing:.7px;color:#fff;background:var(--court);padding:2px 6px;border-radius:6px}
-  .ds-trigger .ds-ic{display:inline-flex;color:var(--court)}
-  .ds-trigger .chev{color:var(--gray);transition:transform .18s}
-  .role-switch.open .ds-trigger .chev{transform:rotate(180deg)}
-  .ds-menu{position:absolute;top:calc(100% + 7px);right:0;width:236px;background:var(--card);border:1px solid var(--line);border-radius:15px;box-shadow:0 14px 38px rgba(20,40,35,.18);padding:6px;animation:dsIn .16s ease}
-  @keyframes dsIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
   @keyframes fadeView{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
-  .ds-grp{font-size:9.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--gray);padding:9px 9px 4px}
-  .ds-item{display:flex;align-items:center;gap:10px;width:100%;padding:8px 9px;border-radius:10px;text-align:left}
-  .ds-item:hover{background:var(--bg)}
-  .ds-item.on{background:var(--court-soft)}
-  .ds-item .ds-ic{width:30px;height:30px;border-radius:9px;background:var(--bg);display:flex;align-items:center;justify-content:center;color:var(--court);flex:none}
-  .ds-item.on .ds-ic{background:var(--court);color:#fff}
-  .ds-item .ds-tx{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.25}
-  .ds-item .ds-tx b{font-size:13px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .ds-item .ds-tx span{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .ds-item .chk{color:var(--court);flex:none}
 
   /* ---------- RESPONSIVE: MOBILE NATIVE ---------- */
   @media(max-width:820px){
     .sidebar{display:none}
     .main{margin-left:0;padding-bottom:74px}
-    .role-switch{top:auto;bottom:84px;right:12px}
-    .role-switch .ds-menu{top:auto;bottom:calc(100% + 7px)}
     .topbar{display:none}
     .mobile-head{display:block;position:sticky;top:0;z-index:15;background:var(--court-dark);color:#fff;
       padding:14px 18px 16px}
@@ -876,8 +856,6 @@ let state = {
   user:users[0],
   onlyAvailable:false,
   fullWeek:false,
-  demoProfile:'u1',
-  demoOpen:false,
   availDate:ymd(NOW),
   availMulti:false,
   availRangeStart:ymd(NOW),
@@ -898,47 +876,6 @@ function defaultMasterHouse(){
 
 const ROLE_LABEL={member:'Miembro',master:'Miembro',admin:'Administrador',prof:'Profesor',portero:'Portería'};
 
-/* ===== perfiles de la demo (selector arriba a la derecha) ===== */
-const DEMO_PROFILES=[
-  {key:'u1',     role:'member', uid:1, group:'Residentes', label:'Usuario 1',               short:'Usuario 1',    sub:'Carlos · Casa 5'},
-  {key:'u2',     role:'member', uid:4, group:'Residentes', label:'Usuario 2',               short:'Usuario 2',    sub:'Lucía · Casa 60'},
-  {key:'master', role:'master', uid:0, group:'Residentes', label:'Usuario con varias casas', short:'Varias casas', sub:'Ana · 4 casas'},
-  {key:'prof',   role:'prof',         group:'Operación',  label:'Profesor',                short:'Profesor',     sub:'Entrenador'},
-  {key:'portero',role:'portero',      group:'Operación',  label:'Portería',                short:'Portería',     sub:'Recepción'},
-  {key:'admin',  role:'admin',        group:'Operación',  label:'Administración',          short:'Administración',sub:'Gestión del condominio'},
-];
-const PROF_ICO={
-  u1:'<circle cx="12" cy="8" r="3.6"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/>',
-  u2:'<circle cx="12" cy="8" r="3.6"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/>',
-  master:'<path d="M3 11.5 12 4l9 7.5"/><path d="M6 10v10h12V10"/><path d="M10 20v-5h4v5"/>',
-  prof:'<circle cx="12" cy="12" r="9"/><path d="M5 5c4 3 4 11 0 14M19 5c-4 3-4 11 0 14"/>',
-  portero:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/>',
-  admin:'<path d="M3 21V9l9-6 9 6v12M9 21v-6h6v6"/>',
-};
-const CHEV_D=svgIco('<path d="M6 9l6 6 6-6"/>',15);
-const CHECK_I=svgIco('<path d="M20 6L9 17l-5-5"/>',16);
-function renderSwitcher(){
-  const el=document.getElementById('roleSwitch'); if(!el) return;
-  const cur=DEMO_PROFILES.find(p=>p.key===state.demoProfile)||DEMO_PROFILES[0];
-  let menu='';
-  if(state.demoOpen){
-    const grps=['Residentes','Operación'];
-    menu=`<div class="ds-menu" onclick="event.stopPropagation()">`+grps.map(g=>`<div class="ds-grp">${g}</div>`+
-      DEMO_PROFILES.filter(p=>p.group===g).map(p=>`<button class="ds-item${p.key===state.demoProfile?' on':''}" onclick="setProfile('${p.key}')">
-        <span class="ds-ic">${svgIco(PROF_ICO[p.key],17)}</span>
-        <span class="ds-tx"><b>${p.label}</b><span>${p.sub}</span></span>
-        ${p.key===state.demoProfile?`<span class="chk">${CHECK_I}</span>`:''}</button>`).join('')
-    ).join('')+`</div>`;
-  }
-  el.innerHTML=`<button class="ds-trigger" onclick="toggleDemo(event)"><span class="ds-tag">DEMO</span><span class="ds-ic">${svgIco(PROF_ICO[cur.key],16)}</span><span>${cur.short}</span><span class="chev">${CHEV_D}</span></button>${menu}`;
-  el.classList.toggle('open',state.demoOpen);
-}
-function toggleDemo(e){ if(e)e.stopPropagation(); state.demoOpen=!state.demoOpen; renderSwitcher(); }
-function setProfile(key){
-  const p=DEMO_PROFILES.find(x=>x.key===key)||DEMO_PROFILES[0];
-  state.demoProfile=p.key; state.demoOpen=false;
-  setRole(p.role, p.uid);
-}
 
 /* ======================= AUTH ======================= */
 /* ojito ver/ocultar contraseña */
@@ -1156,22 +1093,6 @@ async function submitSignup(){
 function isMember(){return state.role==='member'||state.role==='master';}
 function isStaff(){return state.role==='admin'||state.role==='portero';} // ven nombre del propietario y pueden contactarlo
 function profCanRelease(t){return state.role==='prof' && (t==='class'||t==='profclass');} // el profesor puede liberar clases
-function setRole(role, uid){
-  state.role=role;
-  state.user = role==='admin'?{name:'Admin Condominio',house:'Administración'}
-             : role==='prof'?{name:'Profe Tenis',house:'Entrenador'}
-             : role==='portero'?{name:'Portería',house:'Recepción'}
-             : users[uid!=null?uid:(role==='master'?0:1)];
-  state.view='calendar';
-  state.lastHouse=null;
-  renderSwitcher();
-  const init = state.user.name.split(' ').map(s=>s[0]).slice(0,2).join('');
-  document.getElementById('avatar').textContent=init;
-  document.getElementById('uname').textContent=state.user.name;
-  const houseText = role==='master' ? `${state.user.houses.length} casas` : state.user.house;
-  document.getElementById('urole').textContent=houseText+' · '+ROLE_LABEL[role];
-  render();
-}
 
 /* ======================= NAV ======================= */
 function navItems(){
@@ -1574,28 +1495,6 @@ function mSlot(date,h,sc){
   if(cat==='locked') return `<div class="mslot locked"><div class="bar"></div>${t}<div class="ml"><b>Aún no habilitado</b><span>Abre el domingo 8pm</span></div></div>`;
   if(cat==='past') return `<div class="mslot past"><div class="bar"></div>${t}<div class="ml"><b>—</b><span>Hora pasada</span></div></div>`;
   return '';
-}
-
-/* ---- AVAILABLE LIST ---- */
-function viewAvailable(){
-  const list=[];
-  for(let off=0;off<8;off++){const d=addDays(NOW,off);const date=ymd(d);
-    for(const h of HOURS){const {cat}=slotCat(date,h);
-      if(cat==='free'||cat==='class'||cat==='open') list.push({date,h,cat,d});}}
-  if(!list.length) return emptyState('No hay horarios disponibles en los próximos 7 días.');
-  let rows=list.map(s=>{
-    const pill=s.cat==='class'?'<span class="pill amber">★ Clase / libre</span>'
-      :s.cat==='open'?'<span class="pill lime">● Juego libre</span>'
-      :'<span class="pill green">Disponible</span>';
-    const sub=s.cat==='class'?'Clase con el profe o juego libre · no gasta cupo'
-      :s.cat==='open'?'El profesor no asiste · no gasta cupo':'Reserva normal · usa tu cupo';
-    return `<div class="row">
-      <div class="when"><div class="d">${DOW[s.d.getDay()]} ${s.d.getDate()}</div><div class="h">${hlabel(s.h)}</div></div>
-      <div class="info"><b>${hrange(s.h,60)}</b><span>${sub}</span></div>
-      ${pill}
-      <button class="btn-mini" onclick="openBook('${s.date}',${s.h},'${s.cat}')">Reservar</button>
-    </div>`;}).join('');
-  return `<div class="panel"><div class="panel-h"><h3>Próximos 7 días</h3><div class="spacer"></div><span style="font-size:13px;color:var(--muted)">${list.length} espacios</span></div>${rows}</div>`;
 }
 
 /* ---- MY RESERVATIONS ---- */
@@ -2601,8 +2500,6 @@ async function doClose(){
 function closeModal(){document.getElementById('modalBg').classList.remove('show');}
 
 /* helpers */
-function shiftWeek(n){state.weekStart=addDays(state.weekStart,n*7);
-  const cur=new Date(state.mobileDay);state.mobileDay=ymd(addDays(cur,n*7));render();}
 function emptyState(msg){return `<div class="panel"><div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg><div>${msg}</div></div></div>`}
 function emptyInline(msg){return `<div class="empty" style="padding:30px">${msg}</div>`}
 function weekRangeText(){const a=state.weekStart,b=addDays(a,6);

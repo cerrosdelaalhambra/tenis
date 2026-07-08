@@ -201,11 +201,7 @@ async function getMyHouses(profileId){
     .select('is_primary, houses(id,label)').eq('profile_id',profileId);
   return (data||[]).map(r=>({id:r.houses.id, label:r.houses.label, primary:r.is_primary}));
 }
-async function getCupo(){
-  const {data}=await sb.from('app_config').select('value').eq('key','weekly_cupo_hours').single();
-  return data ? Number(data.value) : 2;
-}
-// Toda la configuración en UNA sola consulta (antes eran 3: cupo, flexible, permanente)
+// Toda la configuración en UNA sola consulta (cupo, flexible, permanente)
 async function getConfig(){
   const {data}=await sb.from('app_config').select('key,value');
   const m={}; (data||[]).forEach(x=>m[x.key]=x.value);
@@ -220,21 +216,10 @@ async function getProfSchedule(){
   const {data}=await sb.from('prof_schedule').select('dow,start_min,end_min').order('dow').order('start_min');
   return (data||[]).map(r=>({dow:r.dow, startMin:r.start_min, endMin:r.end_min}));
 }
-// Bandera del modo flexible. Si no existe, devuelve false (comportamiento actual).
-async function getProfFlexible(){
-  const {data}=await sb.from('app_config').select('value').eq('key','prof_flexible').single();
-  return data ? (data.value==='true') : false;
-}
 // Horarios permanentes (según RLS: el residente ve los suyos; profesor/admin todos). Resistente si la tabla no existe.
 async function getRecurring(){
   const {data}=await sb.from('recurring_classes').select('id,house_id,profile_id,dow,start_min,end_min,status,created_at,houses(label)').order('created_at',{ascending:false});
   return (data||[]).map(r=>({id:r.id, houseId:r.house_id, house:(r.houses&&r.houses.label)||'', profileId:r.profile_id, dow:r.dow, startMin:r.start_min, endMin:r.end_min, status:r.status}));
-}
-// Configuración de horarios permanentes: habilitado + a quién llegan las solicitudes.
-async function getPermConfig(){
-  const {data}=await sb.from('app_config').select('key,value').in('key',['perm_enabled','perm_route']);
-  const m={}; (data||[]).forEach(x=>m[x.key]=x.value);
-  return {enabled:m.perm_enabled==='true', route:m.perm_route||'both'};
 }
 async function getHolidays(){
   const {data}=await sb.from('holidays').select('day');
@@ -272,12 +257,6 @@ async function getCalendar(role){
 async function primaryHouseMap(){                   // profile_id -> etiqueta de su casa principal
   const {data}=await sb.from('house_members').select('profile_id,is_primary,houses(label)').eq('is_primary',true);
   const o={}; (data||[]).forEach(r=>{ o[r.profile_id]=r.houses && r.houses.label; }); return o;
-}
-async function getMyReservations(myHouseIds){
-  const {data}=await sb.from('reservations')
-    .select('id,starts_at,ends_at,type,house_id,houses(label)')
-    .in('house_id', myHouseIds).order('starts_at');
-  return (data||[]).map(r=>mapReservation({...r, house_label:r.houses&&r.houses.label}));
 }
 async function getNotifications(role, profileId, seenAt){
   const {data}=await sb.from('notifications').select('*, houses(label)')
@@ -374,7 +353,6 @@ const Admin = {
   async setProfFlexible(on){ const {error}=await sb.from('app_config').update({value:on?'true':'false'}).eq('key','prof_flexible'); if(error) throw mapError(error); },
   // Horarios permanentes: habilitar y a quién llegan las solicitudes
   async setPermEnabled(on){ const {error}=await sb.from('app_config').update({value:on?'true':'false'}).eq('key','perm_enabled'); if(error) throw mapError(error); },
-  async setPermRoute(route){ const {error}=await sb.from('app_config').update({value:route}).eq('key','perm_route'); if(error) throw mapError(error); },
   // Reemplaza TODO el horario del profesor por las filas dadas ([{dow,startMin,endMin}])
   async setProfSchedule(rows){
     const del=await sb.from('prof_schedule').delete().gte('dow',0);
@@ -494,7 +472,7 @@ window.DB = {
   Auth, Admin, Rain,
   fetchAll, book, cancel, markNotif, markAllRead,
   requestRecurring, decideRecurring, cancelRecurring, materializeRecurring,
-  getHouses, getMyHouses, getCalendar, getMyReservations, getNotifications, getActivity,
+  getHouses, getMyHouses, getCalendar, getNotifications, getActivity,
   // utilidades por si se necesitan en app.js:
   bogotaParts, toISO, isMemberRole, normHouse
 };
