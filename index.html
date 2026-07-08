@@ -2344,7 +2344,7 @@ function openBook(date,h,ctx){
   const relHalf = isHalf ? findReleasedHalf(date,h, ctx==='h1'?1:0) : null; // media hora liberada por el profe
   const isClass=(ctx==='classfull') || (relHalf&&relHalf.type==='class');
   const isOpen=(ctx==='openfull') || (relHalf&&relHalf.type==='open');
-  const bonus=isClass||isOpen||isFlex;
+  const bonus=isClass||isOpen;   // en modo flexible el cupo depende de con/sin profesor (nota dinámica)
   const isPortero=state.role==='portero';
   const myHs=myHouses();
   const hasSelect = isPortero || (isMember() && myHs.length>1);
@@ -2389,9 +2389,11 @@ function openBook(date,h,ctx){
     durChoice=`<div class="quota-mini" style="background:#eef4f6;color:var(--court)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg> Reserva de <b style="margin:0 4px">30 minutos</b> · ${msubRange}.</div>`;
   }
   const quedaPhrase = hasSelect ? `${bookHouse} · ${cupoFrase(left)} esta semana` : `${cupoFraseMember(left)} esta semana`;
-  let quotaBox = bonus
-    ? `<div class="bonus-box"><span class="bonus-star">★</span><div><b>Este horario no gasta tu cupo</b><span>${isFlex?'Es una hora del profesor. Tú decides si vas con profesor o sin profesor; no te descuenta cupo.':isClass?'El profesor lo abrió y va a estar: puedes tomar clase o jugar libre, sin que te descuente cupo.':'El profesor no asiste a esta hora y la dejó libre: resérvala sin que te descuente cupo.'}</span></div></div>`
-    : `<div class="quota-mini"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg> <span id="bkPhrase">${quedaPhrase}</span></div>`;
+  let quotaBox = isFlex
+    ? `<div id="flexCupoNote">${flexCupoNote('con')}</div>`
+    : (bonus
+    ? `<div class="bonus-box"><span class="bonus-star">★</span><div><b>Este horario no gasta tu cupo</b><span>${isClass?'El profesor lo abrió y va a estar: puedes tomar clase o jugar libre, sin que te descuente cupo.':'El profesor no asiste a esta hora y la dejó libre: resérvala sin que te descuente cupo.'}</span></div></div>`
+    : `<div class="quota-mini"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg> <span id="bkPhrase">${quedaPhrase}</span></div>`);
   const nightCallout = (h>=21||h<6) ? `<div class="rule-night">${svgIco('<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',15)} A esta hora hay vecinos durmiendo. Por favor, juega en silencio y evita gritos, ruido fuerte y música o parlantes a alto volumen.</div>` : '';
   const rulesBox = `<div class="rules"><b>Antes de confirmar, recuerda:</b>${nightCallout}<ul>${RULES.map(r=>`<li>${r}</li>`).join('')}</ul></div>`;
   const modal=document.getElementById('modal');
@@ -2405,10 +2407,17 @@ function openBook(date,h,ctx){
     </div>`;
   document.getElementById('modalBg').classList.add('show');
 }
+function flexCupoNote(sel){
+  // 'con' = con profesor → no gasta cupo (incentiva ir con el profe)
+  // 'sin' = sin profesor → usa cupo, como una reserva normal
+  if(sel==='con') return `<div class="bonus-box"><span class="bonus-star">★</span><div><b>No gasta tu cupo</b><span>Ir con el profesor no te descuenta cupo de la semana.</span></div></div>`;
+  return `<div class="quota-mini"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg> Usa tu cupo de la semana, como una reserva normal.</div>`;
+}
 function flexPick(el){
   segPick(el,'flexType');
-  const perm = el.dataset.u==='perm';
+  const u = el.dataset.u, perm = u==='perm';
   const note=document.getElementById('permNote'); if(note) note.style.display=perm?'block':'none';
+  const cn=document.getElementById('flexCupoNote'); if(cn){ cn.style.display=perm?'none':'block'; if(!perm) cn.innerHTML=flexCupoNote(u); }
   const btn=document.getElementById('bkConfirm'); if(btn) btn.textContent=perm?'Solicitar horario permanente':'Confirmar reserva';
 }
 function updateBookHouse(){
@@ -2440,8 +2449,8 @@ async function confirmBook(date,h,ctx){
   else if(ctx==='full'){const dEl=document.querySelector('#durSeg button.on');dur=dEl?+dEl.dataset.d:60;if(dur===30){const mEl=document.querySelector('#halfSeg button.on');min=mEl?+mEl.dataset.m:0;}}
   else if(ctx==='openfull'){type='open';}
   else if(ctx==='classfull'){const u=document.querySelector('#useType button.on');type=(u&&u.dataset.u==='free')?'open':'class';}
-  else if(ctx==='flexfull'){const u=document.querySelector('#flexType button.on');type=(u&&u.dataset.u==='sin')?'open':'class';min=0;dur=60;}
-  else if(ctx==='flexh0'||ctx==='flexh1'){const u=document.querySelector('#flexType button.on');type=(u&&u.dataset.u==='sin')?'open':'class';min=(ctx==='flexh1')?30:0;dur=30;}
+  else if(ctx==='flexfull'){const u=document.querySelector('#flexType button.on');type=(u&&u.dataset.u==='sin')?'normal':'class';min=0;dur=60;}
+  else if(ctx==='flexh0'||ctx==='flexh1'){const u=document.querySelector('#flexType button.on');type=(u&&u.dataset.u==='sin')?'normal':'class';min=(ctx==='flexh1')?30:0;dur=30;}
   // media hora liberada por el profesor (bonus): toma el tipo de la liberación
   let relHalf=null;
   if(ctx==='h0'||ctx==='h1'){
