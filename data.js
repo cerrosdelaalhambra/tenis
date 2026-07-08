@@ -183,9 +183,15 @@ const Auth = {
   async currentProfile(){                          // {id,full_name,role,status,phone} o null
     const {data:{user}}=await sb.auth.getUser();
     if(!user) return null;
-    let {data,error}=await sb.from('profiles').select('id,full_name,role,status,phone,notif_seen_at').eq('id',user.id).single();
-    if(error){ const r=await sb.from('profiles').select('id,full_name,role,status,phone').eq('id',user.id).single(); data=r.data; } // por si aún no existe notif_seen_at
+    let {data,error}=await sb.from('profiles').select('id,full_name,role,status,phone,notif_seen_at,notif_email,notif_enabled,notif_prefs').eq('id',user.id).single();
+    if(error){ const r=await sb.from('profiles').select('id,full_name,role,status,phone').eq('id',user.id).single(); data=r.data; } // por si aún no existen las columnas nuevas
+    if(data) data.authEmail = user.email;   // correo de ingreso (por defecto para avisos)
     return data || null;
+  },
+  // Ajustes de avisos por correo del residente (correo, on/off, tipos)
+  async setNotifSettings(profileId, {email, enabled, prefs}){
+    const {error}=await sb.from('profiles').update({notif_email:email, notif_enabled:enabled, notif_prefs:prefs}).eq('id',profileId);
+    if(error) throw mapError(error);
   }
 };
 
