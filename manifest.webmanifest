@@ -1,0 +1,19 @@
+{
+  "id": "./",
+  "name": "Cancha de Tenis · Cerros de la Alhambra",
+  "short_name": "Tenis Cerros",
+  "description": "Reserva la cancha de tenis del condominio Cerros de la Alhambra desde tu celular o computador.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#14564a",
+  "theme_color": "#0e3e35",
+  "lang": "es-CO",
+  "dir": "ltr",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
