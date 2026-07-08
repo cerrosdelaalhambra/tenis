@@ -348,6 +348,9 @@
   .half.h-flex{background:#fff7e6;border:1.5px dashed #e0a92e;color:#7a5410;cursor:pointer;justify-content:space-between}
   .half.h-flex .plus{color:#d9932a}
   .sched-wrap{max-height:46vh;overflow-y:auto;margin:4px 0 6px;padding-right:2px}
+  .sched-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .sched-grid .sched-day{margin-bottom:0}
+  @media(max-width:600px){ .sched-grid{grid-template-columns:1fr} }
   .sched-day{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:10px}
   .sched-dh{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
   .sched-dh b{font-size:13.5px}
@@ -1809,8 +1812,8 @@ function schedEditorHTML(){
   if(!state.schedDraft) initSchedDraft();
   const opts=[]; for(let m=240;m<=1380;m+=30) opts.push(m);
   const optHtml=(sel)=>opts.map(m=>`<option value="${m}"${m===sel?' selected':''}>${schedMinLabel(m)}</option>`).join('');
-  const order=[1,2,3,4,5,6,0];
-  return order.map(d=>{
+  const order=[1,2,3,4,5,6];   // lunes a sábado (sin domingo: el profesor no asiste)
+  return `<div class="sched-grid">`+order.map(d=>{
     const rgs=state.schedDraft[d]||[];
     const rows=rgs.length? rgs.map((rg,i)=>`<div class="sched-row">
         <select onchange="schedSet(${d},${i},'startMin',this.value)">${optHtml(rg.startMin)}</select>
@@ -1820,7 +1823,7 @@ function schedEditorHTML(){
       </div>`).join('')
       : `<div class="sched-empty">Sin horario (el profesor no asiste)</div>`;
     return `<div class="sched-day"><div class="sched-dh"><b>${SCHED_DOW_NAMES[d]}</b><button class="sched-add" onclick="schedAdd(${d})">+ Agregar</button></div>${rows}</div>`;
-  }).join('');
+  }).join('')+`</div>`;
 }
 function schedRerender(){ const el=document.getElementById('schedInline'); if(el) el.innerHTML=schedEditorHTML(); }
 function schedAdd(d){ (state.schedDraft[d]=state.schedDraft[d]||[]).push({startMin:360,endMin:420}); schedRerender(); }
@@ -1828,7 +1831,7 @@ function schedDel(d,i){ state.schedDraft[d].splice(i,1); schedRerender(); }
 function schedSet(d,i,k,v){ if(state.schedDraft[d]&&state.schedDraft[d][i]) state.schedDraft[d][i][k]=+v; }
 async function saveProfSchedule(){
   const rows=[]; let bad=false;
-  for(let d=0;d<7;d++){ (state.schedDraft[d]||[]).forEach(r=>{ if(r.endMin<=r.startMin) bad=true; else rows.push({dow:d,startMin:r.startMin,endMin:r.endMin}); }); }
+  for(let d=1;d<=6;d++){ (state.schedDraft[d]||[]).forEach(r=>{ if(r.endMin<=r.startMin) bad=true; else rows.push({dow:d,startMin:r.startMin,endMin:r.endMin}); }); }
   if(bad){ toast('Revisa: la hora de fin debe ser mayor que la de inicio.','warn'); return; }
   try{ await DB.Admin.setProfSchedule(rows); state.schedDraft=null; await loadData(); render(); toast('Horario del profesor actualizado'); }
   catch(e){ toast(e.message,'warn'); }
