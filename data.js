@@ -104,11 +104,15 @@ const ERR_MSG = {
   SOLO_RESIDENTE:'Solo un residente puede solicitar un horario permanente.',
   NO_ES_HORA_DEL_PROFESOR:'Un horario permanente solo se puede pedir en una hora del profesor.',
   YA_SOLICITADO:'Ya existe una solicitud o un horario permanente para ese día y hora.',
-  YA_RESUELTA:'Esa solicitud ya fue atendida.'
+  YA_RESUELTA:'Esa solicitud ya fue atendida.',
+  PEDIR_A_ADMIN:'Ya usaste tu cancelación de último momento de esta semana. Puedes pedirle a administración que la cancele.',
+  YA_EMPEZO:'Esa reserva ya empezó; no se puede cancelar.',
+  YA_PEDIDO:'Ya enviaste la solicitud de cancelación; espera la respuesta de administración.',
+  SOLO_NORMAL:'Solo se puede solicitar la cancelación de una reserva normal.'
 };
 function mapError(error){
   const raw=(error && (error.message||error.hint||'')) || '';
-  for(const k in ERR_MSG){ if(raw.includes(k)) return new Error(ERR_MSG[k]); }
+  for(const k in ERR_MSG){ if(raw.includes(k)){ const e=new Error(ERR_MSG[k]); e.code=k; return e; } }
   return new Error(raw || 'Ocurrió un error.');
 }
 // Errores de registro / login en lenguaje claro
@@ -355,6 +359,14 @@ async function cancel(id){
   const {error}=await sb.rpc('cancel_reservation',{p_id:id});
   if(error) throw mapError(error);
 }
+async function requestCancel(id){                     // residente pide a admin/portería cancelar
+  const {error}=await sb.rpc('request_cancel',{p_id:id});
+  if(error) throw mapError(error);
+}
+async function decideCancel(id, approve){             // admin/portería aprueban o rechazan
+  const {error}=await sb.rpc('decide_cancel',{p_id:id, p_approve:approve});
+  if(error) throw mapError(error);
+}
 /* ===== Horarios permanentes (Etapa 3) ===== */
 async function requestRecurring(houseId, dow, startMin, endMin){
   const {data,error}=await sb.rpc('request_recurring',{p_house:houseId, p_dow:dow, p_start_min:startMin, p_end_min:endMin});
@@ -488,7 +500,7 @@ async function markAllRead(profileId){
 /* ===== API pública del módulo ===== */
 window.DB = {
   Auth, Admin, Rain,
-  fetchAll, book, cancel, markNotif, markAllRead,
+  fetchAll, book, cancel, requestCancel, decideCancel, markNotif, markAllRead,
   requestRecurring, decideRecurring, cancelRecurring, materializeRecurring,
   VAPID_PUBLIC_KEY, savePushSub, removePushSub,
   getHouses, getMyHouses, getCalendar, getNotifications, getActivity,

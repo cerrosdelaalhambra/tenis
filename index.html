@@ -751,7 +751,7 @@
 <div id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="data.js?v=20260708a"></script>
+<script src="data.js?v=20260708b"></script>
 <script>
 /* PWA: registra el service worker (ruta relativa para que funcione bajo /tenis/) */
 if('serviceWorker' in navigator){
@@ -1719,6 +1719,16 @@ async function permReject(nid){
   try{ await DB.decideRecurring(n.recId,false); await loadData(); render(); toast('Solicitud rechazada'); }
   catch(e){ toast(e.message,'warn'); }
 }
+async function cancelReqAccept(nid){                 // admin/portería aprueban una solicitud de cancelación
+  const n=notifs.find(x=>x.id===nid); if(!n||!n.resId)return;
+  try{ await DB.decideCancel(n.resId,true); await loadData(); render(); toast('Cancelación aprobada · el cupo volvió a la casa'); }
+  catch(e){ toast(e.message,'warn'); }
+}
+async function cancelReqReject(nid){
+  const n=notifs.find(x=>x.id===nid); if(!n||!n.resId)return;
+  try{ await DB.decideCancel(n.resId,false); await loadData(); render(); toast('Solicitud rechazada'); }
+  catch(e){ toast(e.message,'warn'); }
+}
 
 /* ---- HISTORIAL (admin y portería) ---- */
 function whenLabel(ts){
@@ -1759,7 +1769,9 @@ function viewNotif(){
     light:['var(--amber)','#fdf0d9','<path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/>'],
     rain:['#5b7fc0','#e7eef7','<path d="M7 16a5 5 0 0 1-1-9.9A6 6 0 0 1 17.5 7 4.5 4.5 0 0 1 17 16M8 19v2M12 19v2M16 19v2"/>'],
     perm_req:['#3a6ea5','#e7eef7','<path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v4.5h-4.5"/>'],
-    perm_res:['var(--court)','#eef6df','<path d="M20 6L9 17l-5-5"/>']};
+    perm_res:['var(--court)','#eef6df','<path d="M20 6L9 17l-5-5"/>'],
+    cancel_req:['#c0672f','#fbeee3','<circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/>'],
+    cancel_res:['#3a6ea5','#e7eef7','<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>']};
   const settingsPanel = isMember() ? `<div class="panel" style="margin-bottom:14px"><div style="padding:14px 18px;display:flex;align-items:center;gap:12px">
       <div style="flex:1;min-width:0"><b style="font-size:14px">Notificaciones</b><p style="font-size:12px;color:var(--muted);margin-top:2px">Recibe los avisos en tu celular. Actívalas aquí.</p></div>
       <button class="btn-ghost" style="box-shadow:none" onclick="openNotifSettings()">Ajustes</button></div></div>` : '';
@@ -1773,6 +1785,9 @@ function viewNotif(){
     else if(n.type==='perm_req' && n.status==='pending') extra=`<div class="notif-act"><button class="na-yes" onclick="permAccept(${n.id})">Aprobar</button><button class="na-no" onclick="permReject(${n.id})">Rechazar</button></div>`;
     else if(n.type==='perm_req' && n.status==='accepted') extra=`<div class="notif-st ok">Aprobaste esta solicitud.</div>`;
     else if(n.type==='perm_req' && n.status==='rejected') extra=`<div class="notif-st">Solicitud rechazada.</div>`;
+    else if(n.type==='cancel_req' && n.status==='pending') extra=`<div class="notif-act"><button class="na-yes" onclick="cancelReqAccept(${n.id})">Aprobar cancelación</button><button class="na-no" onclick="cancelReqReject(${n.id})">Rechazar</button></div>`;
+    else if(n.type==='cancel_req' && n.status==='accepted') extra=`<div class="notif-st ok">Cancelación aprobada.</div>`;
+    else if(n.type==='cancel_req' && n.status==='rejected') extra=`<div class="notif-st">Cancelación rechazada.</div>`;
     return `<div class="notif ${n.unread?'unread':''}">
       <div class="ic" style="background:${bg};color:${col}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${path}</svg></div>
       <div class="body"><b>${n.title}</b><p>${n.body}</p>${extra}<time>${n.time}</time></div>
@@ -2498,19 +2513,39 @@ function mergeHour(date,h){
 }
 function openMyRes(id){
   const r=reservations.find(x=>x.id===id);if(!r)return;
-  const d=dateAt(r.date,r.h);const limH=(r.type==='class'?1:0.5);const cancelable=(d-NOW)>limH*3600000;
+  const d=dateAt(r.date,r.h);
+  const isClass=(r.type==='class');
+  const cancelable = isClass ? (d-NOW)>3600000 : (d-NOW)>0;   // clase: 1 h antes; normal: antes de que empiece
   const modal=document.getElementById('modal');
   modal.innerHTML=`<div class="grab"></div>
     <h3>Mi reserva</h3>
     <div class="msub">${DOWL[d.getDay()]} ${d.getDate()} de ${MON[d.getMonth()]} · ${rangeLabel(r.h,r.min,r.dur)}</div>
     <div class="quota-mini"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> A nombre de <b style="margin:0 4px">${r.house}</b>${myHouses().length>1?'(una de tus casas)':''}</div>
     ${cancelable?`<div class="modal-actions"><button class="btn-soft" onclick="closeModal()">Cerrar</button><button class="btn-primary" style="background:var(--danger)" onclick="cancelRes(${r.id})">Cancelar reserva</button></div>`
-    :`<p style="font-size:13px;color:var(--muted);text-align:center;padding:6px 0 4px">Ya no se puede cancelar (faltan menos de ${limH===1?'1 hora':'30 minutos'}).</p><button class="btn-soft" style="width:100%" onclick="closeModal()">Cerrar</button>`}`;
+    :`<p style="font-size:13px;color:var(--muted);text-align:center;padding:6px 0 4px">${isClass?'Ya no se puede cancelar (faltan menos de 1 hora).':'La reserva ya empezó; no se puede cancelar.'}</p><button class="btn-soft" style="width:100%" onclick="closeModal()">Cerrar</button>`}`;
   document.getElementById('modalBg').classList.add('show');
 }
 async function cancelRes(id){
+  try{
+    await DB.cancel(id);
+    closeModal(); await loadData(); render(); toast('Reserva cancelada · la hora volvió a tu cupo');
+  }catch(e){
+    if(e.code==='PEDIR_A_ADMIN'){ openRequestCancel(id); return; }   // pasó su límite → ofrecer solicitud
+    closeModal(); toast(e.message,'warn');
+  }
+}
+function openRequestCancel(id){
+  const m=document.getElementById('modal');
+  m.innerHTML=`<div class="grab"></div><h3>Solicitar cancelación</h3>
+    <div class="msub">Ya usaste tu cancelación de último momento de esta semana.</div>
+    <p style="font-size:13px;color:var(--muted);margin:2px 0 12px">Puedes pedirle a la administración o portería que cancele esta reserva por ti. Te llegará un aviso cuando lo decidan.</p>
+    <div class="modal-actions"><button class="btn-soft" onclick="closeModal()">Ahora no</button>
+    <button class="btn-primary" onclick="requestCancelRes(${id})">Solicitar cancelación</button></div>`;
+  document.getElementById('modalBg').classList.add('show');
+}
+async function requestCancelRes(id){
   closeModal();
-  try{ await DB.cancel(id); await loadData(); render(); toast('Reserva cancelada · la hora volvió a tu cupo'); }
+  try{ await DB.requestCancel(id); toast('Solicitud enviada a administración'); }
   catch(e){ toast(e.message,'warn'); }
 }
 function openAdminRes(id){
