@@ -1118,6 +1118,7 @@ function navItems(){
   if(state.role==='portero') return [{id:'porteria', label:'Inicio', icon:'bulb'}];
   if(state.role==='admin') return [cal,
     {id:'users', label:'Usuarios', icon:'users'},
+    {id:'settings', label:'Ajustes', icon:'gear'},
     {id:'avail', label:'Disponibilidad', icon:'clock'},
     {id:'maint', label:'Mantenimiento', icon:'tool'},
     hist];
@@ -1134,6 +1135,7 @@ const ICONS={
   tool:'<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.3 2.3-2-2 2.3-2.3z"/>',
   bulb:'<path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/>',
   history:'<path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7.5v5l3.5 2"/>',
+  gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
   rain:'<path d="M7 16a5 5 0 0 1-1-9.9A6 6 0 0 1 17.5 7 4.5 4.5 0 0 1 17 16M8 19v2M12 19v2M16 19v2"/>',
 };
 function go(view){ state.view=view; try{localStorage.setItem('tcv',view);}catch(e){}
@@ -1184,17 +1186,16 @@ function render(){
 
   // titles
   const titles={calendar:'Calendario de reservas',mine:'Mis reservas',lights:'Iluminación',rain:'Modo lluvia',porteria:'Cancha de tenis',classes:'Mis clases',
-    notif:'Notificaciones',users:'Gestión de usuarios',avail:'Disponibilidad en clases del profesor',maint:'Mantenimiento de la cancha',history:'Historial de actividad'};
+    notif:'Notificaciones',users:'Gestión de usuarios',settings:'Ajustes',avail:'Disponibilidad en clases del profesor',maint:'Mantenimiento de la cancha',history:'Historial de actividad'};
   document.getElementById('ttitle').textContent=titles[state.view];
   document.getElementById('mtitle').textContent=titles[state.view];
-  const subs={calendar:'',mine:'Tus reservas y tu cupo de la semana',lights:'Horarios para prender y apagar las luces',rain:'Cierra la cancha cuando esté lloviendo o encharcada',porteria:'Luces de la cancha y modo lluvia',classes:'Tus clases del día',notif:'Avisos de la cancha',users:'Crea y administra las cuentas',avail:state.role==='prof'?'Abre tus horarios para práctica libre o clase':'Abre horarios de clase del profesor',maint:'Cierra la cancha por reparaciones',history:'Quién reserva y cancela, y a qué hora'};
+  const subs={calendar:'',mine:'Tus reservas y tu cupo de la semana',lights:'Horarios para prender y apagar las luces',rain:'Cierra la cancha cuando esté lloviendo o encharcada',porteria:'Luces de la cancha y modo lluvia',classes:'Tus clases del día',notif:'Avisos de la cancha',users:'Cuentas fijas y residentes',settings:'Configuración de la cancha',avail:state.role==='prof'?'Abre tus horarios para práctica libre o clase':'Abre horarios de clase del profesor',maint:'Cierra la cancha por reparaciones',history:'Quién reserva y cancela, y a qué hora'};
   document.getElementById('tsub').textContent=subs[state.view]||'';
   document.getElementById('weekNav').style.display='none';
 
   // top action button
   const ta=document.getElementById('topAction');
-  if(state.view==='users'){ta.style.display='inline-flex';ta.innerHTML=plusIcon()+'Nuevo usuario';ta.dataset.act='newuser';}
-  else ta.style.display='none';
+  ta.style.display='none';   // el botón "+ Nuevo" ahora vive dentro de la lista de residentes
 
   // mobile day strip — solo en el calendario
   renderDayStrip();
@@ -1210,6 +1211,7 @@ function render(){
   else if(state.view==='porteria') c.innerHTML=viewPorteria();
   else if(state.view==='notif') c.innerHTML=viewNotif();
   else if(state.view==='users') c.innerHTML=viewUsers();
+  else if(state.view==='settings') c.innerHTML=viewSettings();
   else if(state.view==='avail') c.innerHTML=viewAvail();
   else if(state.view==='classes') c.innerHTML=viewClasses();
   else if(state.view==='maint') c.innerHTML=viewMaint();
@@ -1838,12 +1840,12 @@ async function saveProfSchedule(){
   catch(e){ toast(e.message,'warn'); }
 }
 async function setUserActive(id, makeActive){ try{ await DB.Admin.setStatus(id, makeActive?'active':'inactive'); await loadData(); render(); toast(makeActive?'Usuario activado':'Usuario desactivado'); }catch(e){ toast(e.message,'warn'); } }
-function viewUsers(){
+function viewSettings(){
   const cupoSeg=[1,2,3,4].map(n=>`<button class="${CUPO===n?'on':''}" onclick="setCupo(${n})">${n}</button>`).join('');
   const flexSeg=`<div class="seg"><button class="${!PROF_FLEX?'on':''}" onclick="setProfFlex(false)">Apagado</button><button class="${PROF_FLEX?'on':''}" onclick="setProfFlex(true)">Activo</button></div>`;
   const permSeg=`<div class="seg"><button class="${!PERM_ENABLED?'on':''}" onclick="setPermEnabled(false)">Apagado</button><button class="${PERM_ENABLED?'on':''}" onclick="setPermEnabled(true)">Activo</button></div>`;
   const permPend=RECURRING.filter(r=>r.status==='pending').length, permAct=RECURRING.filter(r=>r.status==='active').length;
-  const settings=`<div class="panel" style="margin-bottom:18px">
+  return `<div class="panel">
     <div style="padding:16px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;border-bottom:1px solid var(--line)">
       <div style="flex:1;min-width:170px"><b style="font-size:14px">Cupo semanal por casa</b><p style="font-size:12px;color:var(--muted);margin-top:2px">Horas que cada casa puede reservar por semana.</p></div>
       <div class="seg cupo-seg">${cupoSeg}</div>
@@ -1866,31 +1868,44 @@ function viewUsers(){
       <button class="btn-ghost" style="box-shadow:none" onclick="openRecurringList()">Ver y gestionar</button>
     </div>`:''}
   </div>`;
+}
+function userRow(u,i){
+  const isFixed=(u.role==='admin'||u.role==='prof'||u.role==='portero');
   const roleEs={admin:'Administración',prof:'Profesor',portero:'Portería'};
-  const rows=users.length?users.map((u,i)=>{
-    const pedida = u.status==='pending' ? (u.requestedHouse||'') : '';
-    const correoTxt = u.email ? 'con correo: '+u.email : 'sin correo';
-    const sub = u.status==='pending'
-      ? ('Solicitud nueva'+(pedida?' · pidió '+pedida:'')+(u.username?' · @'+u.username:'')+' · '+correoTxt+(u.phone?' · '+u.phone:''))
-      : (u.houses.length?u.houses.join(', '):(roleEs[u.role]||'sin casa'))+(u.active?'':' · inactivo')+(u.username?' · @'+u.username:'')+(u.phone?' · '+u.phone:'');
-    return `<div class="row">
+  const pedida=u.status==='pending'?(u.requestedHouse||''):'';
+  const correoTxt=u.email?'con correo: '+u.email:'sin correo';
+  const sub=u.status==='pending'
+    ? ('Solicitud nueva'+(pedida?' · pidió '+pedida:'')+(u.username?' · @'+u.username:'')+' · '+correoTxt+(u.phone?' · '+u.phone:''))
+    : (u.houses.length?u.houses.join(', '):(roleEs[u.role]||'sin casa'))+(u.active?'':' · inactivo')+(u.username?' · @'+u.username:'')+(u.phone?' · '+u.phone:'');
+  let actions;
+  if(isFixed){
+    actions=`<button class="btn-ghost" style="box-shadow:none" onclick="openSetPassword(${i})">Cambiar clave</button>`;
+  } else if(u.status==='pending'){
+    actions=`<button class="btn-cancel" onclick="openReject(${i})">Rechazar</button>
+      <button onclick="openApprove(${i})" style="padding:8px 14px;border-radius:10px;border:none;background:var(--court);color:#fff;font-size:13px;font-weight:600;white-space:nowrap">Aprobar</button>`;
+  } else if(u.active){
+    actions=`<button class="btn-cancel" onclick="setUserActive('${u.id}', false)">Desactivar</button>`;
+  } else {
+    actions=`<button class="btn-cancel" onclick="setUserActive('${u.id}', true)">Activar</button>
+      <button class="btn-cancel" style="border-color:#eecaca;color:#b3261e;background:#fff" onclick="openDeleteUser(${i})">Eliminar</button>`;
+  }
+  const extras=isFixed?'':`${u.status!=='pending'?`<button class="btn-ghost" style="box-shadow:none" onclick="openLinkHouses(${i})">Vincular casas</button>`:''}${(u.active&&u.phone)?`<a class="btn-wa btn-wa-sm" href="${waNotifyLink(u)}" target="_blank" rel="noopener" title="Avisar por WhatsApp que su cuenta está activa" aria-label="Avisar por WhatsApp">${WA_ICON}</a>`:''}`;
+  return `<div class="row">
     <div class="avatar" style="background:${u.active?'var(--ball)':'#e4eae8'};color:var(--court-dark)">${(u.name||'?').split(' ').map(s=>s[0]).slice(0,2).join('')}</div>
     <div class="info"><b>${u.name} ${u.houses.length>1?'<span class="pill green" style="margin-left:4px">'+u.houses.length+' casas</span>':''}${u.status==='pending'?'<span class="pill amber" style="margin-left:4px">pendiente</span>':''}</b>
       <span>${sub}</span></div>
-    ${(u.role==='member'&&u.status!=='pending')?`<button class="btn-ghost" style="box-shadow:none" onclick="openLinkHouses(${i})">Vincular casas</button>`:''}
-    ${(u.role==='member'&&u.active&&u.phone)?`<a class="btn-wa btn-wa-sm" href="${waNotifyLink(u)}" target="_blank" rel="noopener" title="Avisar por WhatsApp que su cuenta está activa" aria-label="Avisar por WhatsApp">${WA_ICON}</a>`:''}
-    ${u.status==='pending'
-      ? `<button class="btn-cancel" onclick="openReject(${i})">Rechazar</button>
-         <button onclick="openApprove(${i})" style="padding:8px 14px;border-radius:10px;border:none;background:var(--court);color:#fff;font-size:13px;font-weight:600;white-space:nowrap">Aprobar</button>`
-      : (u.active
-         ? `${(u.role==='portero'||u.role==='prof')?`<button class="btn-ghost" style="box-shadow:none" onclick="openSetPassword(${i})">Cambiar clave</button>`:''}
-            <button class="btn-cancel" onclick="setUserActive('${u.id}', false)">Desactivar</button>`
-         : `<button class="btn-cancel" onclick="setUserActive('${u.id}', true)">Activar</button>
-            <button class="btn-cancel" style="border-color:#eecaca;color:#b3261e;background:#fff" onclick="openDeleteUser(${i})">Eliminar</button>`)}
-  </div>`;}).join(''):'<div class="empty" style="padding:30px">Aún no hay cuentas.</div>';
-  return settings+`<div class="panel"><div class="panel-h"><h3>${users.length} usuarios</h3><div class="spacer"></div>
-    <button class="btn-mini" onclick="openNewUser()">+ Nuevo</button></div>${rows}</div>
-    <p style="font-size:12.5px;color:var(--muted);margin:14px 4px">Con "Vincular casas" asocias varias casas a una cuenta (usuario maestro). Las cuentas con varias casas comparten cupo de forma transparente — visible aquí para el administrador.</p>`;
+    ${extras}${actions}
+  </div>`;
+}
+function viewUsers(){
+  const idx=users.map((u,i)=>({u,i}));
+  const isFx=x=>(x.u.role==='admin'||x.u.role==='prof'||x.u.role==='portero');
+  const fixed=idx.filter(isFx), residents=idx.filter(x=>!isFx(x));
+  const fixedRows=fixed.length?fixed.map(x=>userRow(x.u,x.i)).join(''):'<div class="empty" style="padding:26px">No hay cuentas fijas.</div>';
+  const resRows=residents.length?residents.map(x=>userRow(x.u,x.i)).join(''):'<div class="empty" style="padding:26px">Aún no hay residentes.</div>';
+  return `<div class="panel" style="margin-bottom:16px"><div class="panel-h"><h3>Cuentas fijas</h3><div class="spacer"></div><span style="font-size:12px;color:var(--muted)">No se eliminan</span></div>${fixedRows}</div>
+    <div class="panel"><div class="panel-h"><h3>Residentes${residents.length?' · '+residents.length:''}</h3><div class="spacer"></div><button class="btn-mini" onclick="openNewUser()">+ Nuevo</button></div>${resRows}</div>
+    <p style="font-size:12.5px;color:var(--muted);margin:14px 4px">Con "Vincular casas" asocias varias casas a una cuenta (usuario maestro). Las cuentas con varias casas comparten cupo de forma transparente.</p>`;
 }
 function openLinkHouses(i){
   const u=users[i];
