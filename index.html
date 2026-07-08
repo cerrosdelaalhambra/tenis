@@ -746,7 +746,7 @@
 <div id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="data.js?v=20260614f"></script>
+<script src="data.js?v=20260708a"></script>
 <script>
 /* PWA: registra el service worker (ruta relativa para que funcione bajo /tenis/) */
 if('serviceWorker' in navigator){
@@ -855,6 +855,7 @@ let RECURRING = [];       // horarios permanentes (clases fijas), desde la base
 let PERM_ENABLED = false; // ¿se pueden solicitar horarios permanentes?
 let PERM_ROUTE = 'both';  // a quién llegan: 'prof' | 'admin' | 'both'
 function visibleNotifs(){return notifs.filter(n=>{
+  if(n.type==='reminder') return false; // el recordatorio es solo push (no llena la campana)
   if(n.roles && !n.roles.includes(state.role)) return false;
   if(n.type==='rain' && n.house && isMember() && !myHouses().includes(n.house)) return false; // la solicitud por lluvia solo le llega al dueño afectado
   return true;
@@ -1790,7 +1791,7 @@ async function disablePush(){
 }
 async function openNotifSettings(){
   const p=state.profile||{};
-  const prefs=p.notif_prefs||{release:true,rain:true,perm:true};
+  const prefs=p.notif_prefs||{release:true,rain:true,perm:true,reminder:true};
   let stateHtml;
   if(!pushSupported()){
     stateHtml=`<div class="perm-note"><b>Tu navegador no soporta notificaciones.</b><span>Prueba con Chrome en Android, o instala la app en la pantalla de inicio de tu iPhone.</span></div>`;
@@ -1811,6 +1812,7 @@ async function openNotifSettings(){
     ${chk('release','Cuando el profesor libera un horario')}
     ${chk('rain','Modo lluvia (te piden cancelar tu reserva)')}
     ${chk('perm','Resultado de tu horario permanente')}
+    ${chk('reminder','Recordatorio 15 minutos antes de tu reserva')}
     <div class="modal-actions"><button class="btn-soft" onclick="closeModal()">Cerrar</button>
     <button class="btn-primary" onclick="saveNotifPrefs()">Guardar preferencias</button></div>`;
   document.getElementById('modalBg').classList.add('show');
@@ -1819,7 +1821,8 @@ function toggleNotifPref(k,e){ if(e)e.stopPropagation(); const box=document.getE
 async function saveNotifPrefs(){
   const prefs={ release:document.getElementById('np_release').classList.contains('on'),
                 rain:document.getElementById('np_rain').classList.contains('on'),
-                perm:document.getElementById('np_perm').classList.contains('on') };
+                perm:document.getElementById('np_perm').classList.contains('on'),
+                reminder:document.getElementById('np_reminder').classList.contains('on') };
   closeModal();
   try{ await DB.Auth.setNotifSettings(state.profile.id, {prefs}); if(state.profile) state.profile.notif_prefs=prefs; toast('Preferencias guardadas'); }
   catch(e){ toast(e.message,'warn'); }

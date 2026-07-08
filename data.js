@@ -90,7 +90,7 @@ function relTime(iso){
 
 /* ===== Errores del servidor → mensajes amables ===== */
 const ERR_MSG = {
-  SIN_CUPO:'Esa casa ya no tiene cupo esta semana. Solo puedes reservar horarios que libera el profesor (no consumen cupo).',
+  SIN_CUPO:'Esa casa ya no tiene cupo esta semana. Puedes reservar horarios que libera el profesor, o ir con el profesor en su horario: eso no consume cupo.',
   YA_RESERVADO:'Ese horario ya está reservado.',
   HORARIO_DEL_PROFESOR:'Ese horario es del profesor.',
   FUERA_DE_HORARIO:'Ese horario está fuera del horario de la cancha.',
