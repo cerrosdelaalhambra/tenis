@@ -1440,8 +1440,9 @@ function halfCell(date,h,half,s){
   if(k==='class'||k==='open') return `<div class="half h-bonus" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'h${half}')"`:''} title="No gasta cupo${k==='class'?' · profesor disponible':''}"><span><span class="plus">+</span>Libre</span><span class="bstar">★</span></div>`;
   if(k==='rain') return `<div class="half h-na">${svgIco(RAIN_P,12,'#5b7fc0')}</div>`;
   if(k==='maint'||k==='past'||k==='locked'||k==='na') return `<div class="half h-na"></div>`;
-  if(!canBookFree(date,h)) return `<div class="half h-na"></div>`;
-  return `<div class="half h-free" onclick="openBook('${date}',${h},'h${half}')" title="Reservar ${rangeLabel(h,half*30,30)}"><span class="plus">+</span>Libre</div>`;
+  // Media hora libre: se muestra siempre como "Libre" (igual que la hora completa);
+  // clickeable solo si quien mira puede reservar (el admin gestiona, no reserva).
+  return `<div class="half h-free" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'h${half}')"`:''} title="${canBookFree(date,h)?'Reservar '+rangeLabel(h,half*30,30):rangeLabel(h,half*30,30)+' · libre'}"><span class="plus">+</span>Libre</div>`;
 }
 function slotHTML(date,h){
   const sc=slotCat(date,h), cat=sc.cat, res=sc.res, mc=sc.mc;
