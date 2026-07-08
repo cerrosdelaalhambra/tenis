@@ -454,6 +454,11 @@
   .hrow time.hwhen{display:flex;flex-direction:column;align-items:flex-end;text-align:right;white-space:nowrap;flex:none;line-height:1.3}
   .hrow .hw-d{font-size:11px;color:var(--gray);text-transform:capitalize}
   .hrow .hw-t{font-size:12.5px;color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
+  .hinfo .hline{display:flex;align-items:flex-start;gap:6px;font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.35}
+  .hinfo .hline .hmini{width:13px;height:13px;flex:none;margin-top:1px;stroke:var(--gray);fill:none;stroke-width:2}
+  .hinfo .hlbl{color:var(--gray)}
+  .hinfo .hslot{color:var(--ink);font-weight:700;text-transform:capitalize}
+  .hinfo .hwhen-t{color:var(--muted)}
 
   /* admin forms */
   .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:18px}
@@ -1725,15 +1730,22 @@ function whenLabel(ts){
 function viewHistory(){
   if(!activity.length) return emptyState('Aún no hay actividad registrada.');
   const sorted=[...activity].sort((a,b)=>b.ts-a.ts);
+  const BALL='<svg class="hmini" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M5 6a11 11 0 0 0 0 12M19 6a11 11 0 0 1 0 12"/></svg>';
+  const CLOCK='<svg class="hmini" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg>';
   const rows=sorted.map(e=>{
     const d=dateAt(e.date,e.h), cancel=e.action==='cancel', w=whenLabel(e.ts);
     const who=e.name===e.house?e.house:`${e.name} · ${e.house}`;
-    const extra=e.type==='class'?' (clase)':e.type==='open'?' (libre)':'';
+    const extra=e.type==='class'?' (clase)':e.type==='open'?' (libre)':e.type==='profclass'?' (clase del profesor)':'';
     const ico=cancel?'<path d="M18 6L6 18M6 6l12 12"/>':'<path d="M20 6L9 17l-5-5"/>';
+    const slot=`${DOWL[d.getDay()]} ${d.getDate()} de ${MON[d.getMonth()]} · ${rangeLabel(e.h,e.min,e.dur)}`;
+    const col=cancel?'var(--danger)':'var(--court)';
     return `<div class="hrow">
       <div class="hic ${cancel?'cancel':'reserve'}">${svgIco(ico,16)}</div>
-      <div class="hinfo"><b>${who}</b><span><b style="color:${cancel?'var(--danger)':'var(--court)'};font-weight:700">${cancel?'Canceló':'Reservó'}</b> la reserva del ${DOWL[d.getDay()]} ${d.getDate()}, ${rangeLabel(e.h,e.min,e.dur)}${extra}</span></div>
-      <time class="hwhen"><span class="hw-d">${w.dia}</span><span class="hw-t">${w.hora}</span></time>
+      <div class="hinfo">
+        <b>${who}</b>
+        <span class="hline">${BALL}<span><span class="hlbl">Cancha:</span> <strong class="hslot">${slot}</strong>${extra}</span></span>
+        <span class="hline">${CLOCK}<span><strong style="color:${col}">${cancel?'Canceló':'Reservó'}</strong> <span class="hwhen-t">el ${w.dia}, ${w.hora}</span></span></span>
+      </div>
     </div>`;}).join('');
   return `<div class="panel">${rows}</div>`;
 }
