@@ -1850,11 +1850,6 @@ async function setPermEnabled(on){
     toast(on?'Horarios permanentes habilitados':'Horarios permanentes deshabilitados'); }
   catch(e){ toast(e.message,'warn'); }
 }
-async function setPermRoute(r){
-  try{ await DB.Admin.setPermRoute(r); PERM_ROUTE=r; render();
-    toast('Las solicitudes irán a: '+(r==='prof'?'el profesor':r==='admin'?'la administración':'profesor y administración')); }
-  catch(e){ toast(e.message,'warn'); }
-}
 function recLabel(r){ return `${r.house||'Casa'} · ${SCHED_DOW_NAMES[r.dow]} ${schedMinLabel(r.startMin)}–${schedMinLabel(r.endMin)}`; }
 function openRecurringList(){
   const act=RECURRING.filter(r=>r.status==='active');
@@ -1924,7 +1919,6 @@ function viewUsers(){
   const cupoSeg=[1,2,3,4].map(n=>`<button class="${CUPO===n?'on':''}" onclick="setCupo(${n})">${n}</button>`).join('');
   const flexSeg=`<div class="seg"><button class="${!PROF_FLEX?'on':''}" onclick="setProfFlex(false)">Apagado</button><button class="${PROF_FLEX?'on':''}" onclick="setProfFlex(true)">Activo</button></div>`;
   const permSeg=`<div class="seg"><button class="${!PERM_ENABLED?'on':''}" onclick="setPermEnabled(false)">Apagado</button><button class="${PERM_ENABLED?'on':''}" onclick="setPermEnabled(true)">Activo</button></div>`;
-  const routeSeg=`<div class="seg"><button class="${PERM_ROUTE==='prof'?'on':''}" onclick="setPermRoute('prof')">Profesor</button><button class="${PERM_ROUTE==='admin'?'on':''}" onclick="setPermRoute('admin')">Admin</button><button class="${PERM_ROUTE==='both'?'on':''}" onclick="setPermRoute('both')">Ambos</button></div>`;
   const permPend=RECURRING.filter(r=>r.status==='pending').length, permAct=RECURRING.filter(r=>r.status==='active').length;
   const settings=`<div class="panel" style="margin-bottom:18px">
     <div style="padding:16px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;border-bottom:1px solid var(--line)">
@@ -1940,14 +1934,10 @@ function viewUsers(){
       <button class="btn-ghost" style="box-shadow:none" onclick="openProfSchedule()">Editar horario</button>
     </div>
     <div style="padding:16px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap${PERM_ENABLED?';border-bottom:1px solid var(--line)':''}">
-      <div style="flex:1;min-width:210px"><b style="font-size:14px">Horarios permanentes (clases fijas)</b><p style="font-size:12px;color:var(--muted);margin-top:2px">Permite que los residentes soliciten una clase fija semanal con el profesor. Solo funciona con el modo flexible activo.</p></div>
+      <div style="flex:1;min-width:210px"><b style="font-size:14px">Horarios permanentes (clases fijas)</b><p style="font-size:12px;color:var(--muted);margin-top:2px">Permite que los residentes soliciten una clase fija semanal con el profesor. Las solicitudes le llegan al profesor y a la administración (con que uno apruebe basta). Solo funciona con el modo flexible activo.</p></div>
       ${permSeg}
     </div>
     ${PERM_ENABLED?`
-    <div style="padding:16px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;border-bottom:1px solid var(--line)">
-      <div style="flex:1;min-width:210px"><b style="font-size:14px">¿A quién llegan las solicitudes?</b><p style="font-size:12px;color:var(--muted);margin-top:2px">Con que uno apruebe basta.</p></div>
-      ${routeSeg}
-    </div>
     <div style="padding:16px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
       <div style="flex:1;min-width:210px"><b style="font-size:14px">Clases fijas activas</b><p style="font-size:12px;color:var(--muted);margin-top:2px">${permAct} activa${permAct===1?'':'s'}${permPend?' · '+permPend+' por aprobar':''}.</p></div>
       <button class="btn-ghost" style="box-shadow:none" onclick="openRecurringList()">Ver y gestionar</button>
