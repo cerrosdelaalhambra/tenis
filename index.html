@@ -3,6 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<!-- Adelanta la conexión al CDN y a la base de datos (más rápido en la primera carga) -->
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://lknvospoabzkyljelcuy.supabase.co" crossorigin>
+<link rel="dns-prefetch" href="https://lknvospoabzkyljelcuy.supabase.co">
 <title>Cancha de Tenis · Cerros de la Alhambra</title>
 <!-- Tarjeta para compartir (WhatsApp, etc.) -->
 <meta property="og:type" content="website">
@@ -751,7 +755,7 @@
 <div id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="data.js?v=20260614b"></script>
+<script src="data.js?v=20260614c"></script>
 <script>
 /* ======================= DATA ======================= */
 const NOW = new Date(); // hora real (datos reales vía data.js)
@@ -1066,7 +1070,11 @@ async function autoBoot(){
     if(!prof){ showLogin(); return; }                 // sin sesión → muestra el login
     if(prof.status!=='active'){ showPending(); return; }
     state.profile=prof;
-    try{ if(window.DB&&DB.materializeRecurring) await DB.materializeRecurring(); }catch(e){}  // crea las clases fijas de la semana (idempotente)
+    // Materializa las clases fijas de la semana SIN bloquear la primera pintura;
+    // si de verdad creó alguna (solo la 1ª vez de la semana), refresca para mostrarlas.
+    if(window.DB&&DB.materializeRecurring){
+      Promise.resolve(DB.materializeRecurring()).then(n=>{ if(n>0 && document.getElementById('app').classList.contains('show')) refreshData(); }).catch(()=>{});
+    }
     await loadData();
     try{ const v=localStorage.getItem('tcv'); if(v && navItems().some(i=>i.id===v)) state.view=v; }catch(e){}  // recuerda la pestaña
     document.getElementById('login').style.display='none';

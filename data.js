@@ -205,6 +205,16 @@ async function getCupo(){
   const {data}=await sb.from('app_config').select('value').eq('key','weekly_cupo_hours').single();
   return data ? Number(data.value) : 2;
 }
+// Toda la configuración en UNA sola consulta (antes eran 3: cupo, flexible, permanente)
+async function getConfig(){
+  const {data}=await sb.from('app_config').select('key,value');
+  const m={}; (data||[]).forEach(x=>m[x.key]=x.value);
+  return {
+    cupo: m.weekly_cupo_hours ? Number(m.weekly_cupo_hours) : 2,
+    profFlexible: m.prof_flexible==='true',
+    permEnabled: m.perm_enabled==='true'
+  };
+}
 // Horario del profesor (editable). Si la tabla aún no existe, devuelve [] y la app usa el horario fijo de respaldo.
 async function getProfSchedule(){
   const {data}=await sb.from('prof_schedule').select('dow,start_min,end_min').order('dow').order('start_min');
@@ -240,12 +250,15 @@ async function getClosures(){
 }
 // Calendario: miembros ven solo casa+hora (vista v_calendar); el staff ve nombres
 async function getCalendar(role){
+  // La app solo muestra la semana actual en adelante, así que no traemos historial
+  // viejo (8 días de margen cubren toda la semana en curso). Mantiene la carga liviana.
+  const cutoff = new Date(Date.now() - 8*24*60*60*1000).toISOString();
   if(role==='admin' || role==='portero'){
     // OJO: reservations tiene DOS FK a profiles (profile_id y created_by). Hay que
     // desambiguar el embed con !profile_id, si no PostgREST falla y no llega nada.
     const {data,error}=await sb.from('reservations')
       .select('id,starts_at,ends_at,type,profile_id,houses(label),profiles!profile_id(full_name)')
-      .order('starts_at');
+      .gte('starts_at', cutoff).order('starts_at');
     if(error) console.warn('getCalendar(staff):', error.message);
     const prim = await primaryHouseMap();           // para el detalle "de la Casa X"
     return (data||[]).map(r=>{ const m=mapReservation({...r, house_label:r.houses&&r.houses.label, name:r.profiles&&r.profiles.full_name});
@@ -253,7 +266,7 @@ async function getCalendar(role){
       m.fromHouse = (home && home!==m.house) ? home : null;   // su casa, si reservó a nombre de otra
       return m; });
   }
-  const {data}=await sb.from('v_calendar').select('id,house_label,starts_at,ends_at,type').order('starts_at');
+  const {data}=await sb.from('v_calendar').select('id,house_label,starts_at,ends_at,type').gte('starts_at', cutoff).order('starts_at');
   return (data||[]).map(mapReservation);
 }
 async function primaryHouseMap(){                   // profile_id -> etiqueta de su casa principal
@@ -313,17 +326,20 @@ async function getUsers(){                          // lista de cuentas (admin/p
 
 // Trae TODO lo necesario para pintar, según el perfil logueado
 async function fetchAll(profile){
-  const myHouses = isMemberRole(profile.role) ? await getMyHouses(profile.id) : [];
-  const [reservations, releases, closures, holidays, houses, cupo, notifs, profSchedule, profFlexible, recurring, permCfg] = await Promise.all([
+  const member = isMemberRole(profile.role);
+  const staff  = profile.role==='admin' || profile.role==='portero';
+  // TODO en un solo lote paralelo (antes había hasta 3 fases secuenciales)
+  const [myHouses, reservations, releases, closures, holidays, houses, cfg, notifs, profSchedule, recurring, activity, users] = await Promise.all([
+    member ? getMyHouses(profile.id) : Promise.resolve([]),
     getCalendar(profile.role), getReleases(), getClosures(), getHolidays(),
-    getHouses(), getCupo(), getNotifications(profile.role, profile.id, profile.notif_seen_at),
-    getProfSchedule(), getProfFlexible(), getRecurring(), getPermConfig()
+    getHouses(), getConfig(), getNotifications(profile.role, profile.id, profile.notif_seen_at),
+    getProfSchedule(), getRecurring(),
+    staff ? getActivity() : Promise.resolve([]),
+    staff ? getUsers()    : Promise.resolve([])
   ]);
-  const bundle = { profile, myHouses, reservations, releases, closures, holidays, houses, cupo, notifs, profSchedule, profFlexible,
-                   recurring, permEnabled:permCfg.enabled, permRoute:permCfg.route };
-  if(isMemberRole(profile.role)) bundle.mine = await getMyReservations(myHouses.map(h=>h.id));
-  if(profile.role==='admin'||profile.role==='portero'){ bundle.activity = await getActivity(); bundle.users = await getUsers(); }
-  return bundle;
+  return { profile, myHouses, reservations, releases, closures, holidays, houses,
+    cupo:cfg.cupo, profFlexible:cfg.profFlexible, permEnabled:cfg.permEnabled, permRoute:'both',
+    notifs, profSchedule, recurring, activity, users };
 }
 function isMemberRole(role){ return role==='member' || role==='master'; }
 
@@ -349,7 +365,7 @@ async function requestRecurring(houseId, dow, startMin, endMin){
 }
 async function decideRecurring(id, approve){ const {error}=await sb.rpc('decide_recurring',{p_id:id, p_approve:approve}); if(error) throw mapError(error); }
 async function cancelRecurring(id){ const {error}=await sb.rpc('cancel_recurring',{p_id:id}); if(error) throw mapError(error); }
-async function materializeRecurring(){ const {error}=await sb.rpc('materialize_recurring'); if(error) console.warn('materialize_recurring:', error.message); }
+async function materializeRecurring(){ const {data,error}=await sb.rpc('materialize_recurring'); if(error){ console.warn('materialize_recurring:', error.message); return 0; } return data||0; }
 
 /* ===== Acciones de gestión (hitos siguientes; aquí las simples) ===== */
 const Admin = {
