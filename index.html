@@ -1119,7 +1119,7 @@ function navItems(){
   if(state.role==='admin') return [cal,
     {id:'users', label:'Usuarios', icon:'users'},
     {id:'settings', label:'Ajustes', icon:'gear'},
-    {id:'avail', label:'Disponibilidad', icon:'clock'},
+    {id:'avail', label:'Profesor', icon:'clock'},
     {id:'maint', label:'Mantenimiento', icon:'tool'},
     hist];
   if(state.role==='prof') return [{id:'classes', label:'Mis clases', icon:'ball'}, cal, notif, {id:'avail', label:'Disponibilidad', icon:'clock'}];
@@ -1186,10 +1186,10 @@ function render(){
 
   // titles
   const titles={calendar:'Calendario de reservas',mine:'Mis reservas',lights:'Iluminación',rain:'Modo lluvia',porteria:'Cancha de tenis',classes:'Mis clases',
-    notif:'Notificaciones',users:'Gestión de usuarios',settings:'Ajustes',avail:'Disponibilidad en clases del profesor',maint:'Mantenimiento de la cancha',history:'Historial de actividad'};
+    notif:'Notificaciones',users:'Gestión de usuarios',settings:'Ajustes',avail:(state.role==='prof'?'Disponibilidad':'Profesor'),maint:'Mantenimiento de la cancha',history:'Historial de actividad'};
   document.getElementById('ttitle').textContent=titles[state.view];
   document.getElementById('mtitle').textContent=titles[state.view];
-  const subs={calendar:'',mine:'Tus reservas y tu cupo de la semana',lights:'Horarios para prender y apagar las luces',rain:'Cierra la cancha cuando esté lloviendo o encharcada',porteria:'Luces de la cancha y modo lluvia',classes:'Tus clases del día',notif:'Avisos de la cancha',users:'Cuentas fijas y residentes',settings:'Configuración de la cancha',avail:state.role==='prof'?'Abre tus horarios para práctica libre o clase':'Abre horarios de clase del profesor',maint:'Cierra la cancha por reparaciones',history:'Quién reserva y cancela, y a qué hora'};
+  const subs={calendar:'',mine:'Tus reservas y tu cupo de la semana',lights:'Horarios para prender y apagar las luces',rain:'Cierra la cancha cuando esté lloviendo o encharcada',porteria:'Luces de la cancha y modo lluvia',classes:'Tus clases del día',notif:'Avisos de la cancha',users:'Cuentas fijas y residentes',settings:'Configuración de la cancha',avail:state.role==='prof'?'Abre tus horarios para práctica libre o clase':'Horario del profesor y apertura de horas de clase',maint:'Cierra la cancha por reparaciones',history:'Quién reserva y cancela, y a qué hora'};
   document.getElementById('tsub').textContent=subs[state.view]||'';
   document.getElementById('weekNav').style.display='none';
 
@@ -1854,10 +1854,6 @@ function viewSettings(){
       <div style="flex:1;min-width:210px"><b style="font-size:14px">Horas del profesor reservables</b><p style="font-size:12px;color:var(--muted);margin-top:2px">Si lo activas, los residentes pueden reservar las horas del profesor y eligen ir con o sin profesor. Si lo apagas, esas horas son exclusivas del profesor (como hoy).</p></div>
       ${flexSeg}
     </div>
-    <div style="padding:16px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;border-bottom:1px solid var(--line)">
-      <div style="flex:1;min-width:210px"><b style="font-size:14px">Horario del profesor</b><p style="font-size:12px;color:var(--muted);margin-top:2px">Define los días y las horas en que el profesor está en la cancha.</p></div>
-      <button class="btn-ghost" style="box-shadow:none" onclick="openProfSchedule()">Editar horario</button>
-    </div>
     <div style="padding:16px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap${PERM_ENABLED?';border-bottom:1px solid var(--line)':''}">
       <div style="flex:1;min-width:210px"><b style="font-size:14px">Horarios permanentes (clases fijas)</b><p style="font-size:12px;color:var(--muted);margin-top:2px">Permite que los residentes soliciten una clase fija semanal con el profesor. Las solicitudes le llegan al profesor y a la administración (con que uno apruebe basta). Solo funciona con el modo flexible activo.</p></div>
       ${permSeg}
@@ -2169,7 +2165,11 @@ function viewAvail(){
           </div>`;
   const warn = (!multi&&noProf) ? `<p style="font-size:12.5px;color:var(--clay);background:#fbeee9;border-radius:10px;padding:10px 12px;margin:0">Ese día el profesor no tiene clases (ej. domingo). No hay horarios para abrir.</p>` : '';
   const btnDis = (!multi&&noProf) ? 'disabled' : '';
-  let html=`<div class="panel"><div class="panel-h"><h3>Abrir disponibilidad en clases del profesor</h3><div class="spacer"></div>${checkbox}</div>
+  const schedPanel = state.role==='admin' ? `<div class="panel" style="margin-bottom:16px"><div style="padding:16px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <div style="flex:1;min-width:210px"><b style="font-size:14px">Horario del profesor</b><p style="font-size:12px;color:var(--muted);margin-top:2px">Define los días y las horas en que el profesor está en la cancha.</p></div>
+      <button class="btn-ghost" style="box-shadow:none" onclick="openProfSchedule()">Editar horario</button>
+    </div></div>` : '';
+  let html=schedPanel+`<div class="panel"><div class="panel-h"><h3>Abrir disponibilidad en clases del profesor</h3><div class="spacer"></div>${checkbox}</div>
     <div style="padding:18px">
       <label class="fld-label">${multi?'Escoge el rango de días que el profesor faltará (toca inicio y fin)':'Escoge el día'}</label>
       <div class="avail-cols">
