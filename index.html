@@ -351,6 +351,23 @@
   .perm-note b{display:block;font-size:13px;color:#2b567f;margin-bottom:2px}
   .perm-note span{font-size:12.5px;color:var(--muted);line-height:1.5}
   .seg.seg-wrap{flex-wrap:wrap}
+  .cday-strip{display:flex;gap:8px;overflow-x:auto;padding:2px 0 14px;-webkit-overflow-scrolling:touch}
+  .cday{flex:none;padding:8px 14px;border-radius:11px;border:1.5px solid var(--line);background:#fff;font-size:13px;font-weight:600;color:var(--muted);white-space:nowrap;cursor:pointer}
+  .cday.on{background:var(--court);border-color:var(--court);color:#fff}
+  .cday-head{padding:14px 18px;border-bottom:1px solid var(--line)}
+  .cday-head b{font-size:16px;color:var(--court)}
+  .cday-head span{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+  .crow{display:flex;align-items:center;gap:14px;padding:13px 18px;border-bottom:1px solid var(--line);cursor:pointer}
+  .crow:last-child{border-bottom:none}
+  .crow:hover{background:#fafcfb}
+  .crow.past{opacity:.55}
+  .crow .ctime{min-width:60px}
+  .crow .ctime b{display:block;font-size:15px;color:var(--ink)}
+  .crow .ctime span{font-size:11px;color:var(--muted)}
+  .crow .cinfo{flex:1;min-width:0}
+  .crow .cinfo b{font-size:14px;color:var(--ink);display:flex;align-items:center}
+  .crow .cinfo span{display:block;font-size:12px;color:var(--muted)}
+  .crow .chev{color:var(--muted);flex:none}
   .half.h-bonus:hover{background:var(--court-soft)}
   .half.h-na{background:#fafbfb;border:1px solid #eef1f0;color:#c2c8c6;justify-content:center;font-size:9px}
   .wgrid.filtering .slot:not(.s-free):not(.s-bonus):not(.s-flex){opacity:.12;pointer-events:none}
@@ -851,6 +868,7 @@ let state = {
   view:'calendar',
   weekStart:startOfWeek(NOW),
   mobileDay:ymd(NOW),
+  classDay:ymd(NOW),
   user:users[0],
   onlyAvailable:false,
   fullWeek:false,
@@ -1158,7 +1176,7 @@ function navItems(){
     {id:'avail', label:'Disponibilidad', icon:'clock'},
     {id:'maint', label:'Mantenimiento', icon:'tool'},
     hist];
-  if(state.role==='prof') return [cal, notif, {id:'avail', label:'Disponibilidad', icon:'clock'}];
+  if(state.role==='prof') return [{id:'classes', label:'Mis clases', icon:'ball'}, cal, notif, {id:'avail', label:'Disponibilidad', icon:'clock'}];
   return [cal, {id:'mine', label:'Mis reservas', icon:'check'}, notif];
 }
 const ICONS={
@@ -1220,11 +1238,11 @@ function render(){
   document.getElementById('mhBell').style.display=items.some(i=>i.id==='notif')?'':'none';
 
   // titles
-  const titles={calendar:'Calendario de reservas',mine:'Mis reservas',lights:'Iluminación',rain:'Modo lluvia',porteria:'Cancha de tenis',
+  const titles={calendar:'Calendario de reservas',mine:'Mis reservas',lights:'Iluminación',rain:'Modo lluvia',porteria:'Cancha de tenis',classes:'Mis clases',
     notif:'Notificaciones',users:'Gestión de usuarios',avail:'Disponibilidad en clases del profesor',maint:'Mantenimiento de la cancha',history:'Historial de actividad'};
   document.getElementById('ttitle').textContent=titles[state.view];
   document.getElementById('mtitle').textContent=titles[state.view];
-  const subs={calendar:'',mine:'Tus reservas y tu cupo de la semana',lights:'Horarios para prender y apagar las luces',rain:'Cierra la cancha cuando esté lloviendo o encharcada',porteria:'Luces de la cancha y modo lluvia',notif:'Avisos de la cancha',users:'Crea y administra las cuentas',avail:state.role==='prof'?'Abre tus horarios para práctica libre o clase':'Abre horarios de clase del profesor',maint:'Cierra la cancha por reparaciones',history:'Quién reserva y cancela, y a qué hora'};
+  const subs={calendar:'',mine:'Tus reservas y tu cupo de la semana',lights:'Horarios para prender y apagar las luces',rain:'Cierra la cancha cuando esté lloviendo o encharcada',porteria:'Luces de la cancha y modo lluvia',classes:'Tus clases del día',notif:'Avisos de la cancha',users:'Crea y administra las cuentas',avail:state.role==='prof'?'Abre tus horarios para práctica libre o clase':'Abre horarios de clase del profesor',maint:'Cierra la cancha por reparaciones',history:'Quién reserva y cancela, y a qué hora'};
   document.getElementById('tsub').textContent=subs[state.view]||'';
   document.getElementById('weekNav').style.display='none';
 
@@ -1248,6 +1266,7 @@ function render(){
   else if(state.view==='notif') c.innerHTML=viewNotif();
   else if(state.view==='users') c.innerHTML=viewUsers();
   else if(state.view==='avail') c.innerHTML=viewAvail();
+  else if(state.view==='classes') c.innerHTML=viewClasses();
   else if(state.view==='maint') c.innerHTML=viewMaint();
   else if(state.view==='history') c.innerHTML=viewHistory();
 }
@@ -1597,6 +1616,41 @@ function viewMine(){
   return html;
 }
 
+/* ---- PROFESOR: Mis clases (por día) ---- */
+function setClassDay(date){ state.classDay=date; render(); scrollTop(); fadeContent(); }
+function classDayChips(){
+  let html='';
+  for(let i=0;i<7;i++){
+    const d=addDays(NOW,i), date=ymd(d);
+    const lab = i===0?'Hoy' : i===1?'Mañana' : `${DOW[d.getDay()]} ${d.getDate()}`;
+    html+=`<button class="cday${date===state.classDay?' on':''}" onclick="setClassDay('${date}')">${lab}</button>`;
+  }
+  return `<div class="cday-strip">${html}</div>`;
+}
+function viewClasses(){
+  const date=state.classDay, d=dateAt(date,0);
+  const list=reservations.filter(r=>r.date===date && (r.type==='class'||r.type==='profclass'))
+    .sort((a,b)=>(a.h*60+(a.min||0))-(b.h*60+(b.min||0)));
+  const titulo = date===ymd(NOW)?'Hoy' : date===ymd(addDays(NOW,1))?'Mañana' : DOWL[d.getDay()];
+  const head=`<div class="cday-head"><b>${titulo}</b><span>${DOWL[d.getDay()]} ${d.getDate()} de ${MON[d.getMonth()]} · ${list.length} clase${list.length===1?'':'s'}</span></div>`;
+  let rows;
+  if(!list.length){
+    rows=`<div class="empty" style="padding:34px">No tienes clases este día.</div>`;
+  } else {
+    rows=list.map(r=>{
+      const own=r.type==='profclass';
+      const endT=new Date(dateAt(r.date,r.h).getTime()+((r.min||0)+r.dur)*60000), past=endT<NOW;
+      const quien=own?'Bloque tuyo (clase)':`${HOUSE_ICON}${houseNum(r.house)}${r.name?' · '+r.name.split(' ')[0]:''}`;
+      const openFn=own?`openProfRes(${r.id})`:`openAdminRes(${r.id})`;
+      return `<div class="crow${past?' past':''}" onclick="${openFn}">
+        <div class="ctime"><b>${hlabel(r.h)}</b><span>${rangeLabel(r.h,r.min,r.dur)}</span></div>
+        <div class="cinfo"><b>${quien}</b><span>${own?'Reservado para tu clase':'Clase con el profesor'}</span></div>
+        ${past?'<span class="pill gray">Terminada</span>':M_CHEV}
+      </div>`;
+    }).join('');
+  }
+  return `${classDayChips()}<div class="panel">${head}${rows}</div>`;
+}
 /* ---- PORTERO: ILUMINACIÓN ---- */
 /* ---- PORTERÍA: modo lluvia ---- */
 /* ---- Portería: todo en una sola pantalla (modo lluvia arriba + luces abajo) ---- */
