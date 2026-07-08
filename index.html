@@ -49,7 +49,7 @@
   html{background:#0a2f29}   /* fondo raíz: evita franja blanca en las "safe areas" del iPhone (PWA) */
   body{
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    background:var(--bg); color:var(--ink); -webkit-font-smoothing:antialiased;
+    background:#0a2f29; color:var(--ink); -webkit-font-smoothing:antialiased;   /* verde: sin franja blanca en las safe areas (el fondo claro va en #app) */
     line-height:1.45;
   }
   button{font-family:inherit;cursor:pointer;border:none;background:none}
@@ -129,7 +129,7 @@
   .demo-roles button:hover{border-color:var(--court);background:var(--court-soft)}
 
   /* ---------- APP SHELL ---------- */
-  #app{display:none;min-height:100vh}
+  #app{display:none;min-height:100vh;background:var(--bg)}   /* el fondo claro de la app vive aquí, no en el body */
   #app.show{display:block}
 
   /* Desktop sidebar */
