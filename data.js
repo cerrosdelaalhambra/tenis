@@ -188,12 +188,29 @@ const Auth = {
     if(data) data.authEmail = user.email;   // correo de ingreso (por defecto para avisos)
     return data || null;
   },
-  // Ajustes de avisos por correo del residente (correo, on/off, tipos)
-  async setNotifSettings(profileId, {email, enabled, prefs}){
-    const {error}=await sb.from('profiles').update({notif_email:email, notif_enabled:enabled, notif_prefs:prefs}).eq('id',profileId);
+  // Ajustes de avisos del residente. Actualiza solo los campos presentes.
+  async setNotifSettings(profileId, patch){
+    const upd={};
+    if('email'   in patch) upd.notif_email   = patch.email;
+    if('enabled' in patch) upd.notif_enabled = patch.enabled;
+    if('prefs'   in patch) upd.notif_prefs   = patch.prefs;
+    const {error}=await sb.from('profiles').update(upd).eq('id',profileId);
     if(error) throw mapError(error);
   }
 };
+
+/* ===== Notificaciones push (Web Push) ===== */
+const VAPID_PUBLIC_KEY = 'BE4pJijzs8Sf6cy62MK5n5N1Sgk-97b5FMCjc1IN9Tf6N1RkaOJsLSjszx9QAQCUtkmIFQbSAvxdGnYjQwPg2Rw';
+async function savePushSub(profileId, sub){
+  const j = sub.toJSON();
+  const {error}=await sb.from('push_subscriptions')
+    .upsert({ profile_id:profileId, endpoint:sub.endpoint, p256dh:j.keys.p256dh, auth:j.keys.auth }, { onConflict:'endpoint' });
+  if(error) throw mapError(error);
+}
+async function removePushSub(endpoint){
+  const {error}=await sb.from('push_subscriptions').delete().eq('endpoint', endpoint);
+  if(error) throw mapError(error);
+}
 
 /* ============================================================================
  *  LECTURAS (devuelven datos en formato del prototipo)
@@ -478,6 +495,7 @@ window.DB = {
   Auth, Admin, Rain,
   fetchAll, book, cancel, markNotif, markAllRead,
   requestRecurring, decideRecurring, cancelRecurring, materializeRecurring,
+  VAPID_PUBLIC_KEY, savePushSub, removePushSub,
   getHouses, getMyHouses, getCalendar, getNotifications, getActivity,
   // utilidades por si se necesitan en app.js:
   bogotaParts, toISO, isMemberRole, normHouse
