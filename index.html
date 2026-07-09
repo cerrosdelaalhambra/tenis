@@ -1493,22 +1493,40 @@ async function generateRegPDF(){
   let wrap;
   try{
     const clone=src.cloneNode(true);
-    clone.style.border='none'; clone.style.boxShadow='none'; clone.style.borderRadius='0'; clone.style.margin='0'; clone.style.padding='6px 34px 30px'; clone.style.maxWidth='none';
+    clone.style.border='none'; clone.style.boxShadow='none'; clone.style.borderRadius='0'; clone.style.margin='0'; clone.style.padding='4px 34px 26px'; clone.style.maxWidth='none'; clone.style.width='auto';
+    const header=document.createElement('div');
+    header.style.cssText='background:#14564a;color:#fff;padding:24px 34px 20px;font-family:-apple-system,system-ui,sans-serif';
+    header.innerHTML='<div style="font-size:22px;font-weight:700">'+meta.title+'</div><div style="font-size:12px;opacity:.85;margin-top:4px">Cerros de la Alhambra · Cancha de tenis</div>';
     wrap=document.createElement('div');
     wrap.style.cssText='position:fixed;left:-9999px;top:0;width:760px;background:#fff;font-family:-apple-system,system-ui,sans-serif';
-    wrap.innerHTML='<div style="background:#14564a;color:#fff;padding:24px 34px 20px"><div style="font-size:22px;font-weight:700">'+meta.title+'</div><div style="font-size:12px;opacity:.85;margin-top:4px">Cerros de la Alhambra · Cancha de tenis</div></div>';
-    wrap.appendChild(clone);
+    wrap.appendChild(header); wrap.appendChild(clone);
     document.body.appendChild(wrap);
     const canvas=await html2canvas(wrap,{scale:2,backgroundColor:'#ffffff'});
+    // Puntos de corte SEGUROS: el inicio de cada bloque (para no partir un ítem por la mitad)
+    const wrapTop=wrap.getBoundingClientRect().top;
+    const pxRatio=canvas.height/wrap.offsetHeight;                 // px del canvas por px de pantalla
+    const blocks=[header, ...Array.from(clone.children)];
+    let cuts=blocks.map(b=>Math.round((b.getBoundingClientRect().top - wrapTop)*pxRatio));
+    cuts.push(canvas.height);
+    cuts=cuts.filter((v,i,a)=>a.indexOf(v)===i).sort((a,b)=>a-b);
     document.body.removeChild(wrap); wrap=null;
     const { jsPDF }=window.jspdf;
     const pdf=new jsPDF('p','mm','a4');
     const pageW=210, pageH=297;
-    const imgH=canvas.height*pageW/canvas.width;
-    const imgData=canvas.toDataURL('image/png');
-    let heightLeft=imgH, position=0;
-    pdf.addImage(imgData,'PNG',0,position,pageW,imgH); heightLeft-=pageH;
-    while(heightLeft>0){ position-=pageH; pdf.addPage(); pdf.addImage(imgData,'PNG',0,position,pageW,imgH); heightLeft-=pageH; }
+    const pxPerPage=(pageH/pageW)*canvas.width;                    // px de alto que llenan una página A4
+    let pageStart=0, first=true;
+    while(pageStart < canvas.height-2){
+      const limit=pageStart+pxPerPage;
+      let cut=null;
+      for(const c of cuts){ if(c>pageStart+2 && c<=limit) cut=c; }
+      if(cut===null) cut=Math.min(Math.round(limit), canvas.height);   // un bloque más alto que una página: corte duro
+      const sliceH=cut-pageStart;
+      const sc=document.createElement('canvas'); sc.width=canvas.width; sc.height=sliceH;
+      sc.getContext('2d').drawImage(canvas,0,pageStart,canvas.width,sliceH,0,0,canvas.width,sliceH);
+      if(!first) pdf.addPage(); first=false;
+      pdf.addImage(sc.toDataURL('image/png'),'PNG',0,0,pageW,sliceH*(pageW/canvas.width));
+      pageStart=cut;
+    }
     pdf.save(meta.file);
     toast('PDF generado');
   }catch(e){ if(wrap&&wrap.parentNode) wrap.parentNode.removeChild(wrap); toast('No se pudo generar el PDF: '+(e.message||e),'warn'); }
