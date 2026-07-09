@@ -61,7 +61,7 @@ function mapReservation(r){                       // r puede traer joins (houses
     date: p.date, h: p.h, min: p.min,
     dur: durMin(r.starts_at, r.ends_at),
     house: r.house_label || (r.houses && r.houses.label) || r.house,
-    name: r.name || (r.profiles && r.profiles.full_name) || null,
+    name: r.name || r.student_name || (r.profiles && r.profiles.full_name) || null,
     type: r.type,
     profile_id: r.profile_id || null
   };
@@ -271,7 +271,7 @@ async function getCalendar(role){
     // OJO: reservations tiene DOS FK a profiles (profile_id y created_by). Hay que
     // desambiguar el embed con !profile_id, si no PostgREST falla y no llega nada.
     const {data,error}=await sb.from('reservations')
-      .select('id,starts_at,ends_at,type,profile_id,houses(label),profiles!profile_id(full_name)')
+      .select('id,starts_at,ends_at,type,profile_id,student_name,houses(label),profiles!profile_id(full_name)')
       .gte('starts_at', cutoff).order('starts_at');
     if(error) console.warn('getCalendar(staff):', error.message);
     const prim = await primaryHouseMap();           // para el detalle "de la Casa X"
@@ -414,6 +414,7 @@ async function requestRecurring(houseId, dow, startMin, endMin){
 async function decideRecurring(id, approve){ const {error}=await sb.rpc('decide_recurring',{p_id:id, p_approve:approve}); if(error) throw mapError(error); }
 async function cancelRecurring(id){ const {error}=await sb.rpc('cancel_recurring',{p_id:id}); if(error) throw mapError(error); }
 async function materializeRecurring(){ const {data,error}=await sb.rpc('materialize_recurring'); if(error){ console.warn('materialize_recurring:', error.message); return 0; } return data||0; }
+async function materializeClasses(){ const {data,error}=await sb.rpc('materialize_classes'); if(error){ console.warn('materialize_classes:', error.message); return 0; } return data||0; }
 
 /* ===== Acciones de gestión (hitos siguientes; aquí las simples) ===== */
 const Admin = {
@@ -553,7 +554,7 @@ window.DB = {
   Auth, Admin, Rain,
   fetchAll, book, cancel, requestCancel, decideCancel, markNotif, markAllRead,
   getProfClasses, changeClassHouse, releaseClass, markAbsence, unmarkAbsence,
-  requestRecurring, decideRecurring, cancelRecurring, materializeRecurring,
+  requestRecurring, decideRecurring, cancelRecurring, materializeRecurring, materializeClasses,
   VAPID_PUBLIC_KEY, savePushSub, removePushSub,
   getHouses, getMyHouses, getCalendar, getNotifications, getActivity,
   // utilidades por si se necesitan en app.js:
