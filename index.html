@@ -293,7 +293,6 @@
   .wgrid .cell.cell-past{opacity:.28}
   .wgrid .cell.cell-past .slot{cursor:default}
   .wgrid .hr.hr-now .hrl{color:var(--now);font-weight:700}
-  .wgrid .hr.hr-now .now-tag{font-size:8.5px;font-weight:800;letter-spacing:.4px;color:var(--now);text-transform:uppercase;line-height:1}
   .nowline{position:absolute;left:0;right:0;top:-1.5px;height:2.5px;background:var(--now);z-index:5;pointer-events:none}
   .nowline.nl-today::before{content:'';position:absolute;left:-4px;top:50%;transform:translateY(-50%);width:9px;height:9px;border-radius:50%;background:var(--now);box-shadow:0 0 0 2px var(--card)}
   .slot{position:relative;height:100%;min-height:32px;border-radius:7px;font-size:11px;display:flex;flex-direction:column;
@@ -433,6 +432,9 @@
   .panel-h{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
   .panel-h h3{font-size:15px}
   .panel-h .spacer{flex:1}
+  .panel-h.center{flex-direction:column;gap:10px;text-align:center}
+  .panel-h.center h3{font-size:18px;margin:0}
+  .panel-h.center .ph-ctrl{display:flex;justify-content:center;flex-wrap:wrap;gap:8px}
   .row{display:flex;align-items:center;gap:14px;padding:14px 18px;border-bottom:1px solid var(--line)}
   .row:last-child{border-bottom:none}
   .row .when{text-align:center;flex:none;width:56px}
@@ -552,6 +554,8 @@
   .bonus-box span{font-size:12.5px;color:#5d7a2c;line-height:1.45}
   .fld-label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px}
   .avail-cols{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start}
+  .avail-cols.vcenter{align-items:stretch}
+  .avail-cols.vcenter .avail-right{justify-content:center}
   .avail-right{flex:1;min-width:240px;display:flex;flex-direction:column;gap:14px}
   .sel-day{font-size:15px;font-weight:700;color:var(--court);text-transform:capitalize}
   .dh-row{display:flex;gap:12px}
@@ -801,8 +805,8 @@
 <div id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="data.js?v=20260709a"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<script src="data.js?v=20260709b"></script>
 <script>
 /* PWA: registra el service worker (ruta relativa para que funcione bajo /tenis/) */
 if('serviceWorker' in navigator){
@@ -823,11 +827,16 @@ function ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'
 function addDays(d,n){const x=new Date(d);x.setDate(x.getDate()+n);return x}
 function startOfWeek(d){const x=new Date(d);const g=(x.getDay()+6)%7;x.setDate(x.getDate()-g);x.setHours(0,0,0,0);return x}
 function dateAt(dateStr,h){const[Y,M,D]=dateStr.split('-').map(Number);return new Date(Y,M-1,D,h,0)}
-// Apertura semanal: reset domingo 20:00 abre la semana siguiente (lun–dom) + reinicia cupo
-function _resetBefore(now){let sun=new Date(now);sun.setDate(now.getDate()-now.getDay());sun.setHours(20,0,0,0);if(now<sun)sun.setDate(sun.getDate()-7);return sun;}
-const OPEN_WEEK_START=(function(){let r=_resetBefore(NOW);let m=new Date(r);m.setDate(r.getDate()+1);m.setHours(0,0,0,0);return m;})();
-const OPEN_WEEK_END=ymd(addDays(OPEN_WEEK_START,6));
-const AVAIL_MAX=ymd(addDays(OPEN_WEEK_START,13)); // fin de la próxima semana (admin/profe abren disponibilidad solo esta y la próxima)
+// Apertura semanal: reset domingo a la hora configurada (RESET_HOUR) abre la semana siguiente (lun–dom) + reinicia cupo
+let RESET_HOUR=20;   // hora del domingo en que se reinician los cupos (configurable en Ajustes)
+function rhLong(){const h=RESET_HOUR,ap=h<12?'a.m.':'p.m.',hh=(h%12)||12;return hh+':00 '+ap;}   // "8:00 p.m."
+function rhShort(){return hlabel(RESET_HOUR);}                                                    // "8pm"
+function _resetBefore(now){let sun=new Date(now);sun.setDate(now.getDate()-now.getDay());sun.setHours(RESET_HOUR,0,0,0);if(now<sun)sun.setDate(sun.getDate()-7);return sun;}
+function _computeOWS(){let r=_resetBefore(NOW);let m=new Date(r);m.setDate(r.getDate()+1);m.setHours(0,0,0,0);return m;}
+let OPEN_WEEK_START=_computeOWS();
+let OPEN_WEEK_END=ymd(addDays(OPEN_WEEK_START,6));
+let AVAIL_MAX=ymd(addDays(OPEN_WEEK_START,13)); // fin de la próxima semana (admin/profe abren disponibilidad solo esta y la próxima)
+function recomputeOpenWeek(){OPEN_WEEK_START=_computeOWS();OPEN_WEEK_END=ymd(addDays(OPEN_WEEK_START,6));AVAIL_MAX=ymd(addDays(OPEN_WEEK_START,13));}
 
 let OPEN_START=5, OPEN_END=23;   // horario de operación (configurable en Ajustes): inicio 4/5/6, cierre 22/23
 let HALF_HOURS=false;            // ¿se permite reservar media hora? (por defecto NO: reservas de 1 hora)
@@ -1068,6 +1077,7 @@ async function loadData(){
   (b.houses||[]).forEach(h=>{ houseIdByLabel[h.label]=h.id; houseLabelById[h.id]=h.label; });
   CUPO=b.cupo||2;
   OPEN_START=b.openStart||5; OPEN_END=b.openEnd||23; rebuildHours(); HALF_HOURS=!!b.halfHours;
+  RESET_HOUR=(b.resetHour!=null?b.resetHour:20); recomputeOpenWeek();
   const myLabels=(b.myHouses||[]).map(h=>h.label);
   state.role = prof.role==='member' ? (myLabels.length>1?'master':'member') : prof.role;
   if(!navItems().some(i=>i.id===state.view)) state.view = navItems()[0].id;   // cae en una pestaña válida del rol
@@ -1384,7 +1394,7 @@ const REFRESH_P='<path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 4v4.5h-4.5"/
 const BALL_P='<circle cx="12" cy="12" r="9"/><path d="M5 5c4 3 4 11 0 14M19 5c-4 3-4 11 0 14"/>';
 function cupoRules(){
   return `<div class="cc-rules">
-    <div class="cc-rule"><span class="cc-ric">${svgIco(REFRESH_P,15)}</span><div><b>Se reinicia cada semana</b><span>Tu cupo vuelve a llenarse el domingo a las 8:00 p.m.</span></div></div>
+    <div class="cc-rule"><span class="cc-ric">${svgIco(REFRESH_P,15)}</span><div><b>Se reinicia cada semana</b><span>Tu cupo vuelve a llenarse el domingo a las ${rhLong()}</span></div></div>
     <div class="cc-rule"><span class="cc-ric star">★</span><div><b>Los horarios del profesor son gratis</b><span>Los marcados con ★ no descuentan tu cupo.</span></div></div>
     <div class="cc-rule"><span class="cc-ric">${svgIco(BALL_P,15)}</span><div><b>Jugar en cancha libre no gasta cupo</b><span>Si está libre, juega sin reservar; pero si alguien la reservó por la app, debes cedérsela.</span></div></div>
   </div>`;
@@ -1501,7 +1511,7 @@ function desktopGrid(){
   let rows='';
   for(const h of HOURS){
     const isLine=faded && h===lineHour;   // hoy siempre está visible en "desde ahora"
-    rows+=`<div class="hr${isLine?' hr-now':''}"><span class="hrn">${isLine?'<span class="now-tag">Ahora</span>':''}<span class="hrl">${hlabel(h)}</span></span></div>`;
+    rows+=`<div class="hr${isLine?' hr-now':''}"><span class="hrn"><span class="hrl">${hlabel(h)}</span></span></div>`;
     idxs.forEach(i=>{
       const d=addDays(state.weekStart,i);const date=ymd(d);
       const past=faded && dateAt(date,h+1).getTime()<=NOW.getTime();
@@ -1543,7 +1553,7 @@ function slotHTML(date,h){
   if(cat==='prof') return `<div class="slot s-prof" title="Profesor"><b><span class="cdot cdot-black"></span>Profesor</b></div>`;
   if(cat==='flex') return `<div class="slot s-flex" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'flexfull')"`:''} title="Hora del profesor · puedes reservarla, con o sin profesor"><b><span class="cdot cdot-amber"></span>Profesor</b><span class="flex-tag"><span class="plus">+</span>reservar</span></div>`;
   if(cat==='rain') return `<div class="slot s-rain" title="Cerrada por lluvia · no disponible">${svgIco(RAIN_P,15,'#5b7fc0')}</div>`;
-  if(cat==='locked') return `<div class="slot s-locked" title="Se abre el domingo a las 8:00 pm">${svgIco('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',15)}</div>`;
+  if(cat==='locked') return `<div class="slot s-locked" title="Se abre el domingo a las ${rhShort()}">${svgIco('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',15)}</div>`;
   if(cat==='past') return `<div class="slot s-past" title="Hora ya pasada"><span>—</span></div>`;
   if(cat==='free') return `<div class="slot s-free" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'full')"`:''}><b><span class="plus">+</span>Libre</b></div>`;
   return '';
@@ -1613,7 +1623,7 @@ function mSlot(date,h,sc){
   if(cat==='open') return `<div class="mslot bonus" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'openfull')"`:''}><div class="bar"></div>${t}<div class="ml"><b><span class="bstar">★</span> Libre</b><span>No gasta cupo</span></div>${canBookFree(date,h)?chev:''}</div>`;
   if(cat==='maint') return `<div class="mslot maint"><div class="bar"></div>${t}<div class="ml"><b>Mantenimiento</b><span>${mc?mc.reason:'Cancha en mantenimiento'}</span></div></div>`;
   if(cat==='rain') return `<div class="mslot rain"><div class="bar"></div>${t}<div class="ml"><b>${svgIco(RAIN_P,15,'#5b7fc0')} Cerrada por lluvia</b><span>No disponible ahora</span></div></div>`;
-  if(cat==='locked') return `<div class="mslot locked"><div class="bar"></div>${t}<div class="ml"><b>Aún no habilitado</b><span>Abre el domingo 8pm</span></div></div>`;
+  if(cat==='locked') return `<div class="mslot locked"><div class="bar"></div>${t}<div class="ml"><b>Aún no habilitado</b><span>Abre el domingo ${rhShort()}</span></div></div>`;
   if(cat==='past') return `<div class="mslot past"><div class="bar"></div>${t}<div class="ml"><b>—</b><span>Hora pasada</span></div></div>`;
   return '';
 }
@@ -1919,7 +1929,8 @@ function viewNotif(){
     perm_req:['#3a6ea5','#e7eef7','<path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v4.5h-4.5"/>'],
     perm_res:['var(--court)','#eef6df','<path d="M20 6L9 17l-5-5"/>'],
     cancel_req:['#c0672f','#fbeee3','<circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/>'],
-    cancel_res:['#3a6ea5','#e7eef7','<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>']};
+    cancel_res:['#3a6ea5','#e7eef7','<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'],
+    freed:['var(--court)','#e7f1ee','<circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/>']};
   const settingsPanel = isMember() ? `<div class="panel" style="margin-bottom:14px"><div style="padding:14px 18px;display:flex;align-items:center;gap:12px">
       <div style="flex:1;min-width:0"><b style="font-size:14px">Notificaciones</b><p style="font-size:12px;color:var(--muted);margin-top:2px">Recibe los avisos en tu celular. Actívalas aquí.</p></div>
       <button class="btn-ghost" style="box-shadow:none" onclick="openNotifSettings()">Ajustes</button></div></div>` : '';
@@ -1966,7 +1977,7 @@ async function disablePush(){
 }
 async function openNotifSettings(){
   const p=state.profile||{};
-  const prefs=p.notif_prefs||{release:true,rain:true,perm:true,reminder:true};
+  const prefs=p.notif_prefs||{release:true,rain:true,perm:true,reminder:true,freed:true};
   let stateHtml;
   if(!pushSupported()){
     stateHtml=`<div class="perm-note"><b>Tu navegador no soporta notificaciones.</b><span>Prueba con Chrome en Android, o instala la app en la pantalla de inicio de tu iPhone.</span></div>`;
@@ -1985,6 +1996,7 @@ async function openNotifSettings(){
     ${stateHtml}
     <div class="opt-label" style="margin-top:14px">¿Qué avisos quieres recibir?</div>
     ${chk('release','Cuando el profesor libera un horario')}
+    ${chk('freed','Cuando alguien cancela y la cancha queda libre')}
     ${chk('rain','Modo lluvia (te piden cancelar tu reserva)')}
     ${chk('perm','Resultado de tu horario permanente')}
     ${chk('reminder','Recordatorio 15 minutos antes de tu reserva')}
@@ -1995,6 +2007,7 @@ async function openNotifSettings(){
 function toggleNotifPref(k,e){ if(e)e.stopPropagation(); const box=document.getElementById('np_'+k); const on=!box.classList.contains('on'); box.classList.toggle('on',on); box.textContent=on?'✓':''; }
 async function saveNotifPrefs(){
   const prefs={ release:document.getElementById('np_release').classList.contains('on'),
+                freed:document.getElementById('np_freed').classList.contains('on'),
                 rain:document.getElementById('np_rain').classList.contains('on'),
                 perm:document.getElementById('np_perm').classList.contains('on'),
                 reminder:document.getElementById('np_reminder').classList.contains('on') };
@@ -2006,6 +2019,7 @@ async function saveNotifPrefs(){
 /* ---- ADMIN: USERS ---- */
 async function setCupo(n){ try{ await DB.Admin.setCupo(n); CUPO=n; render(); toast('Cupo semanal: '+n+(n===1?' hora':' horas')+' por casa'); }catch(e){ toast(e.message,'warn'); } }
 async function setOpenHour(which,val){ try{ await DB.Admin.setOpenHour(which,val); if(which==='start')OPEN_START=val; else OPEN_END=val; rebuildHours(); render(); toast('Horario de la cancha actualizado'); }catch(e){ toast(e.message,'warn'); } }
+async function saveResetHour(){ const el=document.getElementById('resetHourSel'); if(!el)return; const v=+el.value; try{ await DB.Admin.setResetHour(v); RESET_HOUR=v; recomputeOpenWeek(); render(); toast('Cupos se reinician el domingo a las '+rhLong()); }catch(e){ toast(e.message,'warn'); } }
 async function setHalfHours(on){ try{ await DB.Admin.setHalfHours(on); HALF_HOURS=on; render(); toast(on?'Ahora se puede reservar media hora':'Reservas de 1 hora completa'); }catch(e){ toast(e.message,'warn'); } }
 /* ===== Horarios permanentes (admin) ===== */
 function recLabel(r){ return `${r.house||'Casa'} · ${SCHED_DOW_NAMES[r.dow]} ${schedMinLabel(r.startMin)}–${schedMinLabel(r.endMin)}`; }
@@ -2126,6 +2140,7 @@ function viewSettings(){
     <div class="set-head">${svgIco(ICONS.ball,15)} La cancha</div>
     <div class="panel">
       <div class="set-row"><div class="set-t"><b>Cupo semanal por casa</b><p>Horas que cada casa puede reservar por semana.</p></div><div class="seg cupo-seg">${cupoSeg}</div></div>
+      <div class="set-row"><div class="set-t"><b>Horario de reinicio de cupos</b><p>Hora del domingo en que se reinician los cupos de la semana. Puedes elegir cualquier hora.</p></div><div style="min-width:120px">${psel('resetHourSel', hourArr(0,23), RESET_HOUR, 'saveResetHour')}</div></div>
       <div class="set-row"><div class="set-t"><b>Horario de la cancha</b><p>A qué hora abre y cierra la cancha para reservas.</p></div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:var(--muted);min-width:42px">Abre</span><div class="seg">${startSeg}</div></div>
@@ -2149,30 +2164,53 @@ function viewSettings(){
       <input type="file" id="tplFile" accept=".xlsx,.xls" style="display:none" onchange="if(this.files&&this.files[0]){importTemplate(this.files[0]);this.value='';}">
     </div>`;
 }
-function classMatrix(){                    // matriz: días (columnas) x horas (filas) de clase
-  const days=[{dow:1,name:'Lunes'},{dow:2,name:'Martes'},{dow:3,name:'Miércoles'},{dow:4,name:'Jueves'},{dow:5,name:'Viernes'},{dow:6,name:'Sábado'}];
-  const slotsByDow={}, hourSet=new Set();
-  days.forEach(d=>{ slotsByDow[d.dow]=new Set();
-    PROF_SCHEDULE.filter(r=>r.dow===d.dow).forEach(b=>{ for(let m=b.startMin; m+60<=b.endMin; m+=60){ slotsByDow[d.dow].add(m); hourSet.add(m); } });
+function classDays(){                       // días con clases (sin lunes ni domingo), cada uno con sus horas
+  const days=[{dow:2,name:'Martes'},{dow:3,name:'Miércoles'},{dow:4,name:'Jueves'},{dow:5,name:'Viernes'},{dow:6,name:'Sábado'}];
+  days.forEach(d=>{ d.slots=[];
+    PROF_SCHEDULE.filter(r=>r.dow===d.dow).sort((a,b)=>a.startMin-b.startMin)
+      .forEach(b=>{ for(let m=b.startMin; m+60<=b.endMin; m+=60) d.slots.push(m); });
   });
-  return { days, hours:[...hourSet].sort((a,b)=>a-b), slotsByDow };
+  return days;
 }
 function exportTemplate(){
   if(typeof XLSX==='undefined'){ toast('No se pudo cargar el generador de Excel.','warn'); return; }
-  const {days,hours,slotsByDow}=classMatrix();
-  if(!hours.length){ toast('No hay horas de clase en el horario del profesor.','warn'); return; }
+  const days=classDays();
+  const maxRows=Math.max(0,...days.map(d=>d.slots.length));
+  if(!maxRows){ toast('No hay horas de clase en el horario del profesor.','warn'); return; }
   const cur=(dow,m)=>CLASS_TEMPLATE.find(c=>c.dow===dow&&c.startMin===m);
-  const h1=['']; days.forEach(d=>h1.push(d.name,''));           // fila 1: nombre del día (2 columnas cada uno)
-  const h2=['Hora']; days.forEach(()=>h2.push('Casa','Nombre')); // fila 2: sub-encabezados
+  // fila 0: nombre del día (unido sobre sus 3 columnas). fila 1: Hora | Casa | Nombre.
+  const h1=[]; days.forEach(d=>h1.push(d.name,'',''));
+  const h2=[]; days.forEach(()=>h2.push('Hora','Casa','Nombre'));
   const rows=[h1,h2];
-  hours.forEach(m=>{
-    const row=[schedMinLabel(m)+'–'+schedMinLabel(m+60)];
-    days.forEach(d=>{ if(slotsByDow[d.dow].has(m)){ const c=cur(d.dow,m); row.push((c&&c.house)||'', (c&&c.student_name)||''); } else row.push('',''); });
+  for(let i=0;i<maxRows;i++){
+    const row=[];
+    days.forEach(d=>{ const m=d.slots[i];
+      if(m==null){ row.push('','',''); }
+      else { const c=cur(d.dow,m); row.push(schedMinLabel(m)+'–'+schedMinLabel(m+60), (c&&c.house)||'', (c&&c.student_name)||''); }
+    });
     rows.push(row);
-  });
+  }
   const ws=XLSX.utils.aoa_to_sheet(rows);
-  ws['!merges']=days.map((d,i)=>({s:{r:0,c:1+i*2},e:{r:0,c:2+i*2}}));   // unir el nombre del día sobre sus 2 columnas
-  let cols=[{wch:15}]; days.forEach(()=>{cols.push({wch:11},{wch:20});}); ws['!cols']=cols;
+  // unir el nombre del día sobre sus 3 columnas
+  ws['!merges']=days.map((d,i)=>({s:{r:0,c:i*3},e:{r:0,c:i*3+2}}));
+  // anchos: Hora 13, Casa 10, Nombre 20 por cada día
+  const cols=[]; days.forEach(()=>{cols.push({wch:13},{wch:10},{wch:22});}); ws['!cols']=cols;
+  ws['!rows']=[{hpt:24},{hpt:19}];
+  // Estilos (xlsx-js-style): encabezados con sombreado; columna Hora con gris muy claro
+  const bord={style:'thin',color:{rgb:'D9E2DE'}};
+  const allBorder={top:bord,bottom:bord,left:bord,right:bord};
+  const dayFill=days.map((d,i)=>({r:0,c:i*3}));
+  const ncols=days.length*3;
+  const setS=(r,c,s)=>{ const a=XLSX.utils.encode_cell({r,c}); if(!ws[a]) ws[a]={t:'s',v:''}; ws[a].s=s; };
+  // fila 0 (nombres de día): verde suave, blanco, centrado, negrita
+  for(let c=0;c<ncols;c++) setS(0,c,{fill:{fgColor:{rgb:'14564A'}},font:{bold:true,sz:12,color:{rgb:'FFFFFF'}},alignment:{horizontal:'center',vertical:'center'},border:allBorder});
+  // fila 1 (Hora/Casa/Nombre): gris claro, negrita, centrado
+  for(let c=0;c<ncols;c++) setS(1,c,{fill:{fgColor:{rgb:'EBF1EF'}},font:{bold:true,sz:10,color:{rgb:'33413D'}},alignment:{horizontal:'center'},border:allBorder});
+  // cuerpo: bordes suaves; columna Hora (cada 3) en gris muy claro y centrada
+  for(let r=2;r<rows.length;r++) for(let c=0;c<ncols;c++){
+    const isHora=(c%3===0);
+    setS(r,c,{border:allBorder, alignment:{horizontal:isHora?'center':'left',vertical:'center'}, ...(isHora?{fill:{fgColor:{rgb:'F5F8F7'}},font:{color:{rgb:'5F6B66'},sz:10}}:{})});
+  }
   const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Clases');
   XLSX.writeFile(wb, 'plantilla_clases.xlsx');
   toast('Plantilla descargada');
@@ -2184,15 +2222,17 @@ async function importTemplate(file){
     const wb=XLSX.read(buf,{type:'array'});
     const ws=wb.Sheets[wb.SheetNames[0]];
     const rows=XLSX.utils.sheet_to_json(ws,{header:1});
-    const {days,hours,slotsByDow}=classMatrix();
-    const hourByLabel={}; hours.forEach(m=>hourByLabel[schedMinLabel(m)+'–'+schedMinLabel(m+60)]=m);
-    const entries=[];
+    const days=classDays();
+    // por día: etiqueta de hora -> minutos (para identificar el bloque aunque muevan filas)
+    days.forEach(d=>{ d.labelToMin={}; d.slots.forEach(m=>{ d.labelToMin[schedMinLabel(m)+'–'+schedMinLabel(m+60)]=m; }); });
+    const entries=[]; const seen={};
     for(let i=2;i<rows.length;i++){ const r=rows[i]; if(!r||!r.length) continue;   // fila 0 y 1 = encabezados
-      const hl=(r[0]!=null?String(r[0]):'').trim(); const m=hourByLabel[hl]; if(m==null) continue;
       days.forEach((d,di)=>{
-        if(!slotsByDow[d.dow].has(m)) return;                       // no hay clase ese día a esa hora
-        const house=(r[1+di*2]!=null?String(r[1+di*2]):'').trim();
-        const name =(r[2+di*2]!=null?String(r[2+di*2]):'').trim();
+        const hl=(r[di*3]!=null?String(r[di*3]):'').trim();
+        const m=d.labelToMin[hl]; if(m==null) return;                 // hora vacía o no válida para ese día
+        const key=d.dow+'|'+m; if(seen[key]) return; seen[key]=1;      // una entrada por bloque
+        const house=(r[di*3+1]!=null?String(r[di*3+1]):'').trim();
+        const name =(r[di*3+2]!=null?String(r[di*3+2]):'').trim();
         entries.push({dow:d.dow, start_min:m, end_min:m+60, house, student:name});
       });
     }
@@ -2504,26 +2544,24 @@ function viewAvail(){
   const warn = (!multi&&noProf) ? `<p style="font-size:12.5px;color:var(--clay);background:#fbeee9;border-radius:10px;padding:10px 12px;margin:0">Ese día el profesor no tiene clases (ej. lunes o domingo). No hay horas para marcar.</p>` : '';
   const btnDis = (!multi&&noProf) ? 'disabled' : '';
   const schedPanel = state.role==='admin' ? `<div class="panel" style="margin-bottom:16px">
-      <div class="panel-h"><h3>Horario del profesor</h3><div class="spacer"></div><button class="btn-mini" onclick="saveProfSchedule()">Guardar</button></div>
-      <div style="padding:4px 18px 14px">
-        <p style="font-size:12px;color:var(--muted);margin:0 0 10px">Días y horas en que el profesor está en la cancha. Agrega o quita rangos y toca "Guardar".</p>
+      <div class="panel-h center"><h3>Horario de clases con el profesor</h3><div class="ph-ctrl"><button class="btn-mini" onclick="saveProfSchedule()">Guardar</button></div></div>
+      <div style="padding:10px 18px 14px">
         <div id="schedInline">${schedEditorHTML()}</div>
       </div>
     </div>` : '';
-  let html=schedPanel+`<div class="panel"><div class="panel-h"><h3>El profesor no viene</h3><div class="spacer"></div>${checkbox}</div>
+  let html=schedPanel+`<div class="panel"><div class="panel-h center"><h3>Ausencia del profesor</h3><div class="ph-ctrl">${checkbox}</div></div>
     <div style="padding:18px">
       <label class="fld-label">${multi?'Escoge el rango de días que el profesor faltará (toca inicio y fin)':'Escoge el día en que el profesor no viene'}</label>
-      <div class="avail-cols">
+      <div class="avail-cols vcenter">
         <div>${cal}</div>
         <div class="avail-right">
           ${rightTop}
-          <p style="font-size:12.5px;color:var(--muted);margin:4px 0 0">Esas horas quedan libres para práctica: los residentes las reservan y sí gastan cupo.</p>
           ${hours}
           ${warn}
         </div>
       </div>
       <button class="btn-primary" id="aBtn" onclick="doMarkAbsence()" ${btnDis} style="margin-top:18px">Marcar ausencia y avisar</button>
-      <p class="hint">${multi?'Se marca todo el día en cada día del rango.':'Por defecto marca todo el horario del profesor ese día. Ajusta "Desde/Hasta" si solo falta una hora puntual.'}</p>
+      ${multi?`<p class="hint">Se marca todo el día en cada día del rango.</p>`:''}
     </div></div>`;
   if(ABSENCES.length){
     const sorted=[...ABSENCES].sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:a.startMin-b.startMin);
@@ -2552,13 +2590,12 @@ function viewMaint(){
             <div class="field"><label>Hasta</label>${psel('cTo',hourArr(9,23),12,'')}</div>
           </div>`;
   const fixedPanel=`<div class="panel" style="margin-bottom:16px">
-      <div class="panel-h"><h3>Mantenimiento (bloques fijos)</h3><div class="spacer"></div><button class="btn-mini" onclick="saveMaintSchedule()">Guardar</button></div>
-      <div style="padding:4px 18px 14px">
-        <p style="font-size:12px;color:var(--muted);margin:0 0 10px">Horas fijas de mantenimiento cada semana. Esas franjas no se pueden reservar.</p>
+      <div class="panel-h center"><h3>Mantenimiento semanal</h3><div class="ph-ctrl"><button class="btn-mini" onclick="saveMaintSchedule()">Guardar</button></div></div>
+      <div style="padding:10px 18px 14px">
         <div id="maintInline">${maintEditorHTML()}</div>
       </div>
     </div>`;
-  let html=fixedPanel+`<div class="panel"><div class="panel-h"><h3>Cerrar la cancha por mantenimiento</h3><div class="spacer"></div>${checkbox}</div>
+  let html=fixedPanel+`<div class="panel"><div class="panel-h center"><h3>Mantenimiento extraordinario</h3><div class="ph-ctrl">${checkbox}</div></div>
     <div style="padding:18px">
       <label class="fld-label">${multi?'Escoge el rango de días (toca inicio y fin)':'Escoge el día'}</label>
       <div class="avail-cols">
@@ -2763,14 +2800,14 @@ function openMyRes(id){
   const r=reservations.find(x=>x.id===id);if(!r)return;
   const d=dateAt(r.date,r.h);
   const isClass=(r.type==='class');
-  const cancelable = isClass ? (d-NOW)>3600000 : (d-NOW)>0;   // clase: 1 h antes; normal: antes de que empiece
+  const cancelable = isClass ? (d-NOW)>3600000 : (d-NOW)>1200000;   // clase: 1 h antes; normal: hasta 20 min antes
   const modal=document.getElementById('modal');
   modal.innerHTML=`<div class="grab"></div>
     <h3>Mi reserva</h3>
     <div class="msub">${DOWL[d.getDay()]} ${d.getDate()} de ${MON[d.getMonth()]} · ${rangeLabel(r.h,r.min,r.dur)}</div>
     <div class="quota-mini"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> A nombre de <b style="margin:0 4px">${r.house}</b>${myHouses().length>1?'(una de tus casas)':''}</div>
     ${cancelable?`<div class="modal-actions"><button class="btn-soft" onclick="closeModal()">Cerrar</button><button class="btn-primary" style="background:var(--danger)" onclick="cancelRes(${r.id})">Cancelar reserva</button></div>`
-    :`<p style="font-size:13px;color:var(--muted);text-align:center;padding:6px 0 4px">${isClass?'Ya no se puede cancelar (faltan menos de 1 hora).':'La reserva ya empezó; no se puede cancelar.'}</p><button class="btn-soft" style="width:100%" onclick="closeModal()">Cerrar</button>`}`;
+    :`<p style="font-size:13px;color:var(--muted);text-align:center;padding:6px 0 4px">${isClass?'Ya no se puede cancelar (faltan menos de 1 hora).':((d-NOW)>0?'Ya no se puede cancelar (faltan menos de 20 minutos).':'La reserva ya empezó; no se puede cancelar.')}</p><button class="btn-soft" style="width:100%" onclick="closeModal()">Cerrar</button>`}`;
   document.getElementById('modalBg').classList.add('show');
 }
 async function cancelRes(id){

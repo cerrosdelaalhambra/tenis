@@ -235,7 +235,8 @@ async function getConfig(){
     permEnabled: m.perm_enabled==='true',
     openStart: m.open_start ? Number(m.open_start) : 5,   // primera hora reservable (4/5/6)
     openEnd:   m.open_end   ? Number(m.open_end)   : 23,  // hora de cierre (22 o 23)
-    halfHours: m.half_hours==='true'                      // ¿se permite reservar media hora? (por defecto NO)
+    halfHours: m.half_hours==='true',                     // ¿se permite reservar media hora? (por defecto NO)
+    resetHour: m.reset_hour!=null ? Number(m.reset_hour) : 20  // hora del domingo en que se reinician los cupos
   };
 }
 // Horario del profesor (editable). Si la tabla aún no existe, devuelve [] y la app usa el horario fijo de respaldo.
@@ -360,7 +361,7 @@ async function fetchAll(profile){
   ]);
   return { profile, myHouses, reservations, releases, closures, holidays, houses,
     cupo:cfg.cupo, profFlexible:cfg.profFlexible, permEnabled:cfg.permEnabled, permRoute:'both',
-    openStart:cfg.openStart, openEnd:cfg.openEnd, halfHours:cfg.halfHours,
+    openStart:cfg.openStart, openEnd:cfg.openEnd, halfHours:cfg.halfHours, resetHour:cfg.resetHour,
     notifs, profSchedule, recurring, activity, users, profClasses, absences, maintSchedule, classTemplate };
 }
 function isMemberRole(role){ return role==='member' || role==='master'; }
@@ -431,6 +432,7 @@ const Admin = {
   async setCupo(hours){ const {error}=await sb.from('app_config').update({value:String(hours)}).eq('key','weekly_cupo_hours'); if(error) throw mapError(error); },
   // Horario de operación: hora de inicio (4/5/6) y de cierre (22 o 23)
   async setOpenHour(which, val){ const key=(which==='start')?'open_start':'open_end'; const {error}=await sb.from('app_config').update({value:String(val)}).eq('key',key); if(error) throw mapError(error); },
+  async setResetHour(val){ const {error}=await sb.from('app_config').update({value:String(val)}).eq('key','reset_hour'); if(error) throw mapError(error); },
   // Permitir reservar media hora (por defecto apagado = solo hora completa)
   async setHalfHours(on){ const {error}=await sb.from('app_config').update({value:on?'true':'false'}).eq('key','half_hours'); if(error) throw mapError(error); },
   // Modo flexible del horario del profesor (interruptor global)
