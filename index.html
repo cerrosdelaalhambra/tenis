@@ -285,7 +285,7 @@
     display:inline-flex;align-items:center;justify-content:center;font-size:14px}
   .gh-month{display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;letter-spacing:.6px;color:var(--muted)}
   .wgrid .hr{position:relative;border-top:1px solid var(--line)}
-  .wgrid .hr .hrn{position:absolute;top:0;left:50%;transform:translate(-50%,-50%);font-size:13px;color:var(--ink);font-weight:600;line-height:1;background:var(--card);padding:1px 6px}
+  .wgrid .hr .hrn{position:absolute;top:0;left:0;right:0;transform:translateY(-50%);text-align:center;font-size:14px;color:var(--ink);font-weight:600;line-height:1}
   .wgrid .cell{position:relative;border-top:1px solid var(--line);border-left:1px solid var(--line);min-height:38px;padding:3px}
   .wgrid .cell.cell-past{opacity:.28}
   .wgrid .cell.cell-past .slot{cursor:default}
@@ -312,12 +312,12 @@
   .s-reserved:hover{background:#fbfdfc}
   .hicon{width:13px;height:13px;vertical-align:middle;margin:-2px 4px 1px 0;fill:var(--ink);flex:none}
   .s-prof{background:#fff;border:1.5px solid var(--ink);color:var(--ink)}
-  .s-class{background:#fdf3d7;border:1.5px solid #e0a92e;color:#7a5410;align-items:flex-start;justify-content:center}
+  .s-class{background:#fff;border:1.5px solid #b8860b;color:#8a6608;align-items:flex-start;justify-content:center}
   .s-class b{display:flex;align-items:center}
-  .s-class .hicon,.half.h-class .hicon{fill:#7a5410}
-  .s-class .cs-name{font-size:10px;color:#8a5f14;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;font-weight:600}
-  .half.h-class{background:#fdf3d7;border:1.5px solid #e0a92e;color:#7a5410;font-weight:600}
-  .mslot.classm .bar{background:#e0a92e}
+  .s-class .hicon,.half.h-class .hicon{fill:#8a6608}
+  .s-class .cs-name{font-size:10px;color:#8a6608;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;font-weight:600}
+  .half.h-class{background:#fff;border:1.5px solid #b8860b;color:#8a6608;font-weight:600}
+  .mslot.classm .bar{background:#b8860b}
   .s-bonus{background:#fff;border:1.5px dashed var(--ball-dark);color:var(--court);cursor:pointer;position:relative}
   .s-bonus:hover{background:var(--court-soft)}
   .bstar{color:#f2b705}
@@ -1235,8 +1235,9 @@ function render(){
   // titles
   const titles={calendar:'Calendario de reservas',mine:'Mis reservas',lights:'Iluminación',rain:'Modo lluvia',porteria:'Cancha de tenis',classes:'Mis clases',
     notif:'Notificaciones',users:'Gestión de usuarios',settings:'Ajustes',avail:'Profesor',maint:'Mantenimiento de la cancha',history:'Historial de actividad'};
-  document.getElementById('ttitle').textContent=titles[state.view];
-  document.getElementById('mtitle').textContent=titles[state.view];
+  const _ttl = state.view==='calendar' ? titles.calendar+' · '+cap1(MESES[state.weekStart.getMonth()]) : titles[state.view];
+  document.getElementById('ttitle').textContent=_ttl;
+  document.getElementById('mtitle').textContent=_ttl;
   const subs={calendar:'',mine:'Tus reservas y tu cupo de la semana',lights:'Horarios para prender y apagar las luces',rain:'Cierra la cancha cuando esté lloviendo o encharcada',porteria:'Luces de la cancha y modo lluvia',classes:'Tus clases del día',notif:'Avisos de la cancha',users:'Cuentas fijas y residentes',settings:'Configuración de la cancha',avail:state.role==='prof'?'Abre tus horarios para práctica libre o clase':'Horario del profesor y apertura de horas de clase',maint:'Cierra la cancha por reparaciones',history:'Quién reserva y cancela, y a qué hora'};
   document.getElementById('tsub').textContent=subs[state.view]||'';
   document.getElementById('weekNav').style.display='none';
@@ -1451,7 +1452,7 @@ function houseUsed(house){
 }
 function monthTag(){const a=state.weekStart,b=addDays(a,6);return a.getMonth()===b.getMonth()?MON[a.getMonth()].toUpperCase():(MON[a.getMonth()]+'/'+MON[b.getMonth()]).toUpperCase();}
 function desktopGrid(){
-  let head=`<div class="gh gh-month">${monthTag()}</div>`;
+  let head=`<div class="gh gh-month"></div>`;
   for(let i=0;i<7;i++){const d=addDays(state.weekStart,i);const today=ymd(d)===ymd(NOW);
     head+=`<div class="gh ${today?'today':''}"><div class="dow">${DOW[d.getDay()]}</div><div class="dnum">${d.getDate()}</div></div>`;}
   const faded=!state.fullWeek, lineHour=NOW.getHours(), todayYmd=ymd(NOW);
