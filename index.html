@@ -499,7 +499,7 @@
   .form-grid .full{grid-column:1/-1}
   .field select{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:11px;font-size:14px;background:#fafcfb}
   .seg{display:flex;gap:8px}
-  .seg button{flex:1;padding:11px;border:1.5px solid var(--line);border-radius:11px;font-size:13px;font-weight:600;color:var(--muted)}
+  .seg button{flex:1;padding:11px;border:1.5px solid var(--line);border-radius:11px;font-size:13px;font-weight:600;color:var(--muted);white-space:nowrap}
   .seg button.on{border-color:var(--court);background:var(--court-soft);color:var(--court)}
   .seg-v{flex-direction:column}
   /* Ajustes · secciones agrupadas */
@@ -2014,8 +2014,8 @@ function openRecurringList(){
     : '<div class="empty" style="padding:22px">Aún no hay clases fijas activas.</div>';
   const penRows= pen.length? `<div class="opt-label" style="margin-top:14px">Por aprobar (${pen.length})</div>`+pen.map(r=>`<div class="row"><div class="info"><b>${recLabel(r)}</b><span>Pendiente · aprueba desde tus notificaciones</span></div></div>`).join('') : '';
   const m=document.getElementById('modal');
-  m.innerHTML=`<div class="grab"></div><h3>Horarios permanentes</h3>
-    <div class="msub">Clases fijas semanales aprobadas. Cancelar detiene las próximas semanas (no borra las clases que ya pasaron).</div>
+  m.innerHTML=`<div class="grab"></div><h3>Solicitudes para clase semanal</h3>
+    <div class="msub">Clases fijas semanales que pidieron los residentes y quedaron aprobadas. Cancelar detiene las próximas semanas (no borra las clases que ya pasaron).</div>
     <div class="sched-wrap">${actRows}${penRows}</div>
     <button class="btn-soft" style="width:100%;margin-top:6px" onclick="closeModal()">Cerrar</button>`;
   document.getElementById('modalBg').classList.add('show');
@@ -2142,7 +2142,7 @@ function viewSettings(){
           <button class="tpl-im" onclick="document.getElementById('tplFile').click()">Importar</button>
         </div>
       </div>
-      <div class="set-row"><div class="set-t"><b>Clases fijas activas</b><p>${permAct} activa${permAct===1?'':'s'}${permPend?' · <b style="color:var(--court)">'+permPend+' por aprobar</b>':''}. Los residentes pueden pedir una clase fija semanal en un horario que quede sin casa asignada; el profesor o la administración la aprueban.</p></div><button class="btn-ghost" style="box-shadow:none" onclick="openRecurringList()">Ver y gestionar</button></div>
+      <div class="set-row"><div class="set-t"><b>Solicitudes para clase semanal</b><p>Cuando un horario de clase queda sin casa, un residente puede pedirlo como clase fija semanal con el profesor; tú o el profesor la aprueban. ${permPend?'<b style="color:var(--court)">'+permPend+' por aprobar</b> · ':''}${permAct} activa${permAct===1?'':'s'}.</p></div><button class="btn-ghost" style="box-shadow:none" onclick="openRecurringList()">Ver y gestionar</button></div>
       <input type="file" id="tplFile" accept=".xlsx,.xls" style="display:none" onchange="if(this.files&&this.files[0]){importTemplate(this.files[0]);this.value='';}">
     </div>`;
 }
