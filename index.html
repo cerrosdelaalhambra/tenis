@@ -332,7 +332,9 @@
   .s-flex .flex-tag .plus{color:#d9932a;margin-right:2px}
   .s-class{background:var(--amber);color:#5a3c07;cursor:pointer;box-shadow:0 0 0 2px rgba(234,165,59,.35)}
   .s-open{background:var(--lime);color:#26430c;cursor:pointer;box-shadow:0 0 0 2px rgba(132,194,58,.35)}
-  .s-maint{background:#fff;border:1.5px solid var(--ink);color:var(--ink);cursor:pointer}
+  .s-maint{background:var(--clay);border:1.5px solid var(--clay);color:#fff;cursor:pointer}
+  .s-maint b{display:flex;align-items:center;justify-content:center;gap:5px}
+  .s-maint svg{flex:none}
   .s-rain{background:#f6f8fb;border:1px solid #e6ecf4;align-items:center;justify-content:center}
   .rain-banner{background:#e7eef7;border:1px solid #cfe0f4;color:#33508a;border-radius:12px;padding:11px 15px;font-size:13px;margin-bottom:14px}
   .btn-wa{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:9px 13px;border-radius:10px;background:#25d366;color:#fff;font-size:13px;font-weight:600;text-decoration:none;white-space:nowrap}
@@ -676,7 +678,11 @@
     .mslot.bonus .bar{background:var(--ball-dark)} .mslot.bonus{cursor:pointer}
     .mslot.flex .bar{background:#e0a92e} .mslot.flex{cursor:pointer;background:#fff7e6}
     .mslot.rain .bar{background:#5b7fc0} .mslot.rain{background:#eef3fb}
-    .mslot.maint .bar{background:var(--ink)} .mslot.maint{background:var(--card)}
+    .mslot.maint{background:var(--clay);border-color:var(--clay)}
+    .mslot.maint .bar{background:rgba(255,255,255,.6)}
+    .mslot.maint .ml b{color:#fff} .mslot.maint .ml span{color:rgba(255,255,255,.85)}
+    .mslot.maint .mt .h{color:#fff} .mslot.maint .mt .h2{color:rgba(255,255,255,.8)}
+    .mslot.maint .ml b svg{vertical-align:-2px;margin-right:4px}
     .mslot.locked .bar{background:#e7eae9} .mslot.locked{opacity:.6}
     .mslot.past{opacity:.45}
     .mslot.m-faded{opacity:.32}
@@ -811,7 +817,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
-<script src="data.js?v=20260709c"></script>
+<script src="data.js?v=20260709d"></script>
 <script>
 /* PWA: registra el service worker (ruta relativa para que funcione bajo /tenis/) */
 if('serviceWorker' in navigator){
@@ -1348,7 +1354,12 @@ function halfState(date,h,half){
       }
       return {kind:rel.type==='class'?'class':'open',rel};
     }
-    return {kind:'prof'};                             // hora del profesor, exclusiva (sin liberar)
+    // Si la plantilla tiene una clase asignada para esta hora (aunque no esté materializada como
+    // reserva, p.ej. en días ya pasados), se muestra la clase (casa + nombre) igual que los días futuros.
+    const _cm=h*60+half*30;
+    const _ct=CLASS_TEMPLATE.find(c=>c.dow===dow && c.house && c.startMin<=_cm && c.endMin>_cm);
+    if(_ct) return {kind:'classinfo', res:{house:_ct.house, name:_ct.student_name}};
+    return {kind:'prof'};                             // hora del profesor, sin clase asignada
   }
   if(h<OPEN_START||h>=OPEN_END) return {kind:'na'};   // fuera del horario de operación (configurable)
   const startHalf=new Date(dateAt(date,h).getTime()+half*30*60000);
@@ -1553,7 +1564,7 @@ function halfCell(date,h,half,s){
 }
 function slotHTML(date,h){
   const sc=slotCat(date,h), cat=sc.cat, res=sc.res, mc=sc.mc;
-  if(cat==='maint') return `<div class="slot s-maint" title="${mc?mc.reason:'Mantenimiento'}" onclick="toast(this.title)"><b><span class="cdot cdot-black"></span>Mantenimiento</b></div>`;
+  if(cat==='maint') return `<div class="slot s-maint" title="${mc?mc.reason:'Mantenimiento'}" onclick="toast(this.title)"><b>${svgIco(ICONS.tool,13,'#fff')}Mantenimiento</b></div>`;
   if(cat==='classinfo') return `<div class="slot s-clase" title="Clase con el profesor${res.name?' · '+res.name:''}"><b>${HOUSE_ICON}${houseNum(res.house)}</b><small class="cs-name">${res.name||'Clase'}</small></div>`;
   if(cat==='profclass') return `<div class="slot s-prof" title="Profesor" ${state.role==='prof'?`onclick="openProfRes(${res.id})" style="cursor:pointer"`:''}><b><span class="cdot cdot-black"></span>Profesor</b></div>`;
   if(cat==='mine') return `<div class="slot s-mine" onclick="openMyRes(${res.id})"><b>${HOUSE_ICON}${houseNum(res.house)}</b><span class="mtime${slotRain(date,h)?' rn':''}">${rangeLabel(res.h,res.min,res.dur)}</span>${slotRain(date,h)?RAINMARK:''}</div>`;
@@ -1632,7 +1643,7 @@ function mSlot(date,h,sc){
   if(cat==='flex') return `<div class="mslot flex" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'flexfull')"`:''}><div class="bar"></div>${t}<div class="ml"><b>Profesor · reservar</b><span>${canBookFree(date,h)?'Con o sin profesor · no gasta cupo':'Hora del profesor'}</span></div>${canBookFree(date,h)?chev:''}</div>`;
   if(cat==='class') return `<div class="mslot bonus" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'classfull')"`:''}><div class="bar"></div>${t}<div class="ml"><b><span class="bstar">★</span> Libre</b><span>No gasta cupo</span></div>${canBookFree(date,h)?chev:''}</div>`;
   if(cat==='open') return `<div class="mslot bonus" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'openfull')"`:''}><div class="bar"></div>${t}<div class="ml"><b><span class="bstar">★</span> Libre</b><span>No gasta cupo</span></div>${canBookFree(date,h)?chev:''}</div>`;
-  if(cat==='maint') return `<div class="mslot maint"><div class="bar"></div>${t}<div class="ml"><b>Mantenimiento</b><span>${mc?mc.reason:'Cancha en mantenimiento'}</span></div></div>`;
+  if(cat==='maint') return `<div class="mslot maint"><div class="bar"></div>${t}<div class="ml"><b>${svgIco(ICONS.tool,14,'#fff')}Mantenimiento</b><span>${mc?mc.reason:'Cancha en mantenimiento'}</span></div></div>`;
   if(cat==='rain') return `<div class="mslot rain"><div class="bar"></div>${t}<div class="ml"><b>${svgIco(RAIN_P,15,'#5b7fc0')} Cerrada por lluvia</b><span>No disponible ahora</span></div></div>`;
   if(cat==='locked') return `<div class="mslot locked"><div class="bar"></div>${t}<div class="ml"><b>Aún no habilitado</b><span>Abre el domingo ${rhShort()}</span></div></div>`;
   if(cat==='past') return `<div class="mslot past"><div class="bar"></div>${t}<div class="ml"><b>—</b><span>Hora pasada</span></div></div>`;
@@ -2156,15 +2167,15 @@ function viewSettings(){
   return `
     <div class="set-head">${svgIco(ICONS.ball,15)} La cancha</div>
     <div class="panel">
-      <div class="set-row"><div class="set-t"><b>Cupo semanal por casa</b><p>Horas que cada casa puede reservar por semana.</p></div><div class="seg cupo-seg">${cupoSeg}</div></div>
-      <div class="set-row"><div class="set-t"><b>Horario de reinicio de cupos</b><p>Hora del domingo en que se reinician los cupos de la semana. Puedes elegir cualquier hora.</p></div><div style="min-width:120px">${psel('resetHourSel', hourArr(0,23), RESET_HOUR, 'saveResetHour')}</div></div>
-      <div class="set-row"><div class="set-t"><b>Horario de la cancha</b><p>A qué hora abre y cierra la cancha para reservas.</p></div>
+      <div class="set-row"><div class="set-t"><b>Cupo de horas semanal por casa</b></div><div class="seg cupo-seg">${cupoSeg}</div></div>
+      <div class="set-row"><div class="set-t"><b>Hora de reinicio de cupos (domingo)</b></div><div style="min-width:120px">${psel('resetHourSel', hourArr(0,23), RESET_HOUR, 'saveResetHour')}</div></div>
+      <div class="set-row"><div class="set-t"><b>Horario de la cancha</b></div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:var(--muted);min-width:42px">Abre</span><div class="seg">${startSeg}</div></div>
           <div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:var(--muted);min-width:42px">Cierra</span><div class="seg">${endSeg}</div></div>
         </div>
       </div>
-      <div class="set-row"><div class="set-t"><b>Permitir reservas de media hora</b><p>Normalmente cada reserva es de 1 hora. Enciéndelo si quieres que también se puedan reservar bloques de media hora.</p></div>${halfSeg}</div>
+      <div class="set-row"><div class="set-t"><b>Permitir reservas de media hora</b></div>${halfSeg}</div>
     </div>
 
     <div class="set-head">${svgIco(ICONS.check,15)} Clases del profesor</div>

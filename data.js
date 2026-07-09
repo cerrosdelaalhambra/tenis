@@ -358,7 +358,7 @@ async function fetchAll(profile){
     staff ? getUsers()    : Promise.resolve([]),
     isProf ? getProfClasses() : Promise.resolve([]),
     getAbsences(), getMaintSchedule(),
-    (profile.role==='admin') ? getClassTemplate() : Promise.resolve([])
+    getClassTemplate()   // para todos: sirve para el Excel (admin) y para mostrar clases de días ya pasados
   ]);
   return { profile, myHouses, reservations, releases, closures, holidays, houses,
     cupo:cfg.cupo, profFlexible:cfg.profFlexible, permEnabled:cfg.permEnabled, permRoute:'both',
