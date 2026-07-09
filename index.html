@@ -370,7 +370,8 @@
   .sched-add{font-size:12px;color:var(--court);font-weight:600;padding:4px 8px;border-radius:8px}
   .sched-add:hover{background:var(--court-soft)}
   .sched-row{display:flex;align-items:center;gap:8px;margin:6px 0}
-  .sched-row select{flex:1;padding:8px 10px;border:1.5px solid var(--line);border-radius:9px;font-size:13px;background:#fafcfb;color:var(--ink)}
+  .sched-row select{flex:1;padding:9px 28px 9px 11px;border:1.5px solid var(--line);border-radius:10px;font-size:13px;font-weight:500;background-color:#fafcfb;color:var(--ink);font-family:inherit;cursor:pointer;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2314564a' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;transition:border .15s,box-shadow .15s}
+  .sched-row select:focus{outline:none;border-color:var(--court);box-shadow:0 0 0 3px var(--court-soft);background-color:#fff}
   .sched-a{font-size:12px;color:var(--muted)}
   .sched-del{color:#b3261e;font-size:14px;padding:4px 8px;border-radius:8px}
   .sched-del:hover{background:#fdecea}
@@ -780,7 +781,8 @@
 <div id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="data.js?v=20260708k"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="data.js?v=20260708l"></script>
 <script>
 /* PWA: registra el service worker (ruta relativa para que funcione bajo /tenis/) */
 if('serviceWorker' in navigator){
@@ -897,6 +899,7 @@ let PROF_FLEX = false;    // modo flexible: horas del profesor reservables por e
 let PROF_CLASSES = [];    // clases del profesor (casa + nombre del alumno), solo en el rol 'prof'
 let ABSENCES = [];        // ausencias del profesor (rangos por fecha); esas horas quedan libres (gastan cupo)
 let MAINT_SCHEDULE = [];  // mantenimiento recurrente (semanal); esas franjas no se pueden reservar
+let CLASS_TEMPLATE = [];  // plantilla de clases (dow, horas, casa, nombre) — para exportar/importar Excel (admin)
 let RECURRING = [];       // horarios permanentes (clases fijas), desde la base
 let PERM_ENABLED = false; // ¿se pueden solicitar horarios permanentes?
 let PERM_ROUTE = 'both';  // a quién llegan: 'prof' | 'admin' | 'both'
@@ -1039,7 +1042,7 @@ async function loadData(){
   state.rainUntil = rainC ? rainC.endTs : null;                        // lluvia → marca/banner
   state.rainHours = rainC ? Math.max(1,Math.round((rainC.endTs-rainC.startTs)/3600000)) : 0;
   HOLIDAYS=b.holidays||new Set(); notifs=b.notifs||[]; activity=b.activity||[]; users=b.users||[];
-  PROF_SCHEDULE=b.profSchedule||[]; PROF_FLEX=!!b.profFlexible; PROF_CLASSES=b.profClasses||[]; ABSENCES=b.absences||[]; MAINT_SCHEDULE=b.maintSchedule||[];
+  PROF_SCHEDULE=b.profSchedule||[]; PROF_FLEX=!!b.profFlexible; PROF_CLASSES=b.profClasses||[]; ABSENCES=b.absences||[]; MAINT_SCHEDULE=b.maintSchedule||[]; CLASS_TEMPLATE=b.classTemplate||[];
   RECURRING=b.recurring||[]; PERM_ENABLED=!!b.permEnabled; PERM_ROUTE=b.permRoute||'both';
   houses=(b.houses||[]).map(h=>h.label); houseIdByLabel={}; houseLabelById={};
   (b.houses||[]).forEach(h=>{ houseIdByLabel[h.label]=h.id; houseLabelById[h.id]=h.label; });
@@ -2111,6 +2114,14 @@ function viewSettings(){
       <button class="btn-ghost" style="box-shadow:none" onclick="openRecurringList()">Ver y gestionar</button>
     </div>`:''}
     <div style="padding:16px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;border-top:1px solid var(--line)">
+      <div style="flex:1;min-width:200px"><b style="font-size:14px">Plantilla de clases (Excel)</b><p style="font-size:12px;color:var(--muted);margin-top:2px">Descarga el Excel con las clases actuales (casa y nombre), edítalo en tu computador y súbelo para actualizar. Las celdas que dejes vacías quedan sin asignar.</p></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn-ghost" style="box-shadow:none" onclick="exportTemplate()">Descargar</button>
+        <button class="btn-ghost" style="box-shadow:none" onclick="document.getElementById('tplFile').click()">Importar</button>
+      </div>
+      <input type="file" id="tplFile" accept=".xlsx,.xls" style="display:none" onchange="if(this.files&&this.files[0]){importTemplate(this.files[0]);this.value='';}">
+    </div>
+    <div style="padding:16px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;border-top:1px solid var(--line)">
       <div style="flex:1;min-width:210px"><b style="font-size:14px">Periodo de clases fijas</b><p style="font-size:12px;color:var(--muted);margin-top:2px">Al empezar un nuevo trimestre, cierra el periodo actual (borra la plantilla y las clases fijas) para cargar una plantilla nueva. El horario base y el mantenimiento no se tocan.</p></div>
       <button class="btn-ghost" style="box-shadow:none;color:var(--danger)" onclick="openResetPeriod()">Reiniciar periodo</button>
     </div>
@@ -2125,6 +2136,51 @@ function openResetPeriod(){
   document.getElementById('modalBg').classList.add('show');
 }
 async function confirmResetPeriod(){ closeModal(); try{ await DB.Admin.resetClassPeriod(); await loadData(); render(); toast('Periodo de clases fijas reiniciado'); }catch(e){ toast(e.message,'warn'); } }
+function classSlotList(){
+  const dnames=['','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const out=[];
+  [1,2,3,4,5,6].forEach(dow=>{
+    PROF_SCHEDULE.filter(r=>r.dow===dow).sort((a,b)=>a.startMin-b.startMin).forEach(b=>{
+      for(let m=b.startMin; m+60<=b.endMin; m+=60){
+        const cur=CLASS_TEMPLATE.find(c=>c.dow===dow && c.startMin===m);
+        out.push({dow, startMin:m, endMin:m+60, dname:dnames[dow], hlabel:schedMinLabel(m)+'–'+schedMinLabel(m+60), house:(cur&&cur.house)||'', name:(cur&&cur.student_name)||''});
+      }
+    });
+  });
+  return out;
+}
+function exportTemplate(){
+  if(typeof XLSX==='undefined'){ toast('No se pudo cargar el generador de Excel.','warn'); return; }
+  const slots=classSlotList();
+  if(!slots.length){ toast('No hay horas de clase en el horario del profesor.','warn'); return; }
+  const rows=[['Día','Hora','Casa','Nombre']].concat(slots.map(s=>[s.dname, s.hlabel, s.house, s.name]));
+  const ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:12},{wch:24},{wch:12},{wch:26}];
+  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Clases');
+  XLSX.writeFile(wb, 'plantilla_clases.xlsx');
+  toast('Plantilla descargada');
+}
+async function importTemplate(file){
+  if(typeof XLSX==='undefined'){ toast('No se pudo cargar el lector de Excel.','warn'); return; }
+  try{
+    const buf=await file.arrayBuffer();
+    const wb=XLSX.read(buf,{type:'array'});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const rows=XLSX.utils.sheet_to_json(ws,{header:1});
+    const slots=classSlotList(); const byKey={}; slots.forEach(s=>byKey[s.dname+'|'+s.hlabel]=s);
+    const entries=[];
+    for(let i=1;i<rows.length;i++){ const r=rows[i]; if(!r||!r.length) continue;
+      const dia=(r[0]!=null?String(r[0]):'').trim(), hora=(r[1]!=null?String(r[1]):'').trim();
+      const s=byKey[dia+'|'+hora]; if(!s) continue;
+      entries.push({dow:s.dow, start_min:s.startMin, end_min:s.endMin, house:(r[2]!=null?String(r[2]):'').trim(), student:(r[3]!=null?String(r[3]):'').trim()});
+    }
+    if(!entries.length){ toast('No se reconocieron filas (revisa las columnas Día y Hora).','warn'); return; }
+    await DB.setClassTemplate(entries);
+    if(DB.materializeClasses) await DB.materializeClasses();   // recrea las clases de la semana con la plantilla nueva
+    await loadData(); render();
+    toast('Plantilla importada · '+entries.length+' clases actualizadas');
+  }catch(e){ toast('No se pudo leer el archivo: '+(e.message||e),'warn'); }
+}
 function userRow(u,i){
   const isFixed=(u.role==='admin'||u.role==='prof'||u.role==='portero');
   const roleEs={admin:'Administración',prof:'Profesor',portero:'Portería'};

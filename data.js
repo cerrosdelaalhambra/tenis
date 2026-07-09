@@ -247,6 +247,13 @@ async function getMaintSchedule(){
   const {data}=await sb.from('maint_schedule').select('dow,start_min,end_min').order('dow').order('start_min');
   return (data||[]).map(r=>({dow:r.dow, startMin:r.start_min, endMin:r.end_min}));
 }
+async function getClassTemplate(){                    // plantilla de clases (para exportar a Excel)
+  const {data}=await sb.from('class_schedule').select('dow,start_min,end_min,houses(label),student_name');
+  return (data||[]).map(r=>({dow:r.dow, startMin:r.start_min, endMin:r.end_min, house:(r.houses&&r.houses.label)||'', student_name:r.student_name||''}));
+}
+async function setClassTemplate(entries){             // cargar/reemplazar la plantilla (importar Excel)
+  const {error}=await sb.rpc('set_class_template',{p:entries}); if(error) throw mapError(error);
+}
 // Horarios permanentes (según RLS: el residente ve los suyos; profesor/admin todos). Resistente si la tabla no existe.
 async function getRecurring(){
   const {data}=await sb.from('recurring_classes').select('id,house_id,profile_id,dow,start_min,end_min,status,created_at,houses(label)').order('created_at',{ascending:false});
@@ -340,7 +347,7 @@ async function fetchAll(profile){
   const staff  = profile.role==='admin' || profile.role==='portero';
   const isProf = profile.role==='prof';
   // TODO en un solo lote paralelo (antes había hasta 3 fases secuenciales)
-  const [myHouses, reservations, releases, closures, holidays, houses, cfg, notifs, profSchedule, recurring, activity, users, profClasses, absences, maintSchedule] = await Promise.all([
+  const [myHouses, reservations, releases, closures, holidays, houses, cfg, notifs, profSchedule, recurring, activity, users, profClasses, absences, maintSchedule, classTemplate] = await Promise.all([
     member ? getMyHouses(profile.id) : Promise.resolve([]),
     getCalendar(profile.role), getReleases(), getClosures(), getHolidays(),
     getHouses(), getConfig(), getNotifications(profile.role, profile.id, profile.notif_seen_at),
@@ -348,12 +355,13 @@ async function fetchAll(profile){
     staff ? getActivity() : Promise.resolve([]),
     staff ? getUsers()    : Promise.resolve([]),
     isProf ? getProfClasses() : Promise.resolve([]),
-    getAbsences(), getMaintSchedule()
+    getAbsences(), getMaintSchedule(),
+    (profile.role==='admin') ? getClassTemplate() : Promise.resolve([])
   ]);
   return { profile, myHouses, reservations, releases, closures, holidays, houses,
     cupo:cfg.cupo, profFlexible:cfg.profFlexible, permEnabled:cfg.permEnabled, permRoute:'both',
     openStart:cfg.openStart, openEnd:cfg.openEnd, halfHours:cfg.halfHours,
-    notifs, profSchedule, recurring, activity, users, profClasses, absences, maintSchedule };
+    notifs, profSchedule, recurring, activity, users, profClasses, absences, maintSchedule, classTemplate };
 }
 function isMemberRole(role){ return role==='member' || role==='master'; }
 
@@ -557,7 +565,7 @@ async function markAllRead(profileId){
 window.DB = {
   Auth, Admin, Rain,
   fetchAll, book, cancel, requestCancel, decideCancel, markNotif, markAllRead,
-  getProfClasses, changeClassHouse, releaseClass, markAbsence, unmarkAbsence,
+  getProfClasses, changeClassHouse, releaseClass, markAbsence, unmarkAbsence, setClassTemplate,
   requestRecurring, decideRecurring, cancelRecurring, materializeRecurring, materializeClasses,
   VAPID_PUBLIC_KEY, savePushSub, removePushSub,
   getHouses, getMyHouses, getCalendar, getNotifications, getActivity,
