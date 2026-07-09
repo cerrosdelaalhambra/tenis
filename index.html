@@ -372,6 +372,9 @@
   .sched-row{display:flex;align-items:center;gap:8px;margin:6px 0}
   .sched-row select{flex:1;padding:9px 28px 9px 11px;border:1.5px solid var(--line);border-radius:10px;font-size:13px;font-weight:500;background-color:#fafcfb;color:var(--ink);font-family:inherit;cursor:pointer;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2314564a' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;transition:border .15s,box-shadow .15s}
   .sched-row select:focus{outline:none;border-color:var(--court);box-shadow:0 0 0 3px var(--court-soft);background-color:#fff}
+  .sched-row .psel{flex:1;margin-bottom:0;min-width:0}
+  .sched-row .psel-trigger{padding:9px 11px;font-size:13px;gap:6px}
+  .sched-row .psel-menu{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:6}
   .sched-a{font-size:12px;color:var(--muted)}
   .sched-del{color:#b3261e;font-size:14px;padding:4px 8px;border-radius:8px}
   .sched-del:hover{background:#fdecea}
@@ -782,7 +785,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="data.js?v=20260708l"></script>
+<script src="data.js?v=20260709a"></script>
 <script>
 /* PWA: registra el service worker (ruta relativa para que funcione bajo /tenis/) */
 if('serviceWorker' in navigator){
@@ -2020,15 +2023,14 @@ function initSchedDraft(){
 function schedEditorHTML(){
   if(!state.schedDraft) initSchedDraft();
   const step=HALF_HOURS?30:60, first=HALF_HOURS?240:300;
-  const opts=[]; for(let m=first;m<=1380;m+=step) opts.push(m);
-  const optHtml=(list,sel)=>list.map(m=>`<option value="${m}"${m===sel?' selected':''}>${schedMinLabel(m)}</option>`).join('');
+  const opts=[]; for(let m=first;m<=1380;m+=step) opts.push({v:m,label:schedMinLabel(m)});
   const order=[1,2,3,4,5,6];   // lunes a sábado (sin domingo: el profesor no asiste)
   return `<div class="sched-grid">`+order.map(d=>{
     const rgs=state.schedDraft[d]||[];
     const rows=rgs.length? rgs.map((rg,i)=>`<div class="sched-row">
-        <select class="fldsel" onchange="schedSet(${d},${i},'startMin',this.value)">${optHtml(opts,rg.startMin)}</select>
+        ${psel('psch_s_'+d+'_'+i, opts, rg.startMin, 'schedSync')}
         <span class="sched-a">a</span>
-        <select class="fldsel" onchange="schedSet(${d},${i},'endMin',this.value)">${optHtml(opts.filter(m=>m>rg.startMin),rg.endMin)}</select>
+        ${psel('psch_e_'+d+'_'+i, opts.filter(o=>o.v>rg.startMin), rg.endMin, 'schedSync')}
         <button class="sched-del" title="Quitar" onclick="schedDel(${d},${i})">✕</button>
       </div>`).join('')
       : `<div class="sched-empty">Sin horario (el profesor no asiste)</div>`;
@@ -2039,6 +2041,14 @@ function schedRerender(){ const el=document.getElementById('schedInline'); if(el
 function schedAdd(d){ (state.schedDraft[d]=state.schedDraft[d]||[]).push({startMin:360,endMin:420}); schedRerender(); }
 function schedDel(d,i){ state.schedDraft[d].splice(i,1); schedRerender(); }
 function schedSet(d,i,k,v){ const r=state.schedDraft[d]&&state.schedDraft[d][i]; if(!r) return; r[k]=+v; if(k==='startMin'){ if(r.endMin<=r.startMin) r.endMin=r.startMin+(HALF_HOURS?30:60); schedRerender(); } }
+function schedSync(){
+  for(let d=1;d<=6;d++){ (state.schedDraft[d]||[]).forEach((rg,i)=>{
+    const s=document.getElementById('psch_s_'+d+'_'+i), e=document.getElementById('psch_e_'+d+'_'+i);
+    if(s) rg.startMin=+s.value; if(e) rg.endMin=+e.value;
+    if(rg.endMin<=rg.startMin) rg.endMin=rg.startMin+(HALF_HOURS?30:60);
+  }); }
+  schedRerender();
+}
 async function saveProfSchedule(){
   const rows=[]; let bad=false;
   for(let d=1;d<=6;d++){ (state.schedDraft[d]||[]).forEach(r=>{ if(r.endMin<=r.startMin) bad=true; else rows.push({dow:d,startMin:r.startMin,endMin:r.endMin}); }); }
@@ -2055,14 +2065,13 @@ function initMaintDraft(){
 function maintEditorHTML(){
   if(!state.maintDraft) initMaintDraft();
   const step=HALF_HOURS?30:60, first=HALF_HOURS?240:300;
-  const opts=[]; for(let m=first;m<=1380;m+=step) opts.push(m);
-  const optHtml=(list,sel)=>list.map(m=>`<option value="${m}"${m===sel?' selected':''}>${schedMinLabel(m)}</option>`).join('');
+  const opts=[]; for(let m=first;m<=1380;m+=step) opts.push({v:m,label:schedMinLabel(m)});
   return `<div class="sched-grid">`+[1,2,3,4,5,6].map(d=>{
     const rgs=state.maintDraft[d]||[];
     const rows=rgs.length? rgs.map((rg,i)=>`<div class="sched-row">
-        <select class="fldsel" onchange="maintSet(${d},${i},'startMin',this.value)">${optHtml(opts,rg.startMin)}</select>
+        ${psel('pmnt_s_'+d+'_'+i, opts, rg.startMin, 'maintSync')}
         <span class="sched-a">a</span>
-        <select class="fldsel" onchange="maintSet(${d},${i},'endMin',this.value)">${optHtml(opts.filter(m=>m>rg.startMin),rg.endMin)}</select>
+        ${psel('pmnt_e_'+d+'_'+i, opts.filter(o=>o.v>rg.startMin), rg.endMin, 'maintSync')}
         <button class="sched-del" title="Quitar" onclick="maintDel(${d},${i})">✕</button>
       </div>`).join('')
       : `<div class="sched-empty">Sin mantenimiento</div>`;
@@ -2073,6 +2082,14 @@ function maintRerender(){ const el=document.getElementById('maintInline'); if(el
 function maintAdd(d){ (state.maintDraft[d]=state.maintDraft[d]||[]).push({startMin:360,endMin:420}); maintRerender(); }
 function maintDel(d,i){ state.maintDraft[d].splice(i,1); maintRerender(); }
 function maintSet(d,i,k,v){ const r=state.maintDraft[d]&&state.maintDraft[d][i]; if(!r) return; r[k]=+v; if(k==='startMin'){ if(r.endMin<=r.startMin) r.endMin=r.startMin+(HALF_HOURS?30:60); maintRerender(); } }
+function maintSync(){
+  for(let d=1;d<=6;d++){ (state.maintDraft[d]||[]).forEach((rg,i)=>{
+    const s=document.getElementById('pmnt_s_'+d+'_'+i), e=document.getElementById('pmnt_e_'+d+'_'+i);
+    if(s) rg.startMin=+s.value; if(e) rg.endMin=+e.value;
+    if(rg.endMin<=rg.startMin) rg.endMin=rg.startMin+(HALF_HOURS?30:60);
+  }); }
+  maintRerender();
+}
 async function saveMaintSchedule(){
   const rows=[]; let bad=false;
   for(let d=0;d<=6;d++){ (state.maintDraft[d]||[]).forEach(r=>{ if(r.endMin<=r.startMin) bad=true; else rows.push({dow:d,startMin:r.startMin,endMin:r.endMin}); }); }
@@ -2136,26 +2153,30 @@ function openResetPeriod(){
   document.getElementById('modalBg').classList.add('show');
 }
 async function confirmResetPeriod(){ closeModal(); try{ await DB.Admin.resetClassPeriod(); await loadData(); render(); toast('Periodo de clases fijas reiniciado'); }catch(e){ toast(e.message,'warn'); } }
-function classSlotList(){
-  const dnames=['','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-  const out=[];
-  [1,2,3,4,5,6].forEach(dow=>{
-    PROF_SCHEDULE.filter(r=>r.dow===dow).sort((a,b)=>a.startMin-b.startMin).forEach(b=>{
-      for(let m=b.startMin; m+60<=b.endMin; m+=60){
-        const cur=CLASS_TEMPLATE.find(c=>c.dow===dow && c.startMin===m);
-        out.push({dow, startMin:m, endMin:m+60, dname:dnames[dow], hlabel:schedMinLabel(m)+'–'+schedMinLabel(m+60), house:(cur&&cur.house)||'', name:(cur&&cur.student_name)||''});
-      }
-    });
+function classMatrix(){                    // matriz: días (columnas) x horas (filas) de clase
+  const days=[{dow:1,name:'Lunes'},{dow:2,name:'Martes'},{dow:3,name:'Miércoles'},{dow:4,name:'Jueves'},{dow:5,name:'Viernes'},{dow:6,name:'Sábado'}];
+  const slotsByDow={}, hourSet=new Set();
+  days.forEach(d=>{ slotsByDow[d.dow]=new Set();
+    PROF_SCHEDULE.filter(r=>r.dow===d.dow).forEach(b=>{ for(let m=b.startMin; m+60<=b.endMin; m+=60){ slotsByDow[d.dow].add(m); hourSet.add(m); } });
   });
-  return out;
+  return { days, hours:[...hourSet].sort((a,b)=>a-b), slotsByDow };
 }
 function exportTemplate(){
   if(typeof XLSX==='undefined'){ toast('No se pudo cargar el generador de Excel.','warn'); return; }
-  const slots=classSlotList();
-  if(!slots.length){ toast('No hay horas de clase en el horario del profesor.','warn'); return; }
-  const rows=[['Día','Hora','Casa','Nombre']].concat(slots.map(s=>[s.dname, s.hlabel, s.house, s.name]));
+  const {days,hours,slotsByDow}=classMatrix();
+  if(!hours.length){ toast('No hay horas de clase en el horario del profesor.','warn'); return; }
+  const cur=(dow,m)=>CLASS_TEMPLATE.find(c=>c.dow===dow&&c.startMin===m);
+  const h1=['']; days.forEach(d=>h1.push(d.name,''));           // fila 1: nombre del día (2 columnas cada uno)
+  const h2=['Hora']; days.forEach(()=>h2.push('Casa','Nombre')); // fila 2: sub-encabezados
+  const rows=[h1,h2];
+  hours.forEach(m=>{
+    const row=[schedMinLabel(m)+'–'+schedMinLabel(m+60)];
+    days.forEach(d=>{ if(slotsByDow[d.dow].has(m)){ const c=cur(d.dow,m); row.push((c&&c.house)||'', (c&&c.student_name)||''); } else row.push('',''); });
+    rows.push(row);
+  });
   const ws=XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols']=[{wch:12},{wch:24},{wch:12},{wch:26}];
+  ws['!merges']=days.map((d,i)=>({s:{r:0,c:1+i*2},e:{r:0,c:2+i*2}}));   // unir el nombre del día sobre sus 2 columnas
+  let cols=[{wch:15}]; days.forEach(()=>{cols.push({wch:11},{wch:20});}); ws['!cols']=cols;
   const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Clases');
   XLSX.writeFile(wb, 'plantilla_clases.xlsx');
   toast('Plantilla descargada');
@@ -2167,16 +2188,21 @@ async function importTemplate(file){
     const wb=XLSX.read(buf,{type:'array'});
     const ws=wb.Sheets[wb.SheetNames[0]];
     const rows=XLSX.utils.sheet_to_json(ws,{header:1});
-    const slots=classSlotList(); const byKey={}; slots.forEach(s=>byKey[s.dname+'|'+s.hlabel]=s);
+    const {days,hours,slotsByDow}=classMatrix();
+    const hourByLabel={}; hours.forEach(m=>hourByLabel[schedMinLabel(m)+'–'+schedMinLabel(m+60)]=m);
     const entries=[];
-    for(let i=1;i<rows.length;i++){ const r=rows[i]; if(!r||!r.length) continue;
-      const dia=(r[0]!=null?String(r[0]):'').trim(), hora=(r[1]!=null?String(r[1]):'').trim();
-      const s=byKey[dia+'|'+hora]; if(!s) continue;
-      entries.push({dow:s.dow, start_min:s.startMin, end_min:s.endMin, house:(r[2]!=null?String(r[2]):'').trim(), student:(r[3]!=null?String(r[3]):'').trim()});
+    for(let i=2;i<rows.length;i++){ const r=rows[i]; if(!r||!r.length) continue;   // fila 0 y 1 = encabezados
+      const hl=(r[0]!=null?String(r[0]):'').trim(); const m=hourByLabel[hl]; if(m==null) continue;
+      days.forEach((d,di)=>{
+        if(!slotsByDow[d.dow].has(m)) return;                       // no hay clase ese día a esa hora
+        const house=(r[1+di*2]!=null?String(r[1+di*2]):'').trim();
+        const name =(r[2+di*2]!=null?String(r[2+di*2]):'').trim();
+        entries.push({dow:d.dow, start_min:m, end_min:m+60, house, student:name});
+      });
     }
-    if(!entries.length){ toast('No se reconocieron filas (revisa las columnas Día y Hora).','warn'); return; }
+    if(!entries.length){ toast('No se reconocieron filas (revisa el formato de la plantilla).','warn'); return; }
     await DB.setClassTemplate(entries);
-    if(DB.materializeClasses) await DB.materializeClasses();   // recrea las clases de la semana con la plantilla nueva
+    if(DB.materializeClasses) await DB.materializeClasses();
     await loadData(); render();
     toast('Plantilla importada · '+entries.length+' clases actualizadas');
   }catch(e){ toast('No se pudo leer el archivo: '+(e.message||e),'warn'); }
