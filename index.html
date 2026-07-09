@@ -275,7 +275,8 @@
   .past-panel .row{opacity:.72}
   /* Reglamento */
   .reg-wrap{max-width:840px}
-  .reg-seg{margin-bottom:16px}
+  .reg-seg{margin-bottom:16px;flex-wrap:wrap}
+  .reg-seg button{flex:1 1 auto;min-width:72px;padding-left:8px;padding-right:8px}
   .reg-panel{padding:6px 20px 18px}
   .reg-intro{font-size:13.5px;color:var(--ink);line-height:1.75;margin:14px 0 2px}
   .reg-item{margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
@@ -1448,8 +1449,9 @@ function viewReglamento(){
     <button class="${tab==='general'?'on':''}" onclick="setRegTab('general')">General</button>
     <button class="${tab==='clases'?'on':''}" onclick="setRegTab('clases')">Clases</button>
     <button class="${tab==='reservas'?'on':''}" onclick="setRegTab('reservas')">Reservas</button>
+    <button class="${tab==='beneficios'?'on':''}" onclick="setRegTab('beneficios')">Beneficios</button>
   </div>`;
-  const body = tab==='general'?regGeneral() : tab==='clases'?regClases() : regReservas();
+  const body = tab==='general'?regGeneral() : tab==='clases'?regClases() : tab==='reservas'?regReservas() : regBeneficios();
   return `<div class="reg-wrap">${seg}${body}</div>`;
 }
 function regItem(icon,title,html){
@@ -1486,6 +1488,20 @@ function regReservas(){
     ${regItem(ICONS.clock,'Cancelaciones',`<p>Puedes cancelar hasta <b class="hl">20 minutos antes</b> de tu reserva. Al cancelar, se avisa a <b class="hl">todos los residentes</b> —indicando quién canceló y el horario— que la cancha quedó libre.</p>`)}
     ${regItem(ICONS.bell,'Sanciones administrativas',`<p>Si no asistes a tu reserva, la administración puede aplicar medidas o sanciones. Esto lo maneja la <b class="hl">administración</b>, no la aplicación.</p>`)}
     ${regItem(ICONS.tool,'Mantenimiento',`<p>No se puede reservar en horas de mantenimiento. Estos son los horarios de mantenimiento actuales:</p>${regMaintList()}`)}
+  </div>`;
+}
+function regBeneficios(){
+  return `<div class="panel reg-panel">
+    <p class="reg-intro">Qué mejora esta aplicación frente al sistema anterior de planillas y cuadernos:</p>
+    ${regItem(ICONS.book,'Ahorro de papel',`<p>Se acaban las planillas y los cuadernos: todo el sistema de reservas vive en la aplicación.</p>`)}
+    ${regItem(ICONS.bulb,'Ahorro de energía',`<p>La portería recibe avisos de cuándo prender y apagar las luces de la cancha, evitando dejarlas encendidas de más.</p>`)}
+    ${regItem(ICONS.check,'Sin choques de horarios',`<p>Cada hora tiene un solo responsable. Se acabaron los cruces por error humano de dos personas reservando la misma hora.</p>`)}
+    ${regItem(ICONS.cal,'Disponibilidad siempre a la vista',`<p>Ya no hay que escribir o preguntar a qué horas está libre la cancha: la app muestra la disponibilidad de toda la semana. Menos trabajo operativo.</p>`)}
+    ${regItem(ICONS.ball,'Se aprovechan los espacios libres',`<p>Se promueve el uso de las horas vacías: si alguien cancela, se avisa a todos que la cancha quedó disponible.</p>`)}
+    ${regItem(ICONS.clock,'Todo sobre el profesor',`<p>Se conoce el horario del profesor, y cuando libera un espacio o va a estar ausente se notifica a todos, dejando ese tiempo disponible para la cancha. Algo que antes no se podía hacer.</p>`)}
+    ${regItem(ICONS.tool,'Información de mantenimiento',`<p>Todos saben cuándo hay mantenimiento y cuándo no, con los horarios a la vista.</p>`)}
+    ${regItem(ICONS.history,'Control y registro',`<p>Queda un historial de quién reserva y quién cancela.</p>`)}
+    ${regItem(ICONS.book,'Reglamento a la mano',`<p>El reglamento queda claro y organizado dentro de la app, para que todos estemos enterados de cómo funciona.</p>`)}
   </div>`;
 }
 function regMaintList(){
