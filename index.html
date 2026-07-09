@@ -1270,7 +1270,7 @@ function render(){
   const _ttl = state.view==='calendar' ? titles.calendar+' · '+cap1(MESES[state.weekStart.getMonth()]) : titles[state.view];
   document.getElementById('ttitle').textContent=_ttl;
   document.getElementById('mtitle').textContent=_ttl;
-  const subs={calendar:'',mine:'Tus reservas y tu cupo de la semana',lights:'Horarios para prender y apagar las luces',rain:'Cierra la cancha cuando esté lloviendo o encharcada',porteria:'Luces de la cancha y modo lluvia',classes:'Tus clases del día',notif:'Avisos de la cancha',users:'Cuentas fijas y residentes',settings:'Configuración de la cancha',avail:state.role==='prof'?'Abre tus horarios para práctica libre o clase':'Horario del profesor y apertura de horas de clase',maint:'Cierra la cancha por reparaciones',history:'Quién reserva y cancela, y a qué hora'};
+  const subs={calendar:'',mine:'Tus reservas y tu cupo de la semana',lights:'Horarios para prender y apagar las luces',rain:'Cierra la cancha cuando esté lloviendo o encharcada',porteria:'Luces de la cancha y modo lluvia',classes:'Tus clases del día',notif:'Avisos de la cancha',users:'Cuentas fijas y residentes',settings:'Configuración de la cancha',avail:state.role==='prof'?'Abre tus horarios para práctica libre o clase':'Horario del profesor y ausencias',maint:'Bloques fijos y cierres por reparaciones',history:'Quién reserva y cancela, y a qué hora'};
   document.getElementById('tsub').textContent=subs[state.view]||'';
   document.getElementById('weekNav').style.display='none';
 
@@ -2509,14 +2509,7 @@ function viewAvail(){
         <div id="schedInline">${schedEditorHTML()}</div>
       </div>
     </div>` : '';
-  const maintPanel = state.role==='admin' ? `<div class="panel" style="margin-bottom:16px">
-      <div class="panel-h"><h3>Mantenimiento (bloques fijos)</h3><div class="spacer"></div><button class="btn-mini" onclick="saveMaintSchedule()">Guardar</button></div>
-      <div style="padding:4px 18px 14px">
-        <p style="font-size:12px;color:var(--muted);margin:0 0 10px">Horas fijas de mantenimiento cada semana. Esas franjas no se pueden reservar.</p>
-        <div id="maintInline">${maintEditorHTML()}</div>
-      </div>
-    </div>` : '';
-  let html=schedPanel+maintPanel+`<div class="panel"><div class="panel-h"><h3>El profesor no viene</h3><div class="spacer"></div>${checkbox}</div>
+  let html=schedPanel+`<div class="panel"><div class="panel-h"><h3>El profesor no viene</h3><div class="spacer"></div>${checkbox}</div>
     <div style="padding:18px">
       <label class="fld-label">${multi?'Escoge el rango de días que el profesor faltará (toca inicio y fin)':'Escoge el día en que el profesor no viene'}</label>
       <div class="avail-cols">
@@ -2557,7 +2550,14 @@ function viewMaint(){
             <div class="field"><label>Desde</label>${psel('cFrom',hourArr(5,22),8,'refreshMaintTo')}</div>
             <div class="field"><label>Hasta</label>${psel('cTo',hourArr(9,23),12,'')}</div>
           </div>`;
-  let html=`<div class="panel"><div class="panel-h"><h3>Cerrar la cancha por mantenimiento</h3><div class="spacer"></div>${checkbox}</div>
+  const fixedPanel=`<div class="panel" style="margin-bottom:16px">
+      <div class="panel-h"><h3>Mantenimiento (bloques fijos)</h3><div class="spacer"></div><button class="btn-mini" onclick="saveMaintSchedule()">Guardar</button></div>
+      <div style="padding:4px 18px 14px">
+        <p style="font-size:12px;color:var(--muted);margin:0 0 10px">Horas fijas de mantenimiento cada semana. Esas franjas no se pueden reservar.</p>
+        <div id="maintInline">${maintEditorHTML()}</div>
+      </div>
+    </div>`;
+  let html=fixedPanel+`<div class="panel"><div class="panel-h"><h3>Cerrar la cancha por mantenimiento</h3><div class="spacer"></div>${checkbox}</div>
     <div style="padding:18px">
       <label class="fld-label">${multi?'Escoge el rango de días (toca inicio y fin)':'Escoge el día'}</label>
       <div class="avail-cols">
