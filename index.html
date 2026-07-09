@@ -315,12 +315,13 @@
   .s-reserved:hover{background:#fbfdfc}
   .hicon{width:13px;height:13px;vertical-align:middle;margin:-2px 4px 1px 0;fill:var(--ink);flex:none}
   .s-prof{background:#fff;border:1.5px solid var(--ink);color:var(--ink)}
-  .s-class{background:var(--court);border:1.5px solid var(--court);color:#fff;align-items:flex-start;justify-content:center}
-  .s-class b{display:flex;align-items:center}
-  .s-class .hicon,.half.h-class .hicon{fill:#fff}
-  .s-class .cs-name{font-size:10px;color:rgba(255,255,255,.92);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;font-weight:600}
-  .half.h-class{background:var(--court);border:1.5px solid var(--court);color:#fff;font-weight:600}
-  .mslot.classm .bar{background:var(--court)}
+  .s-clase{background:var(--court);border:1.5px solid var(--court);color:#fff;align-items:flex-start;justify-content:center}
+  .s-clase b{display:flex;align-items:center;color:#fff}
+  .s-clase .hicon,.half.h-clase .hicon{fill:#fff}
+  .s-clase .cs-name{font-size:10px;color:rgba(255,255,255,.92);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;font-weight:600}
+  .half.h-clase{background:var(--court);border:1.5px solid var(--court);color:#fff;font-weight:600}
+  .half.h-clase .hicon{fill:#fff}
+  .mslot.clasem .bar{background:var(--court)}
   .s-bonus{background:#fff;border:1.5px dashed var(--ball-dark);color:var(--court);cursor:pointer;position:relative}
   .s-bonus:hover{background:var(--court-soft)}
   .bstar{color:#f2b705}
@@ -1485,7 +1486,7 @@ function halfCell(date,h,half,s){
   const k=s.kind;
   if(k==='mine'){const r=s.res;return `<div class="half h-mine" onclick="openMyRes(${r.id})" title="${rangeLabel(r.h,r.min,r.dur)}">${HOUSE_ICON}${houseNum(r.house)}${inRainWin(date,h,half)?RAINMARK:''}</div>`;}
   if(k==='reserved'){const r=s.res;return `<div class="half h-reserved" ${(isStaff()||profCanRelease(r.type))?`onclick="openAdminRes(${r.id})"`:''} title="${rangeLabel(r.h,r.min,r.dur)}${isStaff()?' · '+r.name:''}">${HOUSE_ICON}${houseNum(r.house)}${inRainWin(date,h,half)?RAINMARK:''}</div>`;}
-  if(k==='classinfo'){const r=s.res;return `<div class="half h-class" title="Clase${r.name?' · '+r.name:''}">${HOUSE_ICON}${houseNum(r.house)}${r.name?' · '+r.name.split(' ')[0]:''}</div>`;}
+  if(k==='classinfo'){const r=s.res;return `<div class="half h-clase" title="Clase${r.name?' · '+r.name:''}">${HOUSE_ICON}${houseNum(r.house)}${r.name?' · '+r.name.split(' ')[0]:''}</div>`;}
   if(k==='prof') return `<div class="half h-prof" title="Profesor"><span class="cdot cdot-black"></span>Profesor</div>`;
   if(k==='flex') return `<div class="half h-flex" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'flexh${half}')"`:''} title="Hora del profesor · reservable, con o sin profesor"><span><span class="cdot cdot-amber"></span>Profesor</span><span class="plus">+</span></div>`;
   if(k==='class'||k==='open') return `<div class="half h-bonus" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'h${half}')"`:''} title="No gasta cupo${k==='class'?' · profesor disponible':''}"><span><span class="plus">+</span>Libre</span><span class="bstar">★</span></div>`;
@@ -1498,7 +1499,7 @@ function halfCell(date,h,half,s){
 function slotHTML(date,h){
   const sc=slotCat(date,h), cat=sc.cat, res=sc.res, mc=sc.mc;
   if(cat==='maint') return `<div class="slot s-maint" title="${mc?mc.reason:'Mantenimiento'}" onclick="toast(this.title)"><b><span class="cdot cdot-black"></span>Mantenimiento</b></div>`;
-  if(cat==='classinfo') return `<div class="slot s-class" title="Clase con el profesor${res.name?' · '+res.name:''}"><b>${HOUSE_ICON}${houseNum(res.house)}</b><small class="cs-name">${res.name||'Clase'}</small></div>`;
+  if(cat==='classinfo') return `<div class="slot s-clase" title="Clase con el profesor${res.name?' · '+res.name:''}"><b>${HOUSE_ICON}${houseNum(res.house)}</b><small class="cs-name">${res.name||'Clase'}</small></div>`;
   if(cat==='profclass') return `<div class="slot s-prof" title="Profesor" ${state.role==='prof'?`onclick="openProfRes(${res.id})" style="cursor:pointer"`:''}><b><span class="cdot cdot-black"></span>Profesor</b></div>`;
   if(cat==='mine') return `<div class="slot s-mine" onclick="openMyRes(${res.id})"><b>${HOUSE_ICON}${houseNum(res.house)}</b><span class="mtime${slotRain(date,h)?' rn':''}">${rangeLabel(res.h,res.min,res.dur)}</span>${slotRain(date,h)?RAINMARK:''}</div>`;
   if(cat==='reserved') return `<div class="slot s-reserved" ${(isStaff()||profCanRelease(res.type))?`onclick="openAdminRes(${res.id})" style="cursor:pointer"`:''}>${isStaff()?`<b>${HOUSE_ICON}${houseNum(res.house)}</b><small>${res.name}</small>`:`<b>${HOUSE_ICON}${houseNum(res.house)}</b>`}${slotRain(date,h)?RAINMARK:''}</div>`;
@@ -1552,7 +1553,7 @@ function mHalf(date,h,half,s){
   const k=s.kind;
   if(k==='mine'){const r=s.res;return `<div class="mslot mine" onclick="openMyRes(${r.id})"><div class="bar"></div>${tt}<div class="ml"><b>${HOUSE_ICON}${houseNum(r.house)}</b><span>30 min</span></div>${M_CHEV}</div>`;}
   if(k==='reserved'){const r=s.res;return `<div class="mslot reserved" ${(isStaff()||profCanRelease(r.type))?`onclick="openAdminRes(${r.id})"`:''}><div class="bar"></div>${tt}<div class="ml"><b>${HOUSE_ICON}${houseNum(r.house)}</b><span>${isStaff()?r.name:'Reservada'} · 30 min</span></div>${(isStaff()||profCanRelease(r.type))?M_CHEV:''}</div>`;}
-  if(k==='classinfo'){const r=s.res;return `<div class="mslot classm"><div class="bar"></div>${tt}<div class="ml"><b>${HOUSE_ICON}${houseNum(r.house)}</b><span>Clase${r.name?' · '+r.name:''}</span></div></div>`;}
+  if(k==='classinfo'){const r=s.res;return `<div class="mslot clasem"><div class="bar"></div>${tt}<div class="ml"><b>${HOUSE_ICON}${houseNum(r.house)}</b><span>Clase${r.name?' · '+r.name:''}</span></div></div>`;}
   if(k==='prof') return `<div class="mslot prof"><div class="bar"></div>${tt}<div class="ml"><b>Profesor</b><span>30 min</span></div></div>`;
   if(k==='flex'){ if(!canBookFree(date,h)) return `<div class="mslot prof"><div class="bar"></div>${tt}<div class="ml"><b>Profesor</b><span>30 min</span></div></div>`; return `<div class="mslot flex" onclick="openBook('${date}',${h},'flexh${half}')"><div class="bar"></div>${tt}<div class="ml"><b>Profesor · reservar</b><span>Con o sin profesor · no gasta cupo</span></div>${M_CHEV}</div>`; }
   if(k==='class'||k==='open'){ if(!canBookFree(date,h)) return ''; return `<div class="mslot bonus" onclick="openBook('${date}',${h},'h${half}')"><div class="bar"></div>${tt}<div class="ml"><b><span class="bstar">★</span> Libre</b><span>No gasta cupo</span></div>${M_CHEV}</div>`; }
@@ -1568,7 +1569,7 @@ function mSlot(date,h,sc){
   if(cat==='profclass') return `<div class="mslot prof" ${state.role==='prof'?`onclick="openProfRes(${res.id})"`:''}><div class="bar"></div>${t}<div class="ml"><b>Profesor</b><span>${state.role==='prof'?'Tu clase · toca para cancelar':'Reservado para el profesor'}</span></div>${state.role==='prof'?chev:''}</div>`;
   if(cat==='mine') return `<div class="mslot mine" onclick="openMyRes(${res.id})"><div class="bar"></div>${t}<div class="ml"><b>${HOUSE_ICON}${houseNum(res.house)}</b></div>${chev}</div>`;
   if(cat==='reserved') return `<div class="mslot reserved" ${(isStaff()||profCanRelease(res.type))?`onclick="openAdminRes(${res.id})"`:''}><div class="bar"></div>${t}<div class="ml"><b>${HOUSE_ICON}${houseNum(res.house)}</b><span>${isStaff()?res.name:'Reservada'}</span></div>${(isStaff()||profCanRelease(res.type))?chev:''}</div>`;
-  if(cat==='classinfo') return `<div class="mslot classm"><div class="bar"></div>${t}<div class="ml"><b>${HOUSE_ICON}${houseNum(res.house)}</b><span>Clase con el profesor${res.name?' · '+res.name:''}</span></div></div>`;
+  if(cat==='classinfo') return `<div class="mslot clasem"><div class="bar"></div>${t}<div class="ml"><b>${HOUSE_ICON}${houseNum(res.house)}</b><span>Clase con el profesor${res.name?' · '+res.name:''}</span></div></div>`;
   if(cat==='prof') return `<div class="mslot prof"><div class="bar"></div>${t}<div class="ml"><b>Profesor</b><span>Reservado para el profesor</span></div></div>`;
   if(cat==='flex') return `<div class="mslot flex" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'flexfull')"`:''}><div class="bar"></div>${t}<div class="ml"><b>Profesor · reservar</b><span>${canBookFree(date,h)?'Con o sin profesor · no gasta cupo':'Hora del profesor'}</span></div>${canBookFree(date,h)?chev:''}</div>`;
   if(cat==='class') return `<div class="mslot bonus" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'classfull')"`:''}><div class="bar"></div>${t}<div class="ml"><b><span class="bstar">★</span> Libre</b><span>No gasta cupo</span></div>${canBookFree(date,h)?chev:''}</div>`;
