@@ -302,6 +302,9 @@
   .reg-maint li::before{content:none}                       /* sin el punto naranja de las viñetas */
   .reg-maint li b{min-width:82px;color:var(--court-dark)}
   .reg-none{font-size:13px;color:var(--muted);margin-top:8px}
+  .reg-pdf{display:flex;justify-content:flex-end;margin-top:16px}
+  .reg-pdf button{display:inline-flex;align-items:center;gap:7px;padding:11px 17px;border-radius:11px;background:var(--court);color:#fff;font-size:13px;font-weight:600;border:1px solid var(--court);transition:.15s}
+  .reg-pdf button:hover{background:var(--court-dark)}
   .reg-note{font-size:12px;color:var(--muted);font-style:italic;margin-top:8px}
 
   /* ---------- WEEK GRID (desktop) ---------- */
@@ -849,6 +852,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="data.js?v=20260709d"></script>
 <script>
 /* PWA: registra el service worker (ruta relativa para que funcione bajo /tenis/) */
@@ -1467,10 +1472,46 @@ function viewReglamento(){
     <button class="${tab==='beneficios'?'on':''}" onclick="setRegTab('beneficios')">Beneficios</button>
   </div>`;
   const body = tab==='general'?regGeneral() : tab==='clases'?regClases() : tab==='reservas'?regReservas() : regBeneficios();
-  return `<div class="reg-wrap">${seg}${body}</div>`;
+  const pdfBtn=`<div class="reg-pdf"><button onclick="generateRegPDF()">${svgIco('<path d="M12 3v11M8 10l4 4 4-4"/><path d="M5 20h14"/>',15,'#fff')}Generar PDF</button></div>`;
+  return `<div class="reg-wrap">${seg}${body}${pdfBtn}</div>`;
 }
 function regItem(icon,title,html){
   return `<div class="reg-item"><h4><span class="reg-ic">${svgIco(icon,14)}</span>${title}</h4>${html}</div>`;
+}
+async function generateRegPDF(){
+  if(!window.jspdf || typeof html2canvas==='undefined'){ toast('No se pudo cargar el generador de PDF. Revisa tu conexión e intenta de nuevo.','warn'); return; }
+  const tab=state.regTab||'general';
+  const meta={
+    general:{title:'Reglamento de uso · General', file:'Reglamento-general.pdf'},
+    clases:{title:'Reglamento de clases', file:'Reglamento-clases.pdf'},
+    reservas:{title:'Reglamento de reservas', file:'Reglamento-reservas.pdf'},
+    beneficios:{title:'Beneficios de la aplicación', file:'Beneficios-aplicacion.pdf'}
+  }[tab] || {title:'Reglamento de uso', file:'Reglamento.pdf'};
+  const src=document.querySelector('#content .reg-panel');
+  if(!src) return;
+  toast('Generando PDF…');
+  let wrap;
+  try{
+    const clone=src.cloneNode(true);
+    clone.style.border='none'; clone.style.boxShadow='none'; clone.style.borderRadius='0'; clone.style.margin='0'; clone.style.padding='6px 34px 30px'; clone.style.maxWidth='none';
+    wrap=document.createElement('div');
+    wrap.style.cssText='position:fixed;left:-9999px;top:0;width:760px;background:#fff;font-family:-apple-system,system-ui,sans-serif';
+    wrap.innerHTML='<div style="background:#14564a;color:#fff;padding:24px 34px 20px"><div style="font-size:22px;font-weight:700">'+meta.title+'</div><div style="font-size:12px;opacity:.85;margin-top:4px">Cerros de la Alhambra · Cancha de tenis</div></div>';
+    wrap.appendChild(clone);
+    document.body.appendChild(wrap);
+    const canvas=await html2canvas(wrap,{scale:2,backgroundColor:'#ffffff'});
+    document.body.removeChild(wrap); wrap=null;
+    const { jsPDF }=window.jspdf;
+    const pdf=new jsPDF('p','mm','a4');
+    const pageW=210, pageH=297;
+    const imgH=canvas.height*pageW/canvas.width;
+    const imgData=canvas.toDataURL('image/png');
+    let heightLeft=imgH, position=0;
+    pdf.addImage(imgData,'PNG',0,position,pageW,imgH); heightLeft-=pageH;
+    while(heightLeft>0){ position-=pageH; pdf.addPage(); pdf.addImage(imgData,'PNG',0,position,pageW,imgH); heightLeft-=pageH; }
+    pdf.save(meta.file);
+    toast('PDF generado');
+  }catch(e){ if(wrap&&wrap.parentNode) wrap.parentNode.removeChild(wrap); toast('No se pudo generar el PDF: '+(e.message||e),'warn'); }
 }
 function regGeneral(){
   return `<div class="panel reg-panel">
