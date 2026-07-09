@@ -273,6 +273,24 @@
   .cc-rule b{font-size:13px;color:var(--ink);display:block;margin-bottom:1px}
   .cc-rule>div span{font-size:12px;color:var(--muted);line-height:1.5}
   .past-panel .row{opacity:.72}
+  /* Reglamento */
+  .reg-wrap{max-width:840px}
+  .reg-seg{margin-bottom:16px}
+  .reg-panel{padding:6px 20px 18px}
+  .reg-intro{font-size:13.5px;color:var(--ink);line-height:1.75;margin:14px 0 2px}
+  .reg-item{margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
+  .reg-item h4{font-size:14.5px;color:var(--court-dark);margin:0 0 4px;display:flex;align-items:center;gap:9px}
+  .reg-item h4 .reg-ic{width:26px;height:26px;border-radius:8px;background:var(--court-soft);color:var(--court);display:flex;align-items:center;justify-content:center;flex:none}
+  .reg-item p{font-size:13px;color:var(--muted);line-height:1.65;margin:6px 0 0}
+  .reg-item ul{margin:8px 0 0;padding-left:6px;list-style:none}
+  .reg-item li{font-size:13px;color:var(--muted);line-height:1.6;margin:5px 0;padding-left:16px;position:relative}
+  .reg-item li::before{content:'';position:absolute;left:2px;top:8px;width:5px;height:5px;border-radius:50%;background:var(--clay)}
+  .reg-item b.hl{color:var(--court)}
+  .reg-maint{margin:10px 0 0;padding-left:0;list-style:none}
+  .reg-maint li{display:flex;gap:10px;font-size:13px;color:var(--ink);margin:5px 0;padding:8px 12px;background:var(--court-soft);border-radius:9px}
+  .reg-maint li b{min-width:82px;color:var(--court-dark)}
+  .reg-none{font-size:13px;color:var(--muted);margin-top:8px}
+  .reg-note{font-size:12px;color:var(--muted);font-style:italic;margin-top:8px}
 
   /* ---------- WEEK GRID (desktop) ---------- */
   .grid-wrap{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
@@ -967,6 +985,7 @@ let state = {
   user:users[0],
   onlyAvailable:false,
   fullWeek:false,
+  regTab:'general',
   availDate:ymd(NOW),
   availMulti:false,
   availRangeStart:ymd(NOW),
@@ -1215,15 +1234,16 @@ function navItems(){
   const cal={id:'calendar', label:'Calendario', icon:'cal'};
   const notif={id:'notif', label:'Notificaciones', icon:'bell', badge:visibleNotifs().filter(n=>n.unread).length};
   const hist={id:'history', label:'Historial', icon:'history'};
+  const reg={id:'reglamento', label:'Reglamento', icon:'book'};
   if(state.role==='portero') return [{id:'porteria', label:'Inicio', icon:'bulb'}];
   if(state.role==='admin') return [cal,
     {id:'users', label:'Usuarios', icon:'users'},
     {id:'settings', label:'Ajustes', icon:'gear'},
     {id:'avail', label:'Profesor', icon:'clock'},
     {id:'maint', label:'Mantenimiento', icon:'tool'},
-    hist];
-  if(state.role==='prof') return [{id:'classes', label:'Mis clases', icon:'ball'}, notif];
-  return [cal, {id:'mine', label:'Mis reservas', icon:'check'}, notif];
+    reg, hist];
+  if(state.role==='prof') return [{id:'classes', label:'Mis clases', icon:'ball'}, reg, notif];
+  return [cal, {id:'mine', label:'Mis reservas', icon:'check'}, reg, notif];
 }
 const ICONS={
   cal:'<path d="M3 5h18v16H3zM3 9h18M8 3v4M16 3v4"/>',
@@ -1237,6 +1257,7 @@ const ICONS={
   history:'<path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7.5v5l3.5 2"/>',
   gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
   rain:'<path d="M7 16a5 5 0 0 1-1-9.9A6 6 0 0 1 17.5 7 4.5 4.5 0 0 1 17 16M8 19v2M12 19v2M16 19v2"/>',
+  book:'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M9 7h7M9 11h5"/>',
 };
 function go(view){ state.view=view; try{localStorage.setItem('tcv',view);}catch(e){}
   if(view==='avail'){ state.schedDraft=null; state.maintDraft=null; }   // los editores se reinician con lo guardado al entrar
@@ -1287,11 +1308,11 @@ function render(){
 
   // titles
   const titles={calendar:'Calendario de reservas',mine:'Mis reservas',lights:'Iluminación',rain:'Modo lluvia',porteria:'Cancha de tenis',classes:'Mis clases',
-    notif:'Notificaciones',users:'Gestión de usuarios',settings:'Ajustes',avail:'Profesor',maint:'Mantenimiento de la cancha',history:'Historial de actividad'};
+    notif:'Notificaciones',users:'Gestión de usuarios',settings:'Ajustes',avail:'Profesor',maint:'Mantenimiento de la cancha',history:'Historial de actividad',reglamento:'Reglamento de uso'};
   const _ttl = state.view==='calendar' ? titles.calendar+' · '+cap1(MESES[state.weekStart.getMonth()]) : titles[state.view];
   document.getElementById('ttitle').textContent=_ttl;
   document.getElementById('mtitle').textContent=_ttl;
-  const subs={calendar:'',mine:'Tus reservas y tu cupo de la semana',lights:'Horarios para prender y apagar las luces',rain:'Cierra la cancha cuando esté lloviendo o encharcada',porteria:'Luces de la cancha y modo lluvia',classes:'Tus clases del día',notif:'Avisos de la cancha',users:'Cuentas fijas y residentes',settings:'Configuración de la cancha',avail:state.role==='prof'?'Abre tus horarios para práctica libre o clase':'Horario del profesor y ausencias',maint:'',history:'Quién reserva y cancela, y a qué hora'};
+  const subs={calendar:'',mine:'Tus reservas y tu cupo de la semana',lights:'Horarios para prender y apagar las luces',rain:'Cierra la cancha cuando esté lloviendo o encharcada',porteria:'Luces de la cancha y modo lluvia',classes:'Tus clases del día',notif:'Avisos de la cancha',users:'Cuentas fijas y residentes',settings:'Configuración de la cancha',avail:state.role==='prof'?'Abre tus horarios para práctica libre o clase':'Horario del profesor y ausencias',maint:'',history:'Quién reserva y cancela, y a qué hora',reglamento:'Normas de uso de la cancha de tenis'};
   document.getElementById('tsub').textContent=subs[state.view]||'';
   document.getElementById('weekNav').style.display='none';
 
@@ -1318,6 +1339,7 @@ function render(){
   else if(state.view==='classes') c.innerHTML=viewClasses();
   else if(state.view==='maint') c.innerHTML=viewMaint();
   else if(state.view==='history') c.innerHTML=viewHistory();
+  else if(state.view==='reglamento') c.innerHTML=viewReglamento();
 }
 function plusIcon(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>'}
 function topActionClick(){const a=document.getElementById('topAction').dataset.act; if(a==='newuser')openNewUser();}
@@ -1416,6 +1438,61 @@ function cupoRules(){
     <div class="cc-rule"><span class="cc-ric star">★</span><div><b>Clases con el profesor</b><span>Las clases con el profesor no consumen cupos.</span></div></div>
     <div class="cc-rule"><span class="cc-ric">${svgIco(BALL_P,15)}</span><div><b>Cancha libre</b><span>Si la cancha está libre porque nadie ha reservado, pero no tienes cupos, puedes jugar; pero si llega alguien con reserva debes ceder la cancha.</span></div></div>
   </div>`;
+}
+/* ======================= REGLAMENTO (admin, residentes y profesor) ======================= */
+function setRegTab(t){ state.regTab=t; render(); scrollTop(); }
+function viewReglamento(){
+  const tab=state.regTab||'general';
+  const seg=`<div class="seg reg-seg">
+    <button class="${tab==='general'?'on':''}" onclick="setRegTab('general')">General</button>
+    <button class="${tab==='clases'?'on':''}" onclick="setRegTab('clases')">Clases</button>
+    <button class="${tab==='reservas'?'on':''}" onclick="setRegTab('reservas')">Reservas</button>
+  </div>`;
+  const body = tab==='general'?regGeneral() : tab==='clases'?regClases() : regReservas();
+  return `<div class="reg-wrap">${seg}${body}</div>`;
+}
+function regItem(icon,title,html){
+  return `<div class="reg-item"><h4><span class="reg-ic">${svgIco(icon,14)}</span>${title}</h4>${html}</div>`;
+}
+function regGeneral(){
+  return `<div class="panel reg-panel">
+    <p class="reg-intro">Con el propósito de garantizar la igualdad de oportunidades, el uso organizado, el aprovechamiento adecuado y la sana convivencia entre todos los residentes usuarios de la cancha de tenis del Conjunto Residencial Cerros de la Alhambra, se establece el presente reglamento de uso. Este reglamento busca promover un sistema equitativo de reservas, evitar conflictos por disponibilidad de horarios, fomentar el cumplimiento de los turnos asignados y asegurar que todos los residentes puedan disfrutar de las instalaciones deportivas en condiciones justas y ordenadas. Las disposiciones aquí establecidas serán de obligatorio cumplimiento para todos los usuarios de la cancha de tenis.</p>
+    ${regItem(ICONS.ball,'Uso adecuado de la cancha',`
+      <p>La cancha de tenis deberá ser utilizada exclusivamente para la práctica de tenis. Será obligatorio el uso de zapatos adecuados y especializados para tenis, con el fin de proteger la superficie de la cancha y garantizar la seguridad de los usuarios.</p>
+      <p>No estará permitido:</p>
+      <ul>
+        <li>El ingreso de mascotas.</li>
+        <li>El ingreso o uso de balones de fútbol u otros implementos ajenos a la práctica de tenis.</li>
+        <li>El uso de la cancha para actividades diferentes al tenis que puedan afectar las instalaciones o interferir con el adecuado disfrute de los demás usuarios.</li>
+      </ul>`)}
+  </div>`;
+}
+function regClases(){
+  return `<div class="panel reg-panel">
+    ${regItem(ICONS.ball,'Clases con el profesor',`<p>Las clases con el profesor duran <b class="hl">una hora</b> y no consumen tu cupo de reservas. El horario de clases está siempre disponible en el calendario para consultarlo.</p>`)}
+    ${regItem(ICONS.cal,'Planilla trimestral',`<p>Cada trimestre se arma una planilla nueva con el horario semanal de clases y el cupo de cada casa con el profesor. Esto se coordina con la <b class="hl">administración</b>, no por la aplicación. Si en la planilla queda un espacio de clase sin asignar, cualquier residente puede reservarlo por la aplicación.</p>`)}
+    ${regItem(ICONS.clock,'Cancelar una clase',`<p>Si vas a cancelar una clase, avísale al profesor con <b class="hl">mínimo un día de anticipación</b>. La cancelación de clases se coordina directamente con el profesor; no se hace por la aplicación.</p>`)}
+    ${regItem(ICONS.bell,'Cuando queda un hueco',`<p>Si al profesor le cancelan y queda un espacio libre, primero contacta a los residentes para llenarlo. Solo si no encuentra a nadie, <b class="hl">libera el espacio</b>: se avisa a todos los residentes que la cancha queda disponible para usarla con o sin profesor.</p>`)}
+  </div>`;
+}
+function regReservas(){
+  const cupoTxt = CUPO+(CUPO===1?' hora':' horas');
+  return `<div class="panel reg-panel">
+    ${regItem(ICONS.check,'Cupo semanal',`<p>Cada usuario tiene <b class="hl">${cupoTxt} de reserva por semana</b>. No hay límite de reservas por día: puedes usar todo tu cupo el mismo día si quieres. La duración máxima de una reserva es de <b class="hl">2 horas</b>. (La administración puede ajustar el cupo.)</p>`)}
+    ${regItem(ICONS.check,'Solo por la aplicación',`<p>Todas las reservas se hacen por la aplicación. La portería ya no toma reservas.</p>`)}
+    ${regItem(ICONS.cal,'Cuándo se reservan',`<p>Las reservas de la semana se habilitan cada <b class="hl">domingo a las ${rhLong()}</b>. Antes de esa hora de corte no puedes reservar horas de la semana siguiente.</p>`)}
+    ${regItem(ICONS.clock,'Cancelaciones',`<p>Puedes cancelar hasta <b class="hl">20 minutos antes</b> de tu reserva. Al cancelar, se avisa a todos los residentes que la cancha quedó libre. Si no asistes a tu reserva, la administración puede aplicar medidas (esto lo maneja la administración, no la aplicación).</p>`)}
+    ${regItem(ICONS.tool,'Mantenimiento',`<p>No se puede reservar en horas de mantenimiento. Estos son los horarios de mantenimiento actuales:</p>${regMaintList()}`)}
+  </div>`;
+}
+function regMaintList(){
+  if(!MAINT_SCHEDULE.length) return `<p class="reg-none">No hay horarios de mantenimiento fijos por ahora.</p>`;
+  const byDow={}; MAINT_SCHEDULE.forEach(m=>{ (byDow[m.dow]=byDow[m.dow]||[]).push(m); });
+  const order=[1,2,3,4,5,6,0];
+  return `<ul class="reg-maint">`+order.filter(d=>byDow[d]).map(d=>{
+    const ranges=byDow[d].slice().sort((a,b)=>a.startMin-b.startMin).map(m=>schedMinLabel(m.startMin)+'–'+schedMinLabel(m.endMin)).join(', ');
+    return `<li><b>${SCHED_DOW_NAMES[d]}</b><span>${ranges}</span></li>`;
+  }).join('')+`</ul>`;
 }
 function cupoCard(){
   const hs=myHouses();
