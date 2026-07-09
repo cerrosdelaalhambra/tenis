@@ -290,6 +290,13 @@
   .reg-steps li{position:relative;padding-left:36px;margin:10px 0;font-size:13px;color:var(--muted);line-height:1.55;counter-increment:step}
   .reg-steps li::before{content:counter(step);position:absolute;left:0;top:-1px;width:24px;height:24px;border-radius:50%;background:var(--court);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center}
   .reg-item b.hl{color:var(--court)}
+  .reg-iconlist{margin-top:10px;display:flex;flex-direction:column;gap:8px}
+  .reg-iconrow{display:flex;align-items:center;gap:11px;font-size:13px;color:var(--ink);line-height:1.45;padding:9px 12px;border-radius:10px}
+  .reg-iconrow>span:last-child{flex:1}
+  .reg-iconrow b{font-weight:600}
+  .reg-lic{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex:none;background:#fff}
+  .reg-iconrow.good{background:var(--court-soft)} .reg-lic.good{color:var(--court)}
+  .reg-iconrow.bad{background:#fbeeea} .reg-lic.bad{color:var(--clay)}
   .reg-maint{margin:10px 0 0;padding-left:0;list-style:none}
   .reg-maint li{display:flex;gap:10px;font-size:13px;color:var(--ink);margin:5px 0;padding:8px 12px;background:var(--court-soft);border-radius:9px}
   .reg-maint li::before{content:none}                       /* sin el punto naranja de las viñetas */
@@ -1264,6 +1271,10 @@ const ICONS={
   rain:'<path d="M7 16a5 5 0 0 1-1-9.9A6 6 0 0 1 17.5 7 4.5 4.5 0 0 1 17 16M8 19v2M12 19v2M16 19v2"/>',
   book:'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M9 7h7M9 11h5"/>',
   phone:'<rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18h2"/>',
+  shoe:'<path d="M2 16.5V13c0-.6.4-1 1-1h2l2.5-2.5c.4-.4 1-.4 1.4 0L11 11c1.5 1.5 3.5 2.4 5.6 2.7l3.6.5c1 .1 1.8 1 1.8 2v.3a1.5 1.5 0 0 1-1.5 1.5H3.5A1.5 1.5 0 0 1 2 16.5z"/><path d="M13 13.5l-1 1.5M16 14l-1 1.5"/>',
+  paw:'<circle cx="6.5" cy="11" r="1.6"/><circle cx="10" cy="8.5" r="1.6"/><circle cx="14" cy="8.5" r="1.6"/><circle cx="17.5" cy="11" r="1.6"/><path d="M12 12.5c-2.3 0-4.2 1.7-4.2 3.6 0 1.6 1.3 2.4 2.9 2.4h2.6c1.6 0 2.9-.8 2.9-2.4 0-1.9-1.9-3.6-4.2-3.6z"/>',
+  soccer:'<circle cx="12" cy="12" r="9"/><path d="M12 8.2l3.3 2.4-1.3 3.9h-4L8.7 10.6z"/><path d="M12 8.2V3.2M15.3 10.6l4.4-1.6M14 14.5l2.8 3.6M10 14.5l-2.8 3.6M8.7 10.6L4.3 9"/>',
+  ban:'<circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/>',
 };
 function go(view){ state.view=view; try{localStorage.setItem('tcv',view);}catch(e){}
   if(view==='avail'){ state.schedDraft=null; state.maintDraft=null; }   // los editores se reinician con lo guardado al entrar
@@ -1463,15 +1474,19 @@ function regItem(icon,title,html){
 }
 function regGeneral(){
   return `<div class="panel reg-panel">
-    <p class="reg-intro">Con el propósito de garantizar la igualdad de oportunidades, el uso organizado, el aprovechamiento adecuado y la sana convivencia entre todos los residentes usuarios de la cancha de tenis del Conjunto Residencial Cerros de la Alhambra, se establece el presente reglamento de uso. Este reglamento busca promover un sistema equitativo de reservas, evitar conflictos por disponibilidad de horarios, fomentar el cumplimiento de los turnos asignados y asegurar que todos los residentes puedan disfrutar de las instalaciones deportivas en condiciones justas y ordenadas. Las disposiciones aquí establecidas serán de obligatorio cumplimiento para todos los usuarios de la cancha de tenis.</p>
+    <p class="reg-intro">Con el propósito de garantizar la <b class="hl">igualdad de oportunidades</b>, el uso organizado, el aprovechamiento adecuado y la sana convivencia entre todos los residentes de la cancha de tenis del Conjunto Residencial Cerros de la Alhambra, se establece el presente reglamento de uso.</p>
+    <p class="reg-intro">Busca un sistema equitativo de reservas, evitar conflictos por los horarios, fomentar el cumplimiento de los turnos y asegurar que todos disfruten de las instalaciones en condiciones justas y ordenadas. Sus disposiciones son de <b class="hl">obligatorio cumplimiento</b> para todos los usuarios.</p>
     ${regItem(ICONS.ball,'Uso adecuado de la cancha',`
-      <p>La cancha de tenis deberá ser utilizada exclusivamente para la práctica de tenis. Será obligatorio el uso de zapatos adecuados y especializados para tenis, con el fin de proteger la superficie de la cancha y garantizar la seguridad de los usuarios.</p>
-      <p>No estará permitido:</p>
-      <ul>
-        <li>El ingreso de mascotas.</li>
-        <li>El ingreso o uso de balones de fútbol u otros implementos ajenos a la práctica de tenis.</li>
-        <li>El uso de la cancha para actividades diferentes al tenis que puedan afectar las instalaciones o interferir con el adecuado disfrute de los demás usuarios.</li>
-      </ul>`)}
+      <div class="reg-iconlist">
+        <div class="reg-iconrow good"><span class="reg-lic good">${svgIco(ICONS.ball,15)}</span><span>La cancha se usa <b>exclusivamente para la práctica de tenis</b>.</span></div>
+        <div class="reg-iconrow good"><span class="reg-lic good">${svgIco(ICONS.shoe,15)}</span><span>Es obligatorio el uso de <b>zapatos especializados para tenis</b>, para proteger la superficie y garantizar tu seguridad.</span></div>
+      </div>`)}
+    ${regItem(ICONS.ban,'No está permitido',`
+      <div class="reg-iconlist">
+        <div class="reg-iconrow bad"><span class="reg-lic bad">${svgIco(ICONS.paw,15)}</span><span>El ingreso de <b>mascotas</b>.</span></div>
+        <div class="reg-iconrow bad"><span class="reg-lic bad">${svgIco(ICONS.soccer,15)}</span><span>El uso de <b>balones de fútbol</b> u otros implementos ajenos a la práctica de tenis.</span></div>
+        <div class="reg-iconrow bad"><span class="reg-lic bad">${svgIco(ICONS.ban,15)}</span><span>Actividades <b>diferentes al tenis</b> que afecten las instalaciones o el disfrute de los demás usuarios.</span></div>
+      </div>`)}
   </div>`;
 }
 function regClases(){
