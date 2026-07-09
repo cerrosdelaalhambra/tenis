@@ -285,7 +285,7 @@
     display:inline-flex;align-items:center;justify-content:center;font-size:14px}
   .gh-month{display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;letter-spacing:.6px;color:var(--muted)}
   .wgrid .hr{position:relative;border-top:1px solid var(--line)}
-  .wgrid .hr .hrn{position:absolute;top:0;right:8px;transform:translateY(-50%);font-size:11px;color:var(--muted);font-weight:500;line-height:1;background:var(--card);padding:1px 3px}
+  .wgrid .hr .hrn{position:absolute;top:0;left:50%;transform:translate(-50%,-50%);font-size:13px;color:var(--ink);font-weight:600;line-height:1;background:var(--card);padding:1px 6px}
   .wgrid .cell{position:relative;border-top:1px solid var(--line);border-left:1px solid var(--line);min-height:38px;padding:3px}
   .wgrid .cell.cell-past{opacity:.28}
   .wgrid .cell.cell-past .slot{cursor:default}
@@ -312,11 +312,12 @@
   .s-reserved:hover{background:#fbfdfc}
   .hicon{width:13px;height:13px;vertical-align:middle;margin:-2px 4px 1px 0;fill:var(--ink);flex:none}
   .s-prof{background:#fff;border:1.5px solid var(--ink);color:var(--ink)}
-  .s-class{background:#e2f1f4;border:1.5px solid var(--teal);color:#0b5566;align-items:flex-start;justify-content:center}
+  .s-class{background:#fdf3d7;border:1.5px solid #e0a92e;color:#7a5410;align-items:flex-start;justify-content:center}
   .s-class b{display:flex;align-items:center}
-  .s-class .cs-name{font-size:10px;color:#0b6a7c;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;font-weight:600}
-  .half.h-class{background:#e2f1f4;border:1.5px solid var(--teal);color:#0b5566;font-weight:600}
-  .mslot.classm .bar{background:var(--teal)}
+  .s-class .hicon,.half.h-class .hicon{fill:#7a5410}
+  .s-class .cs-name{font-size:10px;color:#8a5f14;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;font-weight:600}
+  .half.h-class{background:#fdf3d7;border:1.5px solid #e0a92e;color:#7a5410;font-weight:600}
+  .mslot.classm .bar{background:#e0a92e}
   .s-bonus{background:#fff;border:1.5px dashed var(--ball-dark);color:var(--court);cursor:pointer;position:relative}
   .s-bonus:hover{background:var(--court-soft)}
   .bstar{color:#f2b705}
