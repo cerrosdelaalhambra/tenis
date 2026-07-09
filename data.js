@@ -108,7 +108,8 @@ const ERR_MSG = {
   PEDIR_A_ADMIN:'Ya usaste tu cancelación de último momento de esta semana. Puedes pedirle a administración que la cancele.',
   YA_EMPEZO:'Esa reserva ya empezó; no se puede cancelar.',
   YA_PEDIDO:'Ya enviaste la solicitud de cancelación; espera la respuesta de administración.',
-  SOLO_NORMAL:'Solo se puede solicitar la cancelación de una reserva normal.'
+  SOLO_NORMAL:'Solo se puede solicitar la cancelación de una reserva normal.',
+  CLASE_YA_TIENE_CASA:'Ese horario de clase ya tiene una casa asignada; no se puede solicitar.'
 };
 function mapError(error){
   const raw=(error && (error.message||error.hint||'')) || '';
@@ -230,12 +231,18 @@ async function getConfig(){
   return {
     cupo: m.weekly_cupo_hours ? Number(m.weekly_cupo_hours) : 2,
     profFlexible: m.prof_flexible==='true',
-    permEnabled: m.perm_enabled==='true'
+    permEnabled: m.perm_enabled==='true',
+    openStart: m.open_start ? Number(m.open_start) : 5,   // primera hora reservable (4/5/6)
+    openEnd:   m.open_end   ? Number(m.open_end)   : 23   // hora de cierre (22 o 23)
   };
 }
 // Horario del profesor (editable). Si la tabla aún no existe, devuelve [] y la app usa el horario fijo de respaldo.
 async function getProfSchedule(){
   const {data}=await sb.from('prof_schedule').select('dow,start_min,end_min').order('dow').order('start_min');
+  return (data||[]).map(r=>({dow:r.dow, startMin:r.start_min, endMin:r.end_min}));
+}
+async function getMaintSchedule(){
+  const {data}=await sb.from('maint_schedule').select('dow,start_min,end_min').order('dow').order('start_min');
   return (data||[]).map(r=>({dow:r.dow, startMin:r.start_min, endMin:r.end_min}));
 }
 // Horarios permanentes (según RLS: el residente ve los suyos; profesor/admin todos). Resistente si la tabla no existe.
@@ -329,18 +336,22 @@ async function getUsers(){                          // lista de cuentas (admin/p
 async function fetchAll(profile){
   const member = isMemberRole(profile.role);
   const staff  = profile.role==='admin' || profile.role==='portero';
+  const isProf = profile.role==='prof';
   // TODO en un solo lote paralelo (antes había hasta 3 fases secuenciales)
-  const [myHouses, reservations, releases, closures, holidays, houses, cfg, notifs, profSchedule, recurring, activity, users] = await Promise.all([
+  const [myHouses, reservations, releases, closures, holidays, houses, cfg, notifs, profSchedule, recurring, activity, users, profClasses, absences, maintSchedule] = await Promise.all([
     member ? getMyHouses(profile.id) : Promise.resolve([]),
     getCalendar(profile.role), getReleases(), getClosures(), getHolidays(),
     getHouses(), getConfig(), getNotifications(profile.role, profile.id, profile.notif_seen_at),
     getProfSchedule(), getRecurring(),
     staff ? getActivity() : Promise.resolve([]),
-    staff ? getUsers()    : Promise.resolve([])
+    staff ? getUsers()    : Promise.resolve([]),
+    isProf ? getProfClasses() : Promise.resolve([]),
+    getAbsences(), getMaintSchedule()
   ]);
   return { profile, myHouses, reservations, releases, closures, holidays, houses,
     cupo:cfg.cupo, profFlexible:cfg.profFlexible, permEnabled:cfg.permEnabled, permRoute:'both',
-    notifs, profSchedule, recurring, activity, users };
+    openStart:cfg.openStart, openEnd:cfg.openEnd,
+    notifs, profSchedule, recurring, activity, users, profClasses, absences, maintSchedule };
 }
 function isMemberRole(role){ return role==='member' || role==='master'; }
 
@@ -357,6 +368,34 @@ async function book({houseId, date, h, min, dur, type}){
 }
 async function cancel(id){
   const {error}=await sb.rpc('cancel_reservation',{p_id:id});
+  if(error) throw mapError(error);
+}
+async function getProfClasses(){                      // clases del profesor (casa + nombre del alumno)
+  const {data,error}=await sb.rpc('prof_classes');
+  if(error){ console.warn('prof_classes:', error.message); return []; }
+  return (data||[]).map(r=>{ const s=bogotaParts(r.starts_at);
+    return { id:r.id, date:s.date, h:s.h, min:s.min, dur:durMin(r.starts_at, r.ends_at),
+             type:r.type, house:r.house_label||'', student_name:r.student_name||'' }; });
+}
+async function changeClassHouse(id, house, student){  // el profesor cambia la casa/alumno de una clase
+  const {error}=await sb.rpc('change_class_house',{p_id:id, p_house:house||'', p_student:student||''});
+  if(error) throw mapError(error);
+}
+async function releaseClass(id){                      // el profesor libera una clase (queda 'flex' para residentes)
+  const {error}=await sb.rpc('release_class',{p_id:id});
+  if(error) throw mapError(error);
+}
+async function getAbsences(){                         // ausencias del profesor (rangos) → {id,date,startMin,endMin}
+  const {data}=await sb.from('prof_absences').select('id,starts_at,ends_at');
+  return (data||[]).map(a=>{ const s=bogotaParts(a.starts_at), e=bogotaParts(a.ends_at);
+    return { id:a.id, date:s.date, startMin:s.h*60+s.min, endMin:(e.date===s.date? e.h*60+e.min : 1440) }; });
+}
+async function markAbsence(date, fromMin, toMin){     // admin marca ausencia (null,null = todo el día)
+  const {error}=await sb.rpc('mark_prof_absence',{p_date:date, p_start_min:(fromMin==null?null:fromMin), p_end_min:(toMin==null?null:toMin)});
+  if(error) throw mapError(error);
+}
+async function unmarkAbsence(id){
+  const {error}=await sb.rpc('unmark_prof_absence',{p_id:id});
   if(error) throw mapError(error);
 }
 async function requestCancel(id){                     // residente pide a admin/portería cancelar
@@ -379,6 +418,8 @@ async function materializeRecurring(){ const {data,error}=await sb.rpc('material
 /* ===== Acciones de gestión (hitos siguientes; aquí las simples) ===== */
 const Admin = {
   async setCupo(hours){ const {error}=await sb.from('app_config').update({value:String(hours)}).eq('key','weekly_cupo_hours'); if(error) throw mapError(error); },
+  // Horario de operación: hora de inicio (4/5/6) y de cierre (22 o 23)
+  async setOpenHour(which, val){ const key=(which==='start')?'open_start':'open_end'; const {error}=await sb.from('app_config').update({value:String(val)}).eq('key',key); if(error) throw mapError(error); },
   // Modo flexible del horario del profesor (interruptor global)
   async setProfFlexible(on){ const {error}=await sb.from('app_config').update({value:on?'true':'false'}).eq('key','prof_flexible'); if(error) throw mapError(error); },
   // Horarios permanentes: habilitar y a quién llegan las solicitudes
@@ -392,6 +433,16 @@ const Admin = {
       if(ins.error) throw mapError(ins.error);
     }
   },
+  async setMaintSchedule(rows){
+    const del=await sb.from('maint_schedule').delete().gte('dow',0);
+    if(del.error) throw mapError(del.error);
+    if(rows&&rows.length){
+      const ins=await sb.from('maint_schedule').insert(rows.map(r=>({dow:r.dow, start_min:r.startMin, end_min:r.endMin})));
+      if(ins.error) throw mapError(ins.error);
+    }
+  },
+  // Reiniciar el periodo de clases fijas (para cargar una plantilla nueva)
+  async resetClassPeriod(){ const {error}=await sb.rpc('reset_class_period'); if(error) throw mapError(error); },
   async setStatus(profileId, status){ const {error}=await sb.from('profiles').update({status}).eq('id',profileId); if(error) throw mapError(error); },
   async approveUser(profileId){ return Admin.setStatus(profileId,'active'); },
   // Busca una casa por etiqueta (sin distinguir mayúsculas) o la crea. Devuelve su id.
@@ -501,6 +552,7 @@ async function markAllRead(profileId){
 window.DB = {
   Auth, Admin, Rain,
   fetchAll, book, cancel, requestCancel, decideCancel, markNotif, markAllRead,
+  getProfClasses, changeClassHouse, releaseClass, markAbsence, unmarkAbsence,
   requestRecurring, decideRecurring, cancelRecurring, materializeRecurring,
   VAPID_PUBLIC_KEY, savePushSub, removePushSub,
   getHouses, getMyHouses, getCalendar, getNotifications, getActivity,

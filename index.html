@@ -383,6 +383,22 @@
   .crow .cinfo b{font-size:14px;color:var(--ink);display:flex;align-items:center}
   .crow .cinfo span{display:block;font-size:12px;color:var(--muted)}
   .crow .chev{color:var(--muted);flex:none}
+  .cchip-strip{display:flex;gap:8px;overflow-x:auto;padding:2px 0 14px;-webkit-overflow-scrolling:touch}
+  .cchip{flex:0 0 auto;min-width:72px;display:flex;flex-direction:column;align-items:center;gap:0;padding:7px 12px;border-radius:12px;border:1.5px solid var(--line);background:#fff;cursor:pointer}
+  .cchip.on{background:var(--court);border-color:var(--court)}
+  .cchip .cc-dn{font-size:11px;font-weight:600;color:var(--muted)}
+  .cchip.on .cc-dn{color:rgba(255,255,255,.85)}
+  .cchip .cc-num{font-size:17px;font-weight:700;color:var(--ink)}
+  .cchip.on .cc-num{color:#fff}
+  .cchead{font-size:13px;color:var(--muted);font-weight:600;margin:2px 2px 12px}
+  .ccard-list{display:flex;flex-direction:column;gap:9px}
+  .ccard{display:flex;align-items:center;gap:11px;border:1px solid var(--line);border-radius:12px;padding:11px 12px;background:#fff;cursor:pointer}
+  .ccard:hover{background:#fafcfb}
+  .ccard.ended{opacity:.55}
+  .ccard .cc-time{flex:none;background:var(--court-soft);color:var(--court);font-size:12px;font-weight:700;padding:6px 9px;border-radius:8px;white-space:nowrap}
+  .ccard .cc-who{flex:1;min-width:0;font-size:14px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ccard .cc-chev{width:18px;height:18px;color:var(--gray);flex:none}
+  .ccard .cc-endpill{font-size:11px;font-weight:700;color:var(--gray);background:#eef1f0;padding:4px 8px;border-radius:8px;flex:none}
   .half.h-bonus:hover{background:var(--court-soft)}
   .half.h-na{background:#fafbfb;border:1px solid #eef1f0;color:#c2c8c6;justify-content:center;font-size:9px}
   .wgrid.filtering .slot:not(.s-free):not(.s-bonus):not(.s-flex){opacity:.12;pointer-events:none}
@@ -751,7 +767,7 @@
 <div id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="data.js?v=20260708b"></script>
+<script src="data.js?v=20260708h"></script>
 <script>
 /* PWA: registra el service worker (ruta relativa para que funcione bajo /tenis/) */
 if('serviceWorker' in navigator){
@@ -778,7 +794,10 @@ const OPEN_WEEK_START=(function(){let r=_resetBefore(NOW);let m=new Date(r);m.se
 const OPEN_WEEK_END=ymd(addDays(OPEN_WEEK_START,6));
 const AVAIL_MAX=ymd(addDays(OPEN_WEEK_START,13)); // fin de la próxima semana (admin/profe abren disponibilidad solo esta y la próxima)
 
-const HOURS = []; for(let h=4;h<=22;h++)HOURS.push(h); // operación 4:00 a 23:00
+let OPEN_START=5, OPEN_END=23;   // horario de operación (configurable en Ajustes): inicio 4/5/6, cierre 22/23
+let HOURS=[];
+function rebuildHours(){ HOURS.length=0; for(let h=OPEN_START;h<OPEN_END;h++) HOURS.push(h); }
+rebuildHours();
 // Festivos oficiales de Colombia 2026 (el profesor no asiste; esos días cuentan como cupo)
 let HOLIDAYS = new Set(['2026-01-01','2026-01-12','2026-03-23','2026-04-02','2026-04-03','2026-05-01','2026-05-18','2026-06-08','2026-06-15','2026-06-29','2026-07-20','2026-08-07','2026-08-17','2026-10-12','2026-11-02','2026-11-16','2026-12-08','2026-12-25']);
 function isHoliday(date){return HOLIDAYS.has(date);}
@@ -807,6 +826,11 @@ function isProfessor(dow,h){
   return false;
 }
 // Horario base del profesor (por media hora). Lunes: no viene. Mar–Vie: 6:00–12:30 y 1:30–5:00. Sáb: 6:00–12:00. Dom: libre.
+function isMaintHalf(dow,h,half){
+  if(!MAINT_SCHEDULE||!MAINT_SCHEDULE.length) return false;
+  const sStart=h*60+half*30, sEnd=sStart+30;
+  return MAINT_SCHEDULE.some(r=>r.dow===dow && r.startMin<sEnd && r.endMin>sStart);
+}
 function isProfHalf(dow,h,half){
   const sStart=h*60+half*30, sEnd=sStart+30;
   // Horario editable (mismo criterio de solape que el servidor). Si está vacío, usa el respaldo fijo.
@@ -856,6 +880,9 @@ let closures = [];   // cierres (mantenimiento/lluvia), desde la base
 let notifs = [];     // notificaciones, desde la base
 let PROF_SCHEDULE = [];   // horario del profesor (editable por el admin); [] = usa el horario fijo de respaldo
 let PROF_FLEX = false;    // modo flexible: horas del profesor reservables por el residente
+let PROF_CLASSES = [];    // clases del profesor (casa + nombre del alumno), solo en el rol 'prof'
+let ABSENCES = [];        // ausencias del profesor (rangos por fecha); esas horas quedan libres (gastan cupo)
+let MAINT_SCHEDULE = [];  // mantenimiento recurrente (semanal); esas franjas no se pueden reservar
 let RECURRING = [];       // horarios permanentes (clases fijas), desde la base
 let PERM_ENABLED = false; // ¿se pueden solicitar horarios permanentes?
 let PERM_ROUTE = 'both';  // a quién llegan: 'prof' | 'admin' | 'both'
@@ -998,11 +1025,12 @@ async function loadData(){
   state.rainUntil = rainC ? rainC.endTs : null;                        // lluvia → marca/banner
   state.rainHours = rainC ? Math.max(1,Math.round((rainC.endTs-rainC.startTs)/3600000)) : 0;
   HOLIDAYS=b.holidays||new Set(); notifs=b.notifs||[]; activity=b.activity||[]; users=b.users||[];
-  PROF_SCHEDULE=b.profSchedule||[]; PROF_FLEX=!!b.profFlexible;
+  PROF_SCHEDULE=b.profSchedule||[]; PROF_FLEX=!!b.profFlexible; PROF_CLASSES=b.profClasses||[]; ABSENCES=b.absences||[]; MAINT_SCHEDULE=b.maintSchedule||[];
   RECURRING=b.recurring||[]; PERM_ENABLED=!!b.permEnabled; PERM_ROUTE=b.permRoute||'both';
   houses=(b.houses||[]).map(h=>h.label); houseIdByLabel={}; houseLabelById={};
   (b.houses||[]).forEach(h=>{ houseIdByLabel[h.label]=h.id; houseLabelById[h.id]=h.label; });
   CUPO=b.cupo||2;
+  OPEN_START=b.openStart||5; OPEN_END=b.openEnd||23; rebuildHours();
   const myLabels=(b.myHouses||[]).map(h=>h.label);
   state.role = prof.role==='member' ? (myLabels.length>1?'master':'member') : prof.role;
   if(!navItems().some(i=>i.id===state.view)) state.view = navItems()[0].id;   // cae en una pestaña válida del rol
@@ -1131,7 +1159,7 @@ function navItems(){
     {id:'avail', label:'Profesor', icon:'clock'},
     {id:'maint', label:'Mantenimiento', icon:'tool'},
     hist];
-  if(state.role==='prof') return [{id:'classes', label:'Mis clases', icon:'ball'}, cal, notif, {id:'avail', label:'Disponibilidad', icon:'clock'}];
+  if(state.role==='prof') return [{id:'classes', label:'Mis clases', icon:'ball'}, cal, notif];
   return [cal, {id:'mine', label:'Mis reservas', icon:'check'}, notif];
 }
 const ICONS={
@@ -1148,7 +1176,7 @@ const ICONS={
   rain:'<path d="M7 16a5 5 0 0 1-1-9.9A6 6 0 0 1 17.5 7 4.5 4.5 0 0 1 17 16M8 19v2M12 19v2M16 19v2"/>',
 };
 function go(view){ state.view=view; try{localStorage.setItem('tcv',view);}catch(e){}
-  if(view==='avail') state.schedDraft=null;   // el editor de horario se reinicia con lo guardado al entrar
+  if(view==='avail'){ state.schedDraft=null; state.maintDraft=null; }   // los editores se reinician con lo guardado al entrar
   if(view==='notif'){
     visibleNotifs().forEach(n=>n.unread=false);
     if(state.profile&&window.DB&&DB.markAllRead){
@@ -1196,7 +1224,7 @@ function render(){
 
   // titles
   const titles={calendar:'Calendario de reservas',mine:'Mis reservas',lights:'Iluminación',rain:'Modo lluvia',porteria:'Cancha de tenis',classes:'Mis clases',
-    notif:'Notificaciones',users:'Gestión de usuarios',settings:'Ajustes',avail:(state.role==='prof'?'Disponibilidad':'Profesor'),maint:'Mantenimiento de la cancha',history:'Historial de actividad'};
+    notif:'Notificaciones',users:'Gestión de usuarios',settings:'Ajustes',avail:'Profesor',maint:'Mantenimiento de la cancha',history:'Historial de actividad'};
   document.getElementById('ttitle').textContent=titles[state.view];
   document.getElementById('mtitle').textContent=titles[state.view];
   const subs={calendar:'',mine:'Tus reservas y tu cupo de la semana',lights:'Horarios para prender y apagar las luces',rain:'Cierra la cancha cuando esté lloviendo o encharcada',porteria:'Luces de la cancha y modo lluvia',classes:'Tus clases del día',notif:'Avisos de la cancha',users:'Cuentas fijas y residentes',settings:'Configuración de la cancha',avail:state.role==='prof'?'Abre tus horarios para práctica libre o clase':'Horario del profesor y apertura de horas de clase',maint:'Cierra la cancha por reparaciones',history:'Quién reserva y cancela, y a qué hora'};
@@ -1245,20 +1273,24 @@ function resAtHalf(date,h,half){
 function halfState(date,h,half){
   const dow=dateAt(date,h).getDay();
   const mc=maintAt(date,h); if(mc) return {kind:'maint',mc};
+  if(isMaintHalf(dow,h,half)) return {kind:'maint'};   // mantenimiento recurrente (semanal)
   const pc=reservations.find(r=>r.date===date&&r.h===h&&r.type==='profclass'); if(pc) return {kind:'profclass',res:pc};
   const r=resAtHalf(date,h,half); if(r) return {kind:(isMember()&&myHouses().includes(r.house))?'mine':'reserved',res:r};
-  const profHere = isProfHalf(dow,h,half) && !isHoliday(date); // festivos: el profesor no asiste
+  const _ss=h*60+half*30, _inAbsence=ABSENCES.some(a=>a.date===date && a.startMin<_ss+30 && a.endMin>_ss);
+  const profHere = isProfHalf(dow,h,half) && !isHoliday(date) && !_inAbsence; // festivos y ausencias: el profesor no asiste
   if(profHere){
     const rel=findReleasedHalf(date,h,half);
-    if(rel) return {kind:rel.type==='class'?'class':'open',rel};
-    if(PROF_FLEX){                                   // modo flexible: la hora del profesor es reservable
-      const startHalf=new Date(dateAt(date,h).getTime()+half*30*60000);
-      if(startHalf<NOW) return {kind:'past'};
-      return {kind:'flex'};
+    if(rel){
+      if(rel.type==='flex'){                         // el profesor abrió esta franja: reservable con/sin profesor
+        const startHalf=new Date(dateAt(date,h).getTime()+half*30*60000);
+        if(startHalf<NOW) return {kind:'past'};
+        return {kind:'flex',rel};
+      }
+      return {kind:rel.type==='class'?'class':'open',rel};
     }
-    return {kind:'prof'};
+    return {kind:'prof'};                             // hora del profesor, exclusiva (sin liberar)
   }
-  if(h<4||h>22) return {kind:'na'};   // fuera de operación (4:00–23:00)
+  if(h<OPEN_START||h>=OPEN_END) return {kind:'na'};   // fuera del horario de operación (configurable)
   const startHalf=new Date(dateAt(date,h).getTime()+half*30*60000);
   if(startHalf<NOW) return {kind:'past'};
   if(date>OPEN_WEEK_END) return {kind:'locked'};
@@ -1554,38 +1586,91 @@ function viewMine(){
 
 /* ---- PROFESOR: Mis clases (por día) ---- */
 function setClassDay(date){ state.classDay=date; render(); scrollTop(); fadeContent(); }
+function classEndMs(c){ return dateAt(c.date,c.h).getTime()+((c.min||0)+c.dur)*60000; }
+function classHasUpcoming(date){ return PROF_CLASSES.some(c=>c.date===date && classEndMs(c)>NOW.getTime()); }
+function classDaysUpcoming(){                       // días de esta semana con clases por venir (los pasados desaparecen)
+  const out=[], g=NOW.getDay(), toSat=(6-g+7)%7;
+  for(let i=0;i<=toSat;i++){ const date=ymd(addDays(NOW,i)); if(classHasUpcoming(date)) out.push(date); }
+  return out;
+}
+function cap1(s){ return s? s.charAt(0).toUpperCase()+s.slice(1) : s; }
 function classDayChips(){
-  let html='';
-  for(let i=0;i<7;i++){
-    const d=addDays(NOW,i), date=ymd(d);
-    const lab = i===0?'Hoy' : i===1?'Mañana' : `${DOW[d.getDay()]} ${d.getDate()}`;
-    html+=`<button class="cday${date===state.classDay?' on':''}" onclick="setClassDay('${date}')">${lab}</button>`;
-  }
-  return `<div class="cday-strip">${html}</div>`;
+  const days=classDaysUpcoming();
+  if(!days.length) return '';
+  if(!days.includes(state.classDay)) state.classDay=days[0];
+  const html=days.map(date=>{ const d=dateAt(date,0);
+    return `<button class="cchip${date===state.classDay?' on':''}" onclick="setClassDay('${date}')"><span class="cc-dn">${cap1(DOWL[d.getDay()])}</span><span class="cc-num">${d.getDate()}</span></button>`;
+  }).join('');
+  return `<div class="cchip-strip">${html}</div>`;
 }
 function viewClasses(){
+  const chips=classDayChips();
+  if(!chips) return emptyState('No tienes clases próximas esta semana.');
   const date=state.classDay, d=dateAt(date,0);
-  const list=reservations.filter(r=>r.date===date && (r.type==='class'||r.type==='profclass'))
-    .sort((a,b)=>(a.h*60+(a.min||0))-(b.h*60+(b.min||0)));
-  const titulo = date===ymd(NOW)?'Hoy' : date===ymd(addDays(NOW,1))?'Mañana' : DOWL[d.getDay()];
-  const head=`<div class="cday-head"><b>${titulo}</b><span>${DOWL[d.getDay()]} ${d.getDate()} de ${MON[d.getMonth()]} · ${list.length} clase${list.length===1?'':'s'}</span></div>`;
+  const list=PROF_CLASSES.filter(c=>c.date===date).sort((a,b)=>(a.h*60+(a.min||0))-(b.h*60+(b.min||0)));
+  const head=`<div class="cchead">${cap1(DOWL[d.getDay()])} ${d.getDate()} de ${MON[d.getMonth()]} · ${list.length} clase${list.length===1?'':'s'}</div>`;
   let rows;
-  if(!list.length){
-    rows=`<div class="empty" style="padding:34px">No tienes clases este día.</div>`;
-  } else {
-    rows=list.map(r=>{
-      const own=r.type==='profclass';
-      const endT=new Date(dateAt(r.date,r.h).getTime()+((r.min||0)+r.dur)*60000), past=endT<NOW;
-      const quien=own?'Bloque tuyo (clase)':`${HOUSE_ICON}${houseNum(r.house)}${r.name?' · '+r.name.split(' ')[0]:''}`;
-      const openFn=own?`openProfRes(${r.id})`:`openAdminRes(${r.id})`;
-      return `<div class="crow${past?' past':''}" onclick="${openFn}">
-        <div class="ctime"><b>${hlabel(r.h)}</b><span>${rangeLabel(r.h,r.min,r.dur)}</span></div>
-        <div class="cinfo"><b>${quien}</b><span>${own?'Reservado para tu clase':'Clase con el profesor'}</span></div>
-        ${past?'<span class="pill gray">Terminada</span>':M_CHEV}
-      </div>`;
-    }).join('');
-  }
-  return `${classDayChips()}<div class="panel">${head}${rows}</div>`;
+  if(!list.length){ rows=`<div class="empty" style="padding:30px">No hay clases este día.</div>`; }
+  else rows=list.map(c=>{
+    const who=(c.house||'Sin casa')+(c.student_name?' · '+c.student_name:'');
+    const ended=classEndMs(c)<=NOW.getTime();
+    return `<div class="ccard${ended?' ended':''}" onclick="openClassActions(${c.id})">
+      <span class="cc-time">${rangeLabel(c.h,c.min,c.dur)}</span>
+      <span class="cc-who">${who}</span>
+      ${ended?'<span class="cc-endpill">Terminada</span>':'<svg class="cc-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>'}
+    </div>`;
+  }).join('');
+  return `${chips}<div class="panel" style="padding:14px 14px 16px">${head}<div class="ccard-list">${rows}</div></div>`;
+}
+function openClassActions(id){
+  const c=PROF_CLASSES.find(x=>x.id===id); if(!c)return;
+  const d=dateAt(c.date,c.h);
+  const who=(c.house||'Sin casa')+(c.student_name?' · '+c.student_name:'');
+  const m=document.getElementById('modal');
+  m.innerHTML=`<div class="grab"></div>
+    <h3>${cap1(DOWL[d.getDay()])} ${d.getDate()} · ${rangeLabel(c.h,c.min,c.dur)}</h3>
+    <div class="msub">${who}</div>
+    <button class="btn-primary" style="width:100%;margin-bottom:9px;background:#eef4f2;color:var(--court-dark)" onclick="openChangeHouse(${id})">Cambiar casa</button>
+    <button class="btn-primary" style="width:100%;margin-bottom:9px" onclick="openReleaseSpace(${id})">Liberar espacio</button>
+    <button class="btn-soft" style="width:100%" onclick="closeModal()">Cerrar</button>`;
+  document.getElementById('modalBg').classList.add('show');
+}
+function openChangeHouse(id){
+  const c=PROF_CLASSES.find(x=>x.id===id); if(!c)return;
+  const fld='width:100%;padding:12px;border:1.5px solid var(--line);border-radius:11px;font-size:15px;background:#fff;color:var(--ink)';
+  const opts=['<option value="">Sin casa</option>'].concat(houses.map(h=>`<option value="${h}" ${h===c.house?'selected':''}>${h}</option>`)).join('');
+  const m=document.getElementById('modal');
+  m.innerHTML=`<div class="grab"></div><h3>Cambiar casa</h3>
+    <div class="msub">${rangeLabel(c.h,c.min,c.dur)}</div>
+    <div class="opt-label">Casa</div>
+    <select id="chHouse" style="${fld}">${opts}</select>
+    <div class="opt-label" style="margin-top:12px">Nombre del alumno</div>
+    <input id="chStudent" style="${fld}" value="${(c.student_name||'').replace(/"/g,'&quot;')}" placeholder="Nombre y apellido">
+    <div class="modal-actions"><button class="btn-soft" onclick="closeModal()">Cancelar</button>
+    <button class="btn-primary" onclick="confirmChangeHouse(${id})">Guardar</button></div>`;
+  document.getElementById('modalBg').classList.add('show');
+}
+async function confirmChangeHouse(id){
+  const house=document.getElementById('chHouse').value;
+  const student=document.getElementById('chStudent').value.trim();
+  closeModal();
+  try{ await DB.changeClassHouse(id, house, student); await loadData(); render(); toast('Casa actualizada'); }
+  catch(e){ toast(e.message,'warn'); }
+}
+function openReleaseSpace(id){
+  const c=PROF_CLASSES.find(x=>x.id===id); if(!c)return;
+  const m=document.getElementById('modal');
+  m.innerHTML=`<div class="grab"></div><h3>Liberar espacio</h3>
+    <div class="msub">${rangeLabel(c.h,c.min,c.dur)}</div>
+    <p style="font-size:13px;color:var(--muted);margin:2px 0 14px">Se abrirá este horario para los residentes. Podrán reservarlo <b>con profesor</b> (no gasta cupo) o <b>sin profesor</b> (gasta cupo). Se les avisará.</p>
+    <div class="modal-actions"><button class="btn-soft" onclick="closeModal()">Cancelar</button>
+    <button class="btn-primary" onclick="confirmRelease(${id})">Liberar</button></div>`;
+  document.getElementById('modalBg').classList.add('show');
+}
+async function confirmRelease(id){
+  closeModal();
+  try{ await DB.releaseClass(id); await loadData(); render(); toast('Espacio liberado · se avisó a los residentes'); }
+  catch(e){ toast(e.message,'warn'); }
 }
 /* ---- PORTERO: ILUMINACIÓN ---- */
 /* ---- PORTERÍA: modo lluvia ---- */
@@ -1858,12 +1943,7 @@ async function saveNotifPrefs(){
 
 /* ---- ADMIN: USERS ---- */
 async function setCupo(n){ try{ await DB.Admin.setCupo(n); CUPO=n; render(); toast('Cupo semanal: '+n+(n===1?' hora':' horas')+' por casa'); }catch(e){ toast(e.message,'warn'); } }
-/* ===== Modo flexible + horario del profesor (admin) ===== */
-async function setProfFlex(on){
-  try{ await DB.Admin.setProfFlexible(on); PROF_FLEX=on; render();
-    toast(on?'Modo flexible activado: los residentes ya pueden reservar horas del profesor':'Modo flexible apagado: horas del profesor exclusivas'); }
-  catch(e){ toast(e.message,'warn'); }
-}
+async function setOpenHour(which,val){ try{ await DB.Admin.setOpenHour(which,val); if(which==='start')OPEN_START=val; else OPEN_END=val; rebuildHours(); render(); toast('Horario de la cancha actualizado'); }catch(e){ toast(e.message,'warn'); } }
 /* ===== Horarios permanentes (admin) ===== */
 async function setPermEnabled(on){
   try{ await DB.Admin.setPermEnabled(on); PERM_ENABLED=on; render();
@@ -1927,10 +2007,44 @@ async function saveProfSchedule(){
   try{ await DB.Admin.setProfSchedule(rows); state.schedDraft=null; await loadData(); render(); toast('Horario del profesor actualizado'); }
   catch(e){ toast(e.message,'warn'); }
 }
+function initMaintDraft(){
+  const src=MAINT_SCHEDULE||[];
+  state.maintDraft={}; for(let d=0;d<7;d++) state.maintDraft[d]=[];
+  src.forEach(r=>{ (state.maintDraft[r.dow]=state.maintDraft[r.dow]||[]).push({startMin:r.startMin,endMin:r.endMin}); });
+  for(let d=0;d<7;d++) state.maintDraft[d].sort((a,b)=>a.startMin-b.startMin);
+}
+function maintEditorHTML(){
+  if(!state.maintDraft) initMaintDraft();
+  const opts=[]; for(let m=240;m<=1380;m+=30) opts.push(m);
+  const optHtml=(sel)=>opts.map(m=>`<option value="${m}"${m===sel?' selected':''}>${schedMinLabel(m)}</option>`).join('');
+  return `<div class="sched-grid">`+[1,2,3,4,5,6].map(d=>{
+    const rgs=state.maintDraft[d]||[];
+    const rows=rgs.length? rgs.map((rg,i)=>`<div class="sched-row">
+        <select onchange="maintSet(${d},${i},'startMin',this.value)">${optHtml(rg.startMin)}</select>
+        <span class="sched-a">a</span>
+        <select onchange="maintSet(${d},${i},'endMin',this.value)">${optHtml(rg.endMin)}</select>
+        <button class="sched-del" title="Quitar" onclick="maintDel(${d},${i})">✕</button>
+      </div>`).join('')
+      : `<div class="sched-empty">Sin mantenimiento</div>`;
+    return `<div class="sched-day"><div class="sched-dh"><b>${SCHED_DOW_NAMES[d]}</b><button class="sched-add" onclick="maintAdd(${d})">+ Agregar</button></div>${rows}</div>`;
+  }).join('')+`</div>`;
+}
+function maintRerender(){ const el=document.getElementById('maintInline'); if(el) el.innerHTML=maintEditorHTML(); }
+function maintAdd(d){ (state.maintDraft[d]=state.maintDraft[d]||[]).push({startMin:360,endMin:420}); maintRerender(); }
+function maintDel(d,i){ state.maintDraft[d].splice(i,1); maintRerender(); }
+function maintSet(d,i,k,v){ if(state.maintDraft[d]&&state.maintDraft[d][i]) state.maintDraft[d][i][k]=+v; }
+async function saveMaintSchedule(){
+  const rows=[]; let bad=false;
+  for(let d=0;d<=6;d++){ (state.maintDraft[d]||[]).forEach(r=>{ if(r.endMin<=r.startMin) bad=true; else rows.push({dow:d,startMin:r.startMin,endMin:r.endMin}); }); }
+  if(bad){ toast('Revisa: la hora de fin debe ser mayor que la de inicio.','warn'); return; }
+  try{ await DB.Admin.setMaintSchedule(rows); state.maintDraft=null; await loadData(); render(); toast('Mantenimiento actualizado'); }
+  catch(e){ toast(e.message,'warn'); }
+}
 async function setUserActive(id, makeActive){ try{ await DB.Admin.setStatus(id, makeActive?'active':'inactive'); await loadData(); render(); toast(makeActive?'Usuario activado':'Usuario desactivado'); }catch(e){ toast(e.message,'warn'); } }
 function viewSettings(){
   const cupoSeg=[1,2,3,4].map(n=>`<button class="${CUPO===n?'on':''}" onclick="setCupo(${n})">${n}</button>`).join('');
-  const flexSeg=`<div class="seg"><button class="${!PROF_FLEX?'on':''}" onclick="setProfFlex(false)">Apagado</button><button class="${PROF_FLEX?'on':''}" onclick="setProfFlex(true)">Activo</button></div>`;
+  const startSeg=[4,5,6].map(n=>`<button class="${OPEN_START===n?'on':''}" onclick="setOpenHour('start',${n})">${n} am</button>`).join('');
+  const endSeg=[22,23].map(n=>`<button class="${OPEN_END===n?'on':''}" onclick="setOpenHour('end',${n})">${n===22?'10 pm':'11 pm'}</button>`).join('');
   const permSeg=`<div class="seg"><button class="${!PERM_ENABLED?'on':''}" onclick="setPermEnabled(false)">Apagado</button><button class="${PERM_ENABLED?'on':''}" onclick="setPermEnabled(true)">Activo</button></div>`;
   const permPend=RECURRING.filter(r=>r.status==='pending').length, permAct=RECURRING.filter(r=>r.status==='active').length;
   return `<div class="panel">
@@ -1939,11 +2053,14 @@ function viewSettings(){
       <div class="seg cupo-seg">${cupoSeg}</div>
     </div>
     <div style="padding:16px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;border-bottom:1px solid var(--line)">
-      <div style="flex:1;min-width:210px"><b style="font-size:14px">Horas del profesor reservables</b><p style="font-size:12px;color:var(--muted);margin-top:2px">Si lo activas, los residentes pueden reservar las horas del profesor y eligen ir con o sin profesor. Si lo apagas, esas horas son exclusivas del profesor (como hoy).</p></div>
-      ${flexSeg}
+      <div style="flex:1;min-width:200px"><b style="font-size:14px">Horario de la cancha</b><p style="font-size:12px;color:var(--muted);margin-top:2px">A qué hora abre y cierra la cancha para reservas.</p></div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:var(--muted);min-width:42px">Abre</span><div class="seg">${startSeg}</div></div>
+        <div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:var(--muted);min-width:42px">Cierra</span><div class="seg">${endSeg}</div></div>
+      </div>
     </div>
     <div style="padding:16px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap${PERM_ENABLED?';border-bottom:1px solid var(--line)':''}">
-      <div style="flex:1;min-width:210px"><b style="font-size:14px">Horarios permanentes (clases fijas)</b><p style="font-size:12px;color:var(--muted);margin-top:2px">Permite que los residentes soliciten una clase fija semanal con el profesor. Las solicitudes le llegan al profesor y a la administración (con que uno apruebe basta). Solo funciona con el modo flexible activo.</p></div>
+      <div style="flex:1;min-width:210px"><b style="font-size:14px">Horarios permanentes (clases fijas)</b><p style="font-size:12px;color:var(--muted);margin-top:2px">Permite que los residentes soliciten una clase fija semanal con el profesor, en un horario de clase que haya quedado sin casa asignada. Las solicitudes le llegan al profesor y a la administración (con que uno apruebe basta).</p></div>
       ${permSeg}
     </div>
     ${PERM_ENABLED?`
@@ -1951,8 +2068,21 @@ function viewSettings(){
       <div style="flex:1;min-width:210px"><b style="font-size:14px">Clases fijas activas</b><p style="font-size:12px;color:var(--muted);margin-top:2px">${permAct} activa${permAct===1?'':'s'}${permPend?' · '+permPend+' por aprobar':''}.</p></div>
       <button class="btn-ghost" style="box-shadow:none" onclick="openRecurringList()">Ver y gestionar</button>
     </div>`:''}
+    <div style="padding:16px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;border-top:1px solid var(--line)">
+      <div style="flex:1;min-width:210px"><b style="font-size:14px">Periodo de clases fijas</b><p style="font-size:12px;color:var(--muted);margin-top:2px">Al empezar un nuevo trimestre, cierra el periodo actual (borra la plantilla y las clases fijas) para cargar una plantilla nueva. El horario base y el mantenimiento no se tocan.</p></div>
+      <button class="btn-ghost" style="box-shadow:none;color:var(--danger)" onclick="openResetPeriod()">Reiniciar periodo</button>
+    </div>
   </div>`;
 }
+function openResetPeriod(){
+  const m=document.getElementById('modal');
+  m.innerHTML=`<div class="grab"></div><h3>Reiniciar periodo de clases fijas</h3>
+    <p style="font-size:13px;color:var(--muted);margin:2px 0 14px">Cierra el periodo actual: borra la plantilla de clases fijas, cancela las clases permanentes y quita las clases futuras. El horario base del profesor y el mantenimiento no se tocan. Úsalo antes de cargar una plantilla nueva.</p>
+    <div class="modal-actions"><button class="btn-soft" onclick="closeModal()">Cancelar</button>
+    <button class="btn-primary" style="background:var(--danger)" onclick="confirmResetPeriod()">Reiniciar periodo</button></div>`;
+  document.getElementById('modalBg').classList.add('show');
+}
+async function confirmResetPeriod(){ closeModal(); try{ await DB.Admin.resetClassPeriod(); await loadData(); render(); toast('Periodo de clases fijas reiniciado'); }catch(e){ toast(e.message,'warn'); } }
 function userRow(u,i){
   const isFixed=(u.role==='admin'||u.role==='prof'||u.role==='portero');
   const roleEs={admin:'Administración',prof:'Profesor',portero:'Portería'};
@@ -2249,9 +2379,9 @@ function viewAvail(){
     : `<div class="sel-day">${fmtLong(state.availDate)}</div>`;
   const hours = multi ? '' : `<div class="dh-row">
             <div class="field"><label>Desde</label>${psel('aFrom',fromArr,from0,'refreshAvailTo',noProf)}</div>
-            <div class="field"><label>Hasta</label>${psel('aTo',toArr,(toArr[0]&&toArr[0].v),'',noProf)}</div>
+            <div class="field"><label>Hasta</label>${psel('aTo',toArr,(toArr.length?toArr[toArr.length-1].v:''),'',noProf)}</div>
           </div>`;
-  const warn = (!multi&&noProf) ? `<p style="font-size:12.5px;color:var(--clay);background:#fbeee9;border-radius:10px;padding:10px 12px;margin:0">Ese día el profesor no tiene clases (ej. domingo). No hay horarios para abrir.</p>` : '';
+  const warn = (!multi&&noProf) ? `<p style="font-size:12.5px;color:var(--clay);background:#fbeee9;border-radius:10px;padding:10px 12px;margin:0">Ese día el profesor no tiene clases (ej. lunes o domingo). No hay horas para marcar.</p>` : '';
   const btnDis = (!multi&&noProf) ? 'disabled' : '';
   const schedPanel = state.role==='admin' ? `<div class="panel" style="margin-bottom:16px">
       <div class="panel-h"><h3>Horario del profesor</h3><div class="spacer"></div><button class="btn-mini" onclick="saveProfSchedule()">Guardar</button></div>
@@ -2260,39 +2390,36 @@ function viewAvail(){
         <div id="schedInline">${schedEditorHTML()}</div>
       </div>
     </div>` : '';
-  let html=schedPanel+`<div class="panel"><div class="panel-h"><h3>Abrir disponibilidad en clases del profesor</h3><div class="spacer"></div>${checkbox}</div>
+  const maintPanel = state.role==='admin' ? `<div class="panel" style="margin-bottom:16px">
+      <div class="panel-h"><h3>Mantenimiento (bloques fijos)</h3><div class="spacer"></div><button class="btn-mini" onclick="saveMaintSchedule()">Guardar</button></div>
+      <div style="padding:4px 18px 14px">
+        <p style="font-size:12px;color:var(--muted);margin:0 0 10px">Horas fijas de mantenimiento cada semana. Esas franjas no se pueden reservar.</p>
+        <div id="maintInline">${maintEditorHTML()}</div>
+      </div>
+    </div>` : '';
+  let html=schedPanel+maintPanel+`<div class="panel"><div class="panel-h"><h3>El profesor no viene</h3><div class="spacer"></div>${checkbox}</div>
     <div style="padding:18px">
-      <label class="fld-label">${multi?'Escoge el rango de días que el profesor faltará (toca inicio y fin)':'Escoge el día'}</label>
+      <label class="fld-label">${multi?'Escoge el rango de días que el profesor faltará (toca inicio y fin)':'Escoge el día en que el profesor no viene'}</label>
       <div class="avail-cols">
         <div>${cal}</div>
         <div class="avail-right">
           ${rightTop}
-          <div><label class="fld-label">¿El profesor estará?</label>
-            <div class="opt-list" id="aType">
-              <button class="opt-card on" data-t="open" onclick="segPick(this,'aType')">
-                <span class="opt-dot"></span>
-                <span class="opt-txt"><b>El profesor NO va a estar</b><small>La casa solo puede reservar para práctica libre (sin profesor). No se puede reservar clase.</small></span>
-              </button>
-              <button class="opt-card" data-t="class" onclick="segPick(this,'aType')">
-                <span class="opt-dot"></span>
-                <span class="opt-txt"><b>El profesor SÍ va a estar</b><small>La persona puede reservar clase con el profesor, o práctica libre (sin profesor).</small></span>
-              </button>
-            </div>
-          </div>
+          <p style="font-size:12.5px;color:var(--muted);margin:4px 0 0">Esas horas quedan libres para práctica: los residentes las reservan y sí gastan cupo.</p>
           ${hours}
           ${warn}
         </div>
       </div>
-      <button class="btn-primary" id="aBtn" onclick="doRelease()" ${btnDis} style="margin-top:18px">Abrir y avisar al condominio</button>
-      <p class="hint">${multi?'Se abre todo el horario del profesor en cada día del rango.':'Puedes abrir medias horas exactas (ej. 12:00–12:30, 1:30–2:00, 4:30–5:00). Mar–vie 6:00–12:30 y 1:30–5:00; sáb 6:00–12:00; lun, dom y festivos no tiene.'}</p>
+      <button class="btn-primary" id="aBtn" onclick="doMarkAbsence()" ${btnDis} style="margin-top:18px">Marcar ausencia y avisar</button>
+      <p class="hint">${multi?'Se marca todo el día en cada día del rango.':'Por defecto marca todo el horario del profesor ese día. Ajusta "Desde/Hasta" si solo falta una hora puntual.'}</p>
     </div></div>`;
-  if(released.length){
-    html+=`<div class="panel" style="margin-top:18px"><div class="panel-h"><h3>Disponibilidad abierta actualmente</h3></div>${
-      releasedRuns().map(run=>{const d=dateAt(run.date,0);return `<div class="row">
-        <div class="when"><div class="d">${DOW[d.getDay()]} ${d.getDate()}</div><div class="h">${timeMin(run.startM)}</div></div>
-        <div class="info"><b>${timeMin(run.startM)}–${timeMin(run.endM)}</b><span>${run.type==='class'?'El profesor sí va a estar':'El profesor no va a estar'}</span></div>
-        ${run.type==='class'?'<span class="pill amber">Profe disponible</span>':'<span class="pill lime">Práctica libre</span>'}
-        <button class="btn-cancel" onclick="unreleaseGroup('${run.ids.join(',')}')">Cerrar</button></div>`}).join('')}</div>`;
+  if(ABSENCES.length){
+    const sorted=[...ABSENCES].sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:a.startMin-b.startMin);
+    html+=`<div class="panel" style="margin-top:18px"><div class="panel-h"><h3>Ausencias marcadas</h3></div>${
+      sorted.map(a=>{const d=dateAt(a.date,0),whole=a.startMin<=0&&a.endMin>=1440;return `<div class="row">
+        <div class="when"><div class="d">${DOW[d.getDay()]} ${d.getDate()}</div><div class="h">${whole?'Todo el día':timeMin(a.startMin)}</div></div>
+        <div class="info"><b>${whole?'Todo el día':timeMin(a.startMin)+'–'+timeMin(a.endMin)}</b><span>El profesor no viene · práctica libre (gasta cupo)</span></div>
+        <span class="pill lime">Libre</span>
+        <button class="btn-cancel" onclick="unmarkAbs(${a.id})">Quitar</button></div>`}).join('')}</div>`;
   }
   return html;
 }
@@ -2613,6 +2740,24 @@ async function doRelease(){
     toast(rows.length?`Disponibilidad abierta (${rows.length} ${rows.length===1?'media hora':'medias horas'}) · se avisó a los residentes`:'Esas horas ya estaban abiertas');
   }catch(e){ toast(e.message,'warn'); }
 }
+async function doMarkAbsence(){
+  let days=[], fromMin=null, toMin=null;
+  if(state.availMulti){
+    const e=state.availRangeEnd||state.availRangeStart;
+    let d=parseYMD(state.availRangeStart), end=parseYMD(e);
+    while(d<=end){ days.push(ymd(d)); d=addDays(d,1); }
+  } else {
+    days.push(state.availDate);
+    fromMin=+document.getElementById('aFrom').value; toMin=+document.getElementById('aTo').value;
+  }
+  if(!days.length){ toast('Elige el día','warn'); return; }
+  try{
+    for(const date of days){ await DB.markAbsence(date, state.availMulti?null:fromMin, state.availMulti?null:toMin); }
+    await loadData(); render();
+    toast('Ausencia marcada · esas horas quedan libres para práctica');
+  }catch(e){ toast(e.message,'warn'); }
+}
+async function unmarkAbs(id){ try{ await DB.unmarkAbsence(id); await loadData(); render(); toast('Ausencia quitada'); }catch(e){ toast(e.message,'warn'); } }
 async function unrelease(i){ try{ await DB.Admin.deleteRelease(released[i].relId); await loadData(); render(); toast('Hueco cerrado nuevamente'); }catch(e){ toast(e.message,'warn'); } }
 // agrupa las medias horas liberadas contiguas (mismo día y tipo) en un solo rango
 function releasedRuns(){
