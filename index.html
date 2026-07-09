@@ -1486,7 +1486,7 @@ function regClases(){
         <li>En caso de encontrar un alumno nuevo, el profesor entra a la app, sección <b class="hl">"Mis clases"</b>, selecciona la clase que le cancelaron y hace clic en <b class="hl">"Cambiar casa"</b> para asignarle la clase al alumno nuevo.</li>
         <li>Solo si no encuentra a nadie, el profesor <b class="hl">libera el espacio</b> desde la app.</li>
         <li>La app envía una notificación a <b class="hl">todo el condominio</b> avisando que ese horario quedó libre.</li>
-        <li>Desde ese momento, cualquier residente puede reservar ese espacio: <b class="hl">con profesor</b> (no consume cupo) o <b class="hl">sin profesor</b> (sí consume cupo).</li>
+        <li>Desde ese momento, cualquier residente puede reservar ese espacio <b class="hl">sin consumir cupo</b>, ya sea con profesor o sin profesor.</li>
       </ol>`)}
   </div>`;
 }
@@ -2866,10 +2866,9 @@ function openBook(date,h,ctx){
   document.getElementById('modalBg').classList.add('show');
 }
 function flexCupoNote(sel){
-  // 'con' = con profesor → no gasta cupo (incentiva ir con el profe)
-  // 'sin' = sin profesor → usa cupo, como una reserva normal
-  if(sel==='con') return `<div class="bonus-box"><span class="bonus-star">★</span><div><b>No gasta tu cupo</b><span>Ir con el profesor no te descuenta cupo de la semana.</span></div></div>`;
-  return `<div class="quota-mini"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg> Usa tu cupo de la semana, como una reserva normal.</div>`;
+  // Espacio liberado por el profesor: NO gasta cupo ni con profesor ni sin profesor.
+  if(sel==='con') return `<div class="bonus-box"><span class="bonus-star">★</span><div><b>No gasta tu cupo</b><span>El profesor liberó su hora: ir con él no te descuenta cupo de la semana.</span></div></div>`;
+  return `<div class="bonus-box"><span class="bonus-star">★</span><div><b>No gasta tu cupo</b><span>Este espacio lo liberó el profesor: resérvalo sin que te descuente cupo, con o sin profesor.</span></div></div>`;
 }
 function flexPick(el){
   segPick(el,'flexType');
@@ -2907,8 +2906,8 @@ async function confirmBook(date,h,ctx){
   else if(ctx==='full'){const dEl=document.querySelector('#durSeg button.on');dur=dEl?+dEl.dataset.d:60;if(dur===30){const mEl=document.querySelector('#halfSeg button.on');min=mEl?+mEl.dataset.m:0;}}
   else if(ctx==='openfull'){type='open';}
   else if(ctx==='classfull'){const u=document.querySelector('#useType button.on');type=(u&&u.dataset.u==='free')?'open':'class';}
-  else if(ctx==='flexfull'){const u=document.querySelector('#flexType button.on');type=(u&&u.dataset.u==='sin')?'normal':'class';min=0;dur=60;}
-  else if(ctx==='flexh0'||ctx==='flexh1'){const u=document.querySelector('#flexType button.on');type=(u&&u.dataset.u==='sin')?'normal':'class';min=(ctx==='flexh1')?30:0;dur=30;}
+  else if(ctx==='flexfull'){const u=document.querySelector('#flexType button.on');type=(u&&u.dataset.u==='sin')?'open':'class';min=0;dur=60;}
+  else if(ctx==='flexh0'||ctx==='flexh1'){const u=document.querySelector('#flexType button.on');type=(u&&u.dataset.u==='sin')?'open':'class';min=(ctx==='flexh1')?30:0;dur=30;}
   // media hora liberada por el profesor (bonus): toma el tipo de la liberación
   let relHalf=null;
   if(ctx==='h0'||ctx==='h1'){
