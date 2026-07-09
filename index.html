@@ -286,6 +286,9 @@
   .reg-item ul{margin:8px 0 0;padding-left:6px;list-style:none}
   .reg-item li{font-size:13px;color:var(--muted);line-height:1.6;margin:5px 0;padding-left:16px;position:relative}
   .reg-item li::before{content:'';position:absolute;left:2px;top:8px;width:5px;height:5px;border-radius:50%;background:var(--clay)}
+  .reg-steps{margin:12px 0 0;padding-left:0;list-style:none;counter-reset:step}
+  .reg-steps li{position:relative;padding-left:36px;margin:10px 0;font-size:13px;color:var(--muted);line-height:1.55;counter-increment:step}
+  .reg-steps li::before{content:counter(step);position:absolute;left:0;top:-1px;width:24px;height:24px;border-radius:50%;background:var(--court);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center}
   .reg-item b.hl{color:var(--court)}
   .reg-maint{margin:10px 0 0;padding-left:0;list-style:none}
   .reg-maint li{display:flex;gap:10px;font-size:13px;color:var(--ink);margin:5px 0;padding:8px 12px;background:var(--court-soft);border-radius:9px}
@@ -1475,7 +1478,13 @@ function regClases(){
     ${regItem(ICONS.ball,'Clases con el profesor',`<p>Las clases con el profesor duran <b class="hl">una hora</b> y no consumen tu cupo de reservas. El horario de clases está siempre disponible en el calendario para consultarlo.</p>`)}
     ${regItem(ICONS.cal,'Planilla trimestral',`<p>Cada trimestre se arma una planilla nueva con el horario semanal de clases y el cupo de cada casa con el profesor. Esto se coordina con la <b class="hl">administración</b>, no por la aplicación. Si en la planilla queda un espacio de clase sin asignar, cualquier residente puede reservarlo por la aplicación.</p>`)}
     ${regItem(ICONS.clock,'Cancelar una clase',`<p>Si vas a cancelar una clase, avísale al profesor con <b class="hl">mínimo un día de anticipación</b>. La cancelación de clases se coordina directamente con el profesor; no se hace por la aplicación.</p>`)}
-    ${regItem(ICONS.bell,'Cuando queda un hueco',`<p>Si al profesor le cancelan y queda un espacio libre, primero contacta a los residentes para llenarlo. Solo si no encuentra a nadie, <b class="hl">libera el espacio</b>: se avisa a todos los residentes que la cancha queda disponible para usarla con o sin profesor.</p>`)}
+    ${regItem(ICONS.bell,'¿Y si no juega nadie en el horario del profesor?',`<p>Cuando al profesor le cancelan una clase, este es el paso a paso:</p>
+      <ol class="reg-steps">
+        <li>Al profesor le cancelan una clase y queda un espacio libre en su horario.</li>
+        <li>El profesor llama a los residentes que tiene a la mano para ver si alguien quiere tomar la clase en ese horario.</li>
+        <li>Si no encuentra a nadie, el profesor <b class="hl">libera el espacio</b> y se envía una notificación a <b class="hl">todo el condominio</b> avisando que ese horario quedó libre.</li>
+        <li>Desde ese momento, cualquier residente puede reservar ese espacio, <b class="hl">con o sin profesor</b>. Si lo reserva <b class="hl">con profesor, no le consume cupo</b>.</li>
+      </ol>`)}
   </div>`;
 }
 function regReservas(){
