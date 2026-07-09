@@ -1697,7 +1697,9 @@ function openClassActions(id){
 function openChangeHouse(id){
   const c=PROF_CLASSES.find(x=>x.id===id); if(!c)return;
   const fld='width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;font-size:15px;background:#fafcfb;color:var(--ink)';
-  const houseOpts=[{v:'',label:'Sin casa'}].concat(houses.map(h=>({v:h,label:h})));
+  // nombre del alumno por casa (desde las clases del profesor) para que el desplegable sea más fácil de leer
+  const nameByHouse={}; PROF_CLASSES.forEach(x=>{ if(x.house && x.student_name && !nameByHouse[x.house]) nameByHouse[x.house]=x.student_name; });
+  const houseOpts=[{v:'',label:'Sin casa'}].concat(houses.map(h=>({v:h, label: nameByHouse[h] ? h+' · '+nameByHouse[h] : h})));
   const m=document.getElementById('modal');
   m.innerHTML=`<div class="grab"></div><h3>Cambiar casa</h3>
     <div class="msub">${rangeLabel(c.h,c.min,c.dur)}</div>
