@@ -286,8 +286,10 @@
   .gh.today .dnum{color:#fff;background:var(--court);width:30px;height:30px;border-radius:50%;
     display:inline-flex;align-items:center;justify-content:center;font-size:14px}
   .gh-month{display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;letter-spacing:.6px;color:var(--muted)}
+  .wgrid .gh-month{border-bottom:none}                                      /* sin línea bajo la primera hora (ej. 5 am) */
   .wgrid .hr{position:relative;background:#fbfdfc}
   .wgrid .hr .hrn{position:absolute;top:0;left:4px;right:9px;transform:translateY(-50%);display:flex;align-items:center;justify-content:flex-end;gap:5px;line-height:1}
+  .wgrid .hr .hrn-end{top:auto;bottom:1px;transform:none}                   /* etiqueta de cierre (ej. 11 pm) al pie del riel */
   .wgrid .hr .hrl{font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.2px}
   .wgrid .cell{position:relative;border-top:1px solid var(--line);border-left:1px solid var(--line);min-height:38px;padding:3px}
   .wgrid .cell.cell-past{opacity:.28}
@@ -1531,9 +1533,11 @@ function desktopGrid(){
   idxs.forEach(i=>{ const d=addDays(state.weekStart,i); const today=ymd(d)===todayYmd;
     head+=`<div class="gh ${today?'today':''}"><div class="dow">${DOW[d.getDay()]}</div><div class="dnum">${d.getDate()}</div></div>`; });
   let rows='';
+  const lastH=HOURS[HOURS.length-1];
   for(const h of HOURS){
     const isLine=faded && h===lineHour;   // hoy siempre está visible en "desde ahora"
-    rows+=`<div class="hr${isLine?' hr-now':''}"><span class="hrn"><span class="hrl">${hlabel(h)}</span></span></div>`;
+    const endLbl=(h===lastH)?`<span class="hrn hrn-end"><span class="hrl">${hlabel(h+1)}</span></span>`:'';   // etiqueta de cierre al final (ej. 11 pm)
+    rows+=`<div class="hr${isLine?' hr-now':''}"><span class="hrn"><span class="hrl">${hlabel(h)}</span></span>${endLbl}</div>`;
     idxs.forEach(i=>{
       const d=addDays(state.weekStart,i);const date=ymd(d);
       const past=faded && dateAt(date,h+1).getTime()<=NOW.getTime();
