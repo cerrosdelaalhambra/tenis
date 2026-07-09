@@ -286,16 +286,14 @@
   .gh.today .dnum{color:#fff;background:var(--court);width:30px;height:30px;border-radius:50%;
     display:inline-flex;align-items:center;justify-content:center;font-size:14px}
   .gh-month{display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;letter-spacing:.6px;color:var(--muted)}
-  .wgrid .hr{position:relative;border-top:1px solid var(--line)}
-  .wgrid .hr .hrn{position:absolute;top:0;left:6px;right:3px;transform:translateY(-50%);display:flex;align-items:center;justify-content:space-between;line-height:1}
-  .wgrid .hr .hrl{font-size:13px;color:var(--ink);font-weight:600}
-  .wgrid .hr .hr-arrow{width:11px;height:11px;color:var(--gray);flex:none}
+  .wgrid .hr{position:relative;background:#fbfdfc}
+  .wgrid .hr .hrn{position:absolute;top:0;left:4px;right:9px;transform:translateY(-50%);display:flex;align-items:center;justify-content:flex-end;gap:5px;line-height:1}
+  .wgrid .hr .hrl{font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.2px}
   .wgrid .cell{position:relative;border-top:1px solid var(--line);border-left:1px solid var(--line);min-height:38px;padding:3px}
   .wgrid .cell.cell-past{opacity:.28}
   .wgrid .cell.cell-past .slot{cursor:default}
   .wgrid .hr.hr-now .hrl{color:var(--now);font-weight:700}
-  .wgrid .hr.hr-now .hr-arrow{color:var(--now)}
-  .wgrid .hr.hr-now .now-tag{display:block;font-size:9px;font-weight:800;letter-spacing:.4px;color:var(--now);text-transform:uppercase;line-height:1;margin-bottom:1px}
+  .wgrid .hr.hr-now .now-tag{font-size:8.5px;font-weight:800;letter-spacing:.4px;color:var(--now);text-transform:uppercase;line-height:1}
   .nowline{position:absolute;left:0;right:0;top:-1.5px;height:2.5px;background:var(--now);z-index:5;pointer-events:none}
   .nowline.nl-today::before{content:'';position:absolute;left:-4px;top:50%;transform:translateY(-50%);width:9px;height:9px;border-radius:50%;background:var(--now);box-shadow:0 0 0 2px var(--card)}
   .slot{position:relative;height:100%;min-height:32px;border-radius:7px;font-size:11px;display:flex;flex-direction:column;
@@ -1492,31 +1490,31 @@ function houseUsed(house){
 }
 function monthTag(){const a=state.weekStart,b=addDays(a,6);return a.getMonth()===b.getMonth()?MON[a.getMonth()].toUpperCase():(MON[a.getMonth()]+'/'+MON[b.getMonth()]).toUpperCase();}
 function desktopGrid(){
-  let head=`<div class="gh gh-month"></div>`;
-  for(let i=0;i<7;i++){const d=addDays(state.weekStart,i);const today=ymd(d)===ymd(NOW);
-    head+=`<div class="gh ${today?'today':''}"><div class="dow">${DOW[d.getDay()]}</div><div class="dnum">${d.getDate()}</div></div>`;}
   const faded=!state.fullWeek, lineHour=NOW.getHours(), todayYmd=ymd(NOW);
-  let weekHasToday=false; for(let i=0;i<7;i++){ if(ymd(addDays(state.weekStart,i))===todayYmd) weekHasToday=true; }
+  // en "Desde ahora" ocultamos los días que ya pasaron: el calendario arranca en HOY
+  let todayIdx=0; for(let i=0;i<7;i++){ if(ymd(addDays(state.weekStart,i))===todayYmd){ todayIdx=i; break; } }
+  const startIdx = faded ? todayIdx : 0;
+  const idxs=[]; for(let i=startIdx;i<7;i++) idxs.push(i);
+  let head=`<div class="gh gh-month"></div>`;
+  idxs.forEach(i=>{ const d=addDays(state.weekStart,i); const today=ymd(d)===todayYmd;
+    head+=`<div class="gh ${today?'today':''}"><div class="dow">${DOW[d.getDay()]}</div><div class="dnum">${d.getDate()}</div></div>`; });
   let rows='';
   for(const h of HOURS){
-    const isLine=faded && weekHasToday && h===lineHour;   // solo en la semana actual
-    rows+=`<div class="hr${isLine?' hr-now':''}"><span class="hrn"><span class="hrl">${isLine?'<span class="now-tag">Ahora</span>':''}${hlabel(h)}</span><svg class="hr-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 6l6 6-6 6"/></svg></span></div>`;
-    for(let i=0;i<7;i++){
+    const isLine=faded && h===lineHour;   // hoy siempre está visible en "desde ahora"
+    rows+=`<div class="hr${isLine?' hr-now':''}"><span class="hrn">${isLine?'<span class="now-tag">Ahora</span>':''}<span class="hrl">${hlabel(h)}</span></span></div>`;
+    idxs.forEach(i=>{
       const d=addDays(state.weekStart,i);const date=ymd(d);
       const past=faded && dateAt(date,h+1).getTime()<=NOW.getTime();
       const todayCol=date===todayYmd;
-      // línea roja SÓLIDA con punto en hoy; línea tenue conectándola con la hora a
-      // través de los días ya pasados (la opacidad la da el difuminado del pasado);
-      // NADA en los días que todavía no llegan.
       let lineEl='';
       if(isLine && date<=todayYmd) lineEl = todayCol
         ? `<div class="nowline nl-today" id="nowline" data-h="${h}"></div>`
         : `<div class="nowline"></div>`;
       const cls='cell'+(past?' cell-past':'');
       rows+=`<div class="${cls}">${slotHTML(date,h)}${lineEl}</div>`;
-    }
+    });
   }
-  return `<div class="grid-wrap"><div class="wgrid${state.onlyAvailable?' filtering':''}">${head}${rows}</div></div>`;
+  return `<div class="grid-wrap"><div class="wgrid${state.onlyAvailable?' filtering':''}" style="grid-template-columns:64px repeat(${idxs.length},1fr)">${head}${rows}</div></div>`;
 }
 function halfCell(date,h,half,s){
   const k=s.kind;
@@ -1554,8 +1552,11 @@ function slotHTML(date,h){
 /* MOBILE day view */
 function renderDayStrip(){
   const strip=document.getElementById('dayStrip');
+  const faded=!state.fullWeek, todayYmd=ymd(NOW);
+  if(faded && state.mobileDay<todayYmd) state.mobileDay=todayYmd;   // no dejar seleccionado un día ya pasado
   let html='';
   for(let i=0;i<7;i++){const d=addDays(state.weekStart,i);const date=ymd(d);
+    if(faded && date<todayYmd) continue;                            // ocultar días ya pasados
     html+=`<button class="${date===state.mobileDay?'on':''}" onclick="setDay('${date}')">
       <span class="dw">${DOW[d.getDay()]}</span><span class="dn">${d.getDate()}</span></button>`;}
   strip.innerHTML=html;
@@ -2118,7 +2119,7 @@ function viewSettings(){
   const cupoSeg=[1,2,3,4].map(n=>`<button class="${CUPO===n?'on':''}" onclick="setCupo(${n})">${n}</button>`).join('');
   const startSeg=[4,5,6].map(n=>`<button class="${OPEN_START===n?'on':''}" onclick="setOpenHour('start',${n})">${n} am</button>`).join('');
   const endSeg=[22,23].map(n=>`<button class="${OPEN_END===n?'on':''}" onclick="setOpenHour('end',${n})">${n===22?'10 pm':'11 pm'}</button>`).join('');
-  const halfSeg=`<div class="seg"><button class="${!HALF_HOURS?'on':''}" onclick="setHalfHours(false)">1 hora</button><button class="${HALF_HOURS?'on':''}" onclick="setHalfHours(true)">Media hora</button></div>`;
+  const halfSeg=`<div class="seg"><button class="${!HALF_HOURS?'on':''}" onclick="setHalfHours(false)">Apagado</button><button class="${HALF_HOURS?'on':''}" onclick="setHalfHours(true)">Encendido</button></div>`;
   const permPend=RECURRING.filter(r=>r.status==='pending').length, permAct=RECURRING.filter(r=>r.status==='active').length;
   const docIco='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h8M8 9h2"/></svg>';
   return `
@@ -2131,7 +2132,7 @@ function viewSettings(){
           <div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:var(--muted);min-width:42px">Cierra</span><div class="seg">${endSeg}</div></div>
         </div>
       </div>
-      <div class="set-row"><div class="set-t"><b>Duración de las reservas</b><p>Por defecto, cada reserva es de 1 hora completa. Si lo activas, se puede reservar media hora.</p></div>${halfSeg}</div>
+      <div class="set-row"><div class="set-t"><b>Permitir reservas de media hora</b><p>Normalmente cada reserva es de 1 hora. Enciéndelo si quieres que también se puedan reservar bloques de media hora.</p></div>${halfSeg}</div>
     </div>
 
     <div class="set-head">${svgIco(ICONS.check,15)} Clases del profesor</div>
