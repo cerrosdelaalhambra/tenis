@@ -285,11 +285,14 @@
     display:inline-flex;align-items:center;justify-content:center;font-size:14px}
   .gh-month{display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;letter-spacing:.6px;color:var(--muted)}
   .wgrid .hr{position:relative;border-top:1px solid var(--line)}
-  .wgrid .hr .hrn{position:absolute;top:0;left:0;right:0;transform:translateY(-50%);text-align:center;font-size:14px;color:var(--ink);font-weight:600;line-height:1}
+  .wgrid .hr .hrn{position:absolute;top:0;left:6px;right:3px;transform:translateY(-50%);display:flex;align-items:center;justify-content:space-between;line-height:1}
+  .wgrid .hr .hrl{font-size:13px;color:var(--ink);font-weight:600}
+  .wgrid .hr .hr-arrow{width:11px;height:11px;color:var(--gray);flex:none}
   .wgrid .cell{position:relative;border-top:1px solid var(--line);border-left:1px solid var(--line);min-height:38px;padding:3px}
   .wgrid .cell.cell-past{opacity:.28}
   .wgrid .cell.cell-past .slot{cursor:default}
-  .wgrid .hr.hr-now .hrn{color:var(--now);font-weight:700}
+  .wgrid .hr.hr-now .hrl{color:var(--now);font-weight:700}
+  .wgrid .hr.hr-now .hr-arrow{color:var(--now)}
   .wgrid .hr.hr-now .now-tag{display:block;font-size:9px;font-weight:800;letter-spacing:.4px;color:var(--now);text-transform:uppercase;line-height:1;margin-bottom:1px}
   .nowline{position:absolute;left:0;right:0;top:-1.5px;height:2.5px;background:var(--now);z-index:5;pointer-events:none}
   .nowline.nl-today::before{content:'';position:absolute;left:-4px;top:50%;transform:translateY(-50%);width:9px;height:9px;border-radius:50%;background:var(--now);box-shadow:0 0 0 2px var(--card)}
@@ -312,12 +315,12 @@
   .s-reserved:hover{background:#fbfdfc}
   .hicon{width:13px;height:13px;vertical-align:middle;margin:-2px 4px 1px 0;fill:var(--ink);flex:none}
   .s-prof{background:#fff;border:1.5px solid var(--ink);color:var(--ink)}
-  .s-class{background:#fff;border:1.5px solid #b8860b;color:#8a6608;align-items:flex-start;justify-content:center}
+  .s-class{background:var(--court);border:1.5px solid var(--court);color:#fff;align-items:flex-start;justify-content:center}
   .s-class b{display:flex;align-items:center}
-  .s-class .hicon,.half.h-class .hicon{fill:#8a6608}
-  .s-class .cs-name{font-size:10px;color:#8a6608;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;font-weight:600}
-  .half.h-class{background:#fff;border:1.5px solid #b8860b;color:#8a6608;font-weight:600}
-  .mslot.classm .bar{background:#b8860b}
+  .s-class .hicon,.half.h-class .hicon{fill:#fff}
+  .s-class .cs-name{font-size:10px;color:rgba(255,255,255,.92);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;font-weight:600}
+  .half.h-class{background:var(--court);border:1.5px solid var(--court);color:#fff;font-weight:600}
+  .mslot.classm .bar{background:var(--court)}
   .s-bonus{background:#fff;border:1.5px dashed var(--ball-dark);color:var(--court);cursor:pointer;position:relative}
   .s-bonus:hover{background:var(--court-soft)}
   .bstar{color:#f2b705}
@@ -774,7 +777,7 @@
 <div id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="data.js?v=20260708i"></script>
+<script src="data.js?v=20260708j"></script>
 <script>
 /* PWA: registra el service worker (ruta relativa para que funcione bajo /tenis/) */
 if('serviceWorker' in navigator){
@@ -1460,7 +1463,7 @@ function desktopGrid(){
   let rows='';
   for(const h of HOURS){
     const isLine=faded && weekHasToday && h===lineHour;   // solo en la semana actual
-    rows+=`<div class="hr${isLine?' hr-now':''}"><span class="hrn">${isLine?'<span class="now-tag">Ahora</span>':''}${hlabel(h)}</span></div>`;
+    rows+=`<div class="hr${isLine?' hr-now':''}"><span class="hrn"><span class="hrl">${isLine?'<span class="now-tag">Ahora</span>':''}${hlabel(h)}</span><svg class="hr-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 6l6 6-6 6"/></svg></span></div>`;
     for(let i=0;i<7;i++){
       const d=addDays(state.weekStart,i);const date=ymd(d);
       const past=faded && dateAt(date,h+1).getTime()<=NOW.getTime();

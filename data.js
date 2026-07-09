@@ -280,7 +280,7 @@ async function getCalendar(role){
       m.fromHouse = (home && home!==m.house) ? home : null;   // su casa, si reservó a nombre de otra
       return m; });
   }
-  const {data}=await sb.from('v_calendar').select('id,house_label,starts_at,ends_at,type').gte('starts_at', cutoff).order('starts_at');
+  const {data}=await sb.from('v_calendar').select('id,house_label,starts_at,ends_at,type,student_name').gte('starts_at', cutoff).order('starts_at');
   return (data||[]).map(mapReservation);
 }
 async function primaryHouseMap(){                   // profile_id -> etiqueta de su casa principal
