@@ -239,6 +239,8 @@
   .psel-opt.on{color:var(--court);font-weight:700;background:#f3f8f5}
   .psel-opt .psel-check{opacity:0;color:var(--court);font-weight:800;font-size:15px}
   .psel-opt.on .psel-check{opacity:1}
+  .fldsel{padding:9px 30px 9px 12px;border:1.5px solid var(--line);border-radius:10px;background-color:#fafcfb;color:var(--ink);font-size:14px;font-family:inherit;font-weight:500;cursor:pointer;transition:border .15s,box-shadow .15s;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2314564a' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center}
+  .fldsel:focus{outline:none;border-color:var(--court);box-shadow:0 0 0 3px var(--court-soft);background-color:#fff}
 
   /* ---------- CALENDAR HEADER (renglón, viejo) ---------- */
   .cal-head{display:flex;align-items:center;gap:13px;flex-wrap:wrap;margin:2px 0 14px;font-size:13px}
@@ -778,7 +780,7 @@
 <div id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="data.js?v=20260708j"></script>
+<script src="data.js?v=20260708k"></script>
 <script>
 /* PWA: registra el service worker (ruta relativa para que funcione bajo /tenis/) */
 if('serviceWorker' in navigator){
@@ -806,6 +808,7 @@ const OPEN_WEEK_END=ymd(addDays(OPEN_WEEK_START,6));
 const AVAIL_MAX=ymd(addDays(OPEN_WEEK_START,13)); // fin de la próxima semana (admin/profe abren disponibilidad solo esta y la próxima)
 
 let OPEN_START=5, OPEN_END=23;   // horario de operación (configurable en Ajustes): inicio 4/5/6, cierre 22/23
+let HALF_HOURS=false;            // ¿se permite reservar media hora? (por defecto NO: reservas de 1 hora)
 let HOURS=[];
 function rebuildHours(){ HOURS.length=0; for(let h=OPEN_START;h<OPEN_END;h++) HOURS.push(h); }
 rebuildHours();
@@ -1041,7 +1044,7 @@ async function loadData(){
   houses=(b.houses||[]).map(h=>h.label); houseIdByLabel={}; houseLabelById={};
   (b.houses||[]).forEach(h=>{ houseIdByLabel[h.label]=h.id; houseLabelById[h.id]=h.label; });
   CUPO=b.cupo||2;
-  OPEN_START=b.openStart||5; OPEN_END=b.openEnd||23; rebuildHours();
+  OPEN_START=b.openStart||5; OPEN_END=b.openEnd||23; rebuildHours(); HALF_HOURS=!!b.halfHours;
   const myLabels=(b.myHouses||[]).map(h=>h.label);
   state.role = prof.role==='member' ? (myLabels.length>1?'master':'member') : prof.role;
   if(!navItems().some(i=>i.id===state.view)) state.view = navItems()[0].id;   // cae en una pestaña válida del rol
@@ -1317,7 +1320,15 @@ function halfState(date,h,half){
   return {kind:'free'};
 }
 function slotCat(date,h){
-  const s0=halfState(date,h,0), s1=halfState(date,h,1);
+  const s0=halfState(date,h,0);
+  if(!HALF_HOURS){                          // sin medias horas: la hora es un solo bloque (estado de su inicio)
+    const k=s0.kind;
+    if(k==='mine'||k==='reserved'||k==='profclass'||k==='classinfo') return {cat:k,res:s0.res};
+    if(k==='class'||k==='open') return {cat:k,rel:s0.rel};
+    if(k==='maint') return {cat:k,mc:s0.mc};
+    return {cat:k};
+  }
+  const s1=halfState(date,h,1);
   const sameRes=(s0.res&&s1.res)?s0.res.id===s1.res.id:(!s0.res&&!s1.res);
   if(s0.kind===s1.kind && sameRes){
     const k=s0.kind;
@@ -1660,13 +1671,13 @@ function openClassActions(id){
 }
 function openChangeHouse(id){
   const c=PROF_CLASSES.find(x=>x.id===id); if(!c)return;
-  const fld='width:100%;padding:12px;border:1.5px solid var(--line);border-radius:11px;font-size:15px;background:#fff;color:var(--ink)';
-  const opts=['<option value="">Sin casa</option>'].concat(houses.map(h=>`<option value="${h}" ${h===c.house?'selected':''}>${h}</option>`)).join('');
+  const fld='width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;font-size:15px;background:#fafcfb;color:var(--ink)';
+  const houseOpts=[{v:'',label:'Sin casa'}].concat(houses.map(h=>({v:h,label:h})));
   const m=document.getElementById('modal');
   m.innerHTML=`<div class="grab"></div><h3>Cambiar casa</h3>
     <div class="msub">${rangeLabel(c.h,c.min,c.dur)}</div>
     <div class="opt-label">Casa</div>
-    <select id="chHouse" style="${fld}">${opts}</select>
+    ${psel('chHouse', houseOpts, c.house||'', '')}
     <div class="opt-label" style="margin-top:12px">Nombre del alumno</div>
     <input id="chStudent" style="${fld}" value="${(c.student_name||'').replace(/"/g,'&quot;')}" placeholder="Nombre y apellido">
     <div class="modal-actions"><button class="btn-soft" onclick="closeModal()">Cancelar</button>
@@ -1967,6 +1978,7 @@ async function saveNotifPrefs(){
 /* ---- ADMIN: USERS ---- */
 async function setCupo(n){ try{ await DB.Admin.setCupo(n); CUPO=n; render(); toast('Cupo semanal: '+n+(n===1?' hora':' horas')+' por casa'); }catch(e){ toast(e.message,'warn'); } }
 async function setOpenHour(which,val){ try{ await DB.Admin.setOpenHour(which,val); if(which==='start')OPEN_START=val; else OPEN_END=val; rebuildHours(); render(); toast('Horario de la cancha actualizado'); }catch(e){ toast(e.message,'warn'); } }
+async function setHalfHours(on){ try{ await DB.Admin.setHalfHours(on); HALF_HOURS=on; render(); toast(on?'Ahora se puede reservar media hora':'Reservas de 1 hora completa'); }catch(e){ toast(e.message,'warn'); } }
 /* ===== Horarios permanentes (admin) ===== */
 async function setPermEnabled(on){
   try{ await DB.Admin.setPermEnabled(on); PERM_ENABLED=on; render();
@@ -2004,15 +2016,16 @@ function initSchedDraft(){
 }
 function schedEditorHTML(){
   if(!state.schedDraft) initSchedDraft();
-  const opts=[]; for(let m=240;m<=1380;m+=30) opts.push(m);
-  const optHtml=(sel)=>opts.map(m=>`<option value="${m}"${m===sel?' selected':''}>${schedMinLabel(m)}</option>`).join('');
+  const step=HALF_HOURS?30:60, first=HALF_HOURS?240:300;
+  const opts=[]; for(let m=first;m<=1380;m+=step) opts.push(m);
+  const optHtml=(list,sel)=>list.map(m=>`<option value="${m}"${m===sel?' selected':''}>${schedMinLabel(m)}</option>`).join('');
   const order=[1,2,3,4,5,6];   // lunes a sábado (sin domingo: el profesor no asiste)
   return `<div class="sched-grid">`+order.map(d=>{
     const rgs=state.schedDraft[d]||[];
     const rows=rgs.length? rgs.map((rg,i)=>`<div class="sched-row">
-        <select onchange="schedSet(${d},${i},'startMin',this.value)">${optHtml(rg.startMin)}</select>
+        <select class="fldsel" onchange="schedSet(${d},${i},'startMin',this.value)">${optHtml(opts,rg.startMin)}</select>
         <span class="sched-a">a</span>
-        <select onchange="schedSet(${d},${i},'endMin',this.value)">${optHtml(rg.endMin)}</select>
+        <select class="fldsel" onchange="schedSet(${d},${i},'endMin',this.value)">${optHtml(opts.filter(m=>m>rg.startMin),rg.endMin)}</select>
         <button class="sched-del" title="Quitar" onclick="schedDel(${d},${i})">✕</button>
       </div>`).join('')
       : `<div class="sched-empty">Sin horario (el profesor no asiste)</div>`;
@@ -2022,7 +2035,7 @@ function schedEditorHTML(){
 function schedRerender(){ const el=document.getElementById('schedInline'); if(el) el.innerHTML=schedEditorHTML(); }
 function schedAdd(d){ (state.schedDraft[d]=state.schedDraft[d]||[]).push({startMin:360,endMin:420}); schedRerender(); }
 function schedDel(d,i){ state.schedDraft[d].splice(i,1); schedRerender(); }
-function schedSet(d,i,k,v){ if(state.schedDraft[d]&&state.schedDraft[d][i]) state.schedDraft[d][i][k]=+v; }
+function schedSet(d,i,k,v){ const r=state.schedDraft[d]&&state.schedDraft[d][i]; if(!r) return; r[k]=+v; if(k==='startMin'){ if(r.endMin<=r.startMin) r.endMin=r.startMin+(HALF_HOURS?30:60); schedRerender(); } }
 async function saveProfSchedule(){
   const rows=[]; let bad=false;
   for(let d=1;d<=6;d++){ (state.schedDraft[d]||[]).forEach(r=>{ if(r.endMin<=r.startMin) bad=true; else rows.push({dow:d,startMin:r.startMin,endMin:r.endMin}); }); }
@@ -2038,14 +2051,15 @@ function initMaintDraft(){
 }
 function maintEditorHTML(){
   if(!state.maintDraft) initMaintDraft();
-  const opts=[]; for(let m=240;m<=1380;m+=30) opts.push(m);
-  const optHtml=(sel)=>opts.map(m=>`<option value="${m}"${m===sel?' selected':''}>${schedMinLabel(m)}</option>`).join('');
+  const step=HALF_HOURS?30:60, first=HALF_HOURS?240:300;
+  const opts=[]; for(let m=first;m<=1380;m+=step) opts.push(m);
+  const optHtml=(list,sel)=>list.map(m=>`<option value="${m}"${m===sel?' selected':''}>${schedMinLabel(m)}</option>`).join('');
   return `<div class="sched-grid">`+[1,2,3,4,5,6].map(d=>{
     const rgs=state.maintDraft[d]||[];
     const rows=rgs.length? rgs.map((rg,i)=>`<div class="sched-row">
-        <select onchange="maintSet(${d},${i},'startMin',this.value)">${optHtml(rg.startMin)}</select>
+        <select class="fldsel" onchange="maintSet(${d},${i},'startMin',this.value)">${optHtml(opts,rg.startMin)}</select>
         <span class="sched-a">a</span>
-        <select onchange="maintSet(${d},${i},'endMin',this.value)">${optHtml(rg.endMin)}</select>
+        <select class="fldsel" onchange="maintSet(${d},${i},'endMin',this.value)">${optHtml(opts.filter(m=>m>rg.startMin),rg.endMin)}</select>
         <button class="sched-del" title="Quitar" onclick="maintDel(${d},${i})">✕</button>
       </div>`).join('')
       : `<div class="sched-empty">Sin mantenimiento</div>`;
@@ -2055,7 +2069,7 @@ function maintEditorHTML(){
 function maintRerender(){ const el=document.getElementById('maintInline'); if(el) el.innerHTML=maintEditorHTML(); }
 function maintAdd(d){ (state.maintDraft[d]=state.maintDraft[d]||[]).push({startMin:360,endMin:420}); maintRerender(); }
 function maintDel(d,i){ state.maintDraft[d].splice(i,1); maintRerender(); }
-function maintSet(d,i,k,v){ if(state.maintDraft[d]&&state.maintDraft[d][i]) state.maintDraft[d][i][k]=+v; }
+function maintSet(d,i,k,v){ const r=state.maintDraft[d]&&state.maintDraft[d][i]; if(!r) return; r[k]=+v; if(k==='startMin'){ if(r.endMin<=r.startMin) r.endMin=r.startMin+(HALF_HOURS?30:60); maintRerender(); } }
 async function saveMaintSchedule(){
   const rows=[]; let bad=false;
   for(let d=0;d<=6;d++){ (state.maintDraft[d]||[]).forEach(r=>{ if(r.endMin<=r.startMin) bad=true; else rows.push({dow:d,startMin:r.startMin,endMin:r.endMin}); }); }
@@ -2068,6 +2082,7 @@ function viewSettings(){
   const cupoSeg=[1,2,3,4].map(n=>`<button class="${CUPO===n?'on':''}" onclick="setCupo(${n})">${n}</button>`).join('');
   const startSeg=[4,5,6].map(n=>`<button class="${OPEN_START===n?'on':''}" onclick="setOpenHour('start',${n})">${n} am</button>`).join('');
   const endSeg=[22,23].map(n=>`<button class="${OPEN_END===n?'on':''}" onclick="setOpenHour('end',${n})">${n===22?'10 pm':'11 pm'}</button>`).join('');
+  const halfSeg=`<div class="seg"><button class="${!HALF_HOURS?'on':''}" onclick="setHalfHours(false)">1 hora</button><button class="${HALF_HOURS?'on':''}" onclick="setHalfHours(true)">Media hora</button></div>`;
   const permSeg=`<div class="seg"><button class="${!PERM_ENABLED?'on':''}" onclick="setPermEnabled(false)">Apagado</button><button class="${PERM_ENABLED?'on':''}" onclick="setPermEnabled(true)">Activo</button></div>`;
   const permPend=RECURRING.filter(r=>r.status==='pending').length, permAct=RECURRING.filter(r=>r.status==='active').length;
   return `<div class="panel">
@@ -2081,6 +2096,10 @@ function viewSettings(){
         <div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:var(--muted);min-width:42px">Abre</span><div class="seg">${startSeg}</div></div>
         <div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:var(--muted);min-width:42px">Cierra</span><div class="seg">${endSeg}</div></div>
       </div>
+    </div>
+    <div style="padding:16px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;border-bottom:1px solid var(--line)">
+      <div style="flex:1;min-width:200px"><b style="font-size:14px">Duración de las reservas</b><p style="font-size:12px;color:var(--muted);margin-top:2px">Por defecto, cada reserva es de 1 hora completa. Si lo activas, se puede reservar media hora.</p></div>
+      ${halfSeg}
     </div>
     <div style="padding:16px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap${PERM_ENABLED?';border-bottom:1px solid var(--line)':''}">
       <div style="flex:1;min-width:210px"><b style="font-size:14px">Horarios permanentes (clases fijas)</b><p style="font-size:12px;color:var(--muted);margin-top:2px">Permite que los residentes soliciten una clase fija semanal con el profesor, en un horario de clase que haya quedado sin casa asignada. Las solicitudes le llegan al profesor y a la administración (con que uno apruebe basta).</p></div>
@@ -2553,7 +2572,7 @@ function openBook(date,h,ctx){
     </div>
     <div id="permNote" style="display:none;margin-top:10px"><div class="perm-note"><b>Clase fija cada semana</b><span>Se repetirá todos los ${DOWL[dateAt(date,h).getDay()]} a esta hora. Debe aprobarlo ${permWho}. Al confirmar, envías la solicitud (aún no queda reservado).</span></div></div>`:'';
   let durChoice='';
-  if(ctx==='full'){
+  if(ctx==='full' && HALF_HOURS){
     durChoice=`<div class="opt-label">Duración</div>
       <div class="seg" id="durSeg">
         <button class="on" data-d="60" onclick="segPick(this,'durSeg');document.getElementById('halfWrap').style.display='none'">1 hora</button>
