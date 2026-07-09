@@ -1263,6 +1263,7 @@ const ICONS={
   gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
   rain:'<path d="M7 16a5 5 0 0 1-1-9.9A6 6 0 0 1 17.5 7 4.5 4.5 0 0 1 17 16M8 19v2M12 19v2M16 19v2"/>',
   book:'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M9 7h7M9 11h5"/>',
+  phone:'<rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18h2"/>',
 };
 function go(view){ state.view=view; try{localStorage.setItem('tcv',view);}catch(e){}
   if(view==='avail'){ state.schedDraft=null; state.maintDraft=null; }   // los editores se reinician con lo guardado al entrar
@@ -1478,12 +1479,16 @@ function regClases(){
     ${regItem(ICONS.ball,'Clases con el profesor',`<p>Las clases con el profesor duran <b class="hl">una hora</b> y no consumen tu cupo de reservas. El horario de clases está siempre disponible en el calendario para consultarlo.</p>`)}
     ${regItem(ICONS.cal,'Planilla trimestral',`<p>Cada trimestre se arma una planilla nueva con el horario semanal de clases y el cupo de cada casa con el profesor. Esto se coordina con la <b class="hl">administración</b>, no por la aplicación. Si en la planilla queda un espacio de clase sin asignar, cualquier residente puede reservarlo por la aplicación.</p>`)}
     ${regItem(ICONS.clock,'Cancelar una clase',`<p>Si vas a cancelar una clase, avísale al profesor con <b class="hl">mínimo un día de anticipación</b>. La cancelación de clases se coordina directamente con el profesor; no se hace por la aplicación.</p>`)}
-    ${regItem(ICONS.bell,'¿Y si no juega nadie en el horario del profesor?',`<p>Cuando al profesor le cancelan una clase, este es el paso a paso:</p>
+    ${regItem(ICONS.bell,'¿Qué pasa si al profesor le cancelan una clase?',`<p>Con el fin de que otros residentes puedan hacer uso de la clase con el profesor y que no se pierda el espacio, este es el paso a paso a seguir:</p>
       <ol class="reg-steps">
-        <li>Al profesor le cancelan una clase y queda un espacio libre en su horario.</li>
+        <li>Al profesor le cancelan una clase.</li>
         <li>El profesor llama a los residentes que tiene a la mano para ver si alguien quiere tomar la clase en ese horario.</li>
-        <li>Si no encuentra a nadie, el profesor <b class="hl">libera el espacio</b> y se envía una notificación a <b class="hl">todo el condominio</b> avisando que ese horario quedó libre.</li>
-        <li>Desde ese momento, cualquier residente puede reservar ese espacio, <b class="hl">con o sin profesor</b>. Si lo reserva <b class="hl">con profesor, no le consume cupo</b>.</li>
+        <li>En caso de encontrar un alumno nuevo, el profesor entra a la app, sección <b class="hl">"Mis clases"</b>, selecciona la clase que le cancelaron y hace clic en <b class="hl">"Cambiar casa"</b> para asignarle la clase al alumno nuevo.</li>
+        <li>Solo si no encuentra a nadie, el profesor <b class="hl">libera el espacio</b> desde la app.</li>
+        <li>La app envía una notificación a <b class="hl">todo el condominio</b> avisando que ese horario quedó libre.</li>
+        <li>Desde ese momento, cualquier residente puede reservar ese espacio.</li>
+        <li>Puede reservar <b class="hl">con profesor</b> (no consume cupo).</li>
+        <li>Puede reservar <b class="hl">sin profesor</b> (sí consume cupo).</li>
       </ol>`)}
   </div>`;
 }
@@ -1492,10 +1497,10 @@ function regReservas(){
   return `<div class="panel reg-panel">
     ${regItem(ICONS.ball,'Qué se puede reservar',`<p>Solo se pueden reservar los horarios <b class="hl">libres</b>: los que no son del profesor (clases) ni de mantenimiento. Esos horarios no están disponibles para reserva.</p>`)}
     ${regItem(ICONS.check,'Cupo semanal',`<p>Cada usuario tiene <b class="hl">${cupoTxt} de reserva por semana</b>. La administración puede ajustar el cupo.</p>`)}
-    ${regItem(ICONS.clock,'Límite de reservas por día',`<p>Máximo <b class="hl">2 horas de reserva por día</b> (por ejemplo, dos horas seguidas).</p>`)}
-    ${regItem(ICONS.check,'Solo por la aplicación',`<p>Todas las reservas se hacen por la aplicación. La portería ya no toma reservas.</p>`)}
+    ${regItem(ICONS.clock,'Reservas de 2 horas seguidas',`<p>El sistema no permite que una misma casa reserve <b class="hl">más de dos horas seguidas</b> (ej.: 7:00 a 10:00).</p>`)}
+    ${regItem(ICONS.phone,'Solo por la aplicación',`<p>Todas las reservas se hacen por la aplicación. La portería ya no toma reservas.</p>`)}
     ${regItem(ICONS.cal,'Cuándo se reservan',`<p>Las reservas de la semana se habilitan cada <b class="hl">domingo a las ${rhLong()}</b>. Antes de esa hora de corte no puedes reservar horas de la semana siguiente.</p>`)}
-    ${regItem(ICONS.clock,'Cancelaciones',`<p>Puedes cancelar hasta <b class="hl">20 minutos antes</b> de tu reserva. Al cancelar, se avisa a <b class="hl">todos los residentes</b> —indicando quién canceló y el horario— que la cancha quedó libre.</p>`)}
+    ${regItem(ICONS.clock,'Cancelaciones',`<p>Puedes cancelar hasta <b class="hl">20 minutos antes</b> de tu reserva. Al cancelar, se envía una notificación a <b class="hl">todos los residentes</b> informando el horario en que la cancha quedó libre y quién fue el que canceló.</p>`)}
     ${regItem(ICONS.bell,'Sanciones administrativas',`<p>Si no asistes a tu reserva, la administración puede aplicar medidas o sanciones. Esto lo maneja la <b class="hl">administración</b>, no la aplicación.</p>`)}
     ${regItem(ICONS.tool,'Mantenimiento',`<p>No se puede reservar en horas de mantenimiento. Estos son los horarios de mantenimiento actuales:</p>${regMaintList()}`)}
   </div>`;
