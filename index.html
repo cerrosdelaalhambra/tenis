@@ -1412,9 +1412,9 @@ const REFRESH_P='<path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 4v4.5h-4.5"/
 const BALL_P='<circle cx="12" cy="12" r="9"/><path d="M5 5c4 3 4 11 0 14M19 5c-4 3-4 11 0 14"/>';
 function cupoRules(){
   return `<div class="cc-rules">
-    <div class="cc-rule"><span class="cc-ric">${svgIco(REFRESH_P,15)}</span><div><b>Se reinicia cada semana</b><span>Tu cupo vuelve a llenarse el domingo a las ${rhLong()}</span></div></div>
-    <div class="cc-rule"><span class="cc-ric star">★</span><div><b>Los horarios del profesor son gratis</b><span>Los marcados con ★ no descuentan tu cupo.</span></div></div>
-    <div class="cc-rule"><span class="cc-ric">${svgIco(BALL_P,15)}</span><div><b>Jugar en cancha libre no gasta cupo</b><span>Si está libre, juega sin reservar; pero si alguien la reservó por la app, debes cedérsela.</span></div></div>
+    <div class="cc-rule"><span class="cc-ric">${svgIco(REFRESH_P,15)}</span><div><b>Reinicio de horas</b><span>Las horas disponibles se reinician todos los domingos a las ${rhLong()}</span></div></div>
+    <div class="cc-rule"><span class="cc-ric star">★</span><div><b>Clases con el profesor</b><span>Las clases con el profesor no consumen cupos.</span></div></div>
+    <div class="cc-rule"><span class="cc-ric">${svgIco(BALL_P,15)}</span><div><b>Cancha libre</b><span>Si la cancha está libre porque nadie ha reservado, pero no tienes cupos, puedes jugar; pero si llega alguien con reserva debes ceder la cancha.</span></div></div>
   </div>`;
 }
 function cupoCard(){
