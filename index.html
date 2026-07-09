@@ -288,6 +288,7 @@
   .reg-item b.hl{color:var(--court)}
   .reg-maint{margin:10px 0 0;padding-left:0;list-style:none}
   .reg-maint li{display:flex;gap:10px;font-size:13px;color:var(--ink);margin:5px 0;padding:8px 12px;background:var(--court-soft);border-radius:9px}
+  .reg-maint li::before{content:none}                       /* sin el punto naranja de las viñetas */
   .reg-maint li b{min-width:82px;color:var(--court-dark)}
   .reg-none{font-size:13px;color:var(--muted);margin-top:8px}
   .reg-note{font-size:12px;color:var(--muted);font-style:italic;margin-top:8px}
@@ -1478,10 +1479,12 @@ function regClases(){
 function regReservas(){
   const cupoTxt = CUPO+(CUPO===1?' hora':' horas');
   return `<div class="panel reg-panel">
+    ${regItem(ICONS.ball,'Qué se puede reservar',`<p>Solo se pueden reservar los horarios <b class="hl">libres</b>: los que no son del profesor (clases) ni de mantenimiento. Esos horarios no están disponibles para reserva.</p>`)}
     ${regItem(ICONS.check,'Cupo semanal',`<p>Cada usuario tiene <b class="hl">${cupoTxt} de reserva por semana</b>. No hay límite de reservas por día: puedes usar todo tu cupo el mismo día si quieres. La duración máxima de una reserva es de <b class="hl">2 horas</b>. (La administración puede ajustar el cupo.)</p>`)}
     ${regItem(ICONS.check,'Solo por la aplicación',`<p>Todas las reservas se hacen por la aplicación. La portería ya no toma reservas.</p>`)}
     ${regItem(ICONS.cal,'Cuándo se reservan',`<p>Las reservas de la semana se habilitan cada <b class="hl">domingo a las ${rhLong()}</b>. Antes de esa hora de corte no puedes reservar horas de la semana siguiente.</p>`)}
-    ${regItem(ICONS.clock,'Cancelaciones',`<p>Puedes cancelar hasta <b class="hl">20 minutos antes</b> de tu reserva. Al cancelar, se avisa a todos los residentes que la cancha quedó libre. Si no asistes a tu reserva, la administración puede aplicar medidas (esto lo maneja la administración, no la aplicación).</p>`)}
+    ${regItem(ICONS.clock,'Cancelaciones',`<p>Puedes cancelar hasta <b class="hl">20 minutos antes</b> de tu reserva. Al cancelar, se avisa a <b class="hl">todos los residentes</b> —indicando quién canceló y el horario— que la cancha quedó libre.</p>`)}
+    ${regItem(ICONS.bell,'Sanciones administrativas',`<p>Si no asistes a tu reserva, la administración puede aplicar medidas o sanciones. Esto lo maneja la <b class="hl">administración</b>, no la aplicación.</p>`)}
     ${regItem(ICONS.tool,'Mantenimiento',`<p>No se puede reservar en horas de mantenimiento. Estos son los horarios de mantenimiento actuales:</p>${regMaintList()}`)}
   </div>`;
 }
