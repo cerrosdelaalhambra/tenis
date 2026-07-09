@@ -502,6 +502,25 @@
   .seg button{flex:1;padding:11px;border:1.5px solid var(--line);border-radius:11px;font-size:13px;font-weight:600;color:var(--muted)}
   .seg button.on{border-color:var(--court);background:var(--court-soft);color:var(--court)}
   .seg-v{flex-direction:column}
+  /* Ajustes · secciones agrupadas */
+  .set-head{display:flex;align-items:center;gap:8px;margin:22px 2px 11px;font-size:12px;font-weight:700;color:var(--court);letter-spacing:.05em;text-transform:uppercase}
+  .set-head:first-child{margin-top:4px}
+  .set-row{padding:16px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .set-row + .set-row{border-top:1px solid var(--line)}
+  .set-t{flex:1;min-width:180px}
+  .set-t b{font-size:14px}
+  .set-t p{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.45}
+  .tpl-cta{padding:18px;display:flex;align-items:center;gap:15px;flex-wrap:wrap;background:linear-gradient(135deg,var(--court-soft),#eef5f2)}
+  .tpl-ic{width:46px;height:46px;border-radius:14px;background:var(--court);color:#fff;display:flex;align-items:center;justify-content:center;flex:none;box-shadow:0 3px 10px rgba(20,86,74,.28)}
+  .tpl-ic svg{width:23px;height:23px}
+  .tpl-txt{flex:1;min-width:210px}
+  .tpl-txt b{font-size:14px;color:var(--court-dark)}
+  .tpl-txt p{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.5}
+  .tpl-btns{display:flex;gap:8px;flex-wrap:wrap}
+  .tpl-dl{padding:10px 17px;border-radius:11px;background:var(--court);color:#fff;font-size:13px;font-weight:600;border:1px solid var(--court);transition:.15s}
+  .tpl-dl:hover{background:var(--court-dark)}
+  .tpl-im{padding:10px 17px;border-radius:11px;background:#fff;color:var(--court);font-size:13px;font-weight:600;border:1px solid var(--court);transition:.15s}
+  .tpl-im:hover{background:var(--court-soft)}
   .opt-list{display:flex;flex-direction:column;gap:8px}
   .opt-card{display:flex;gap:11px;align-items:flex-start;text-align:left;padding:12px 13px;border:1.5px solid var(--line);border-radius:12px;background:#fff;transition:.13s;width:100%}
   .opt-card:hover{border-color:var(--court)}
@@ -904,7 +923,7 @@ let ABSENCES = [];        // ausencias del profesor (rangos por fecha); esas hor
 let MAINT_SCHEDULE = [];  // mantenimiento recurrente (semanal); esas franjas no se pueden reservar
 let CLASS_TEMPLATE = [];  // plantilla de clases (dow, horas, casa, nombre) — para exportar/importar Excel (admin)
 let RECURRING = [];       // horarios permanentes (clases fijas), desde la base
-let PERM_ENABLED = false; // ¿se pueden solicitar horarios permanentes?
+let PERM_ENABLED = true; // horarios permanentes: SIEMPRE activos (ya no hay interruptor)
 let PERM_ROUTE = 'both';  // a quién llegan: 'prof' | 'admin' | 'both'
 function visibleNotifs(){return notifs.filter(n=>{
   if(n.type==='reminder') return false; // el recordatorio es solo push (no llena la campana)
@@ -1046,7 +1065,7 @@ async function loadData(){
   state.rainHours = rainC ? Math.max(1,Math.round((rainC.endTs-rainC.startTs)/3600000)) : 0;
   HOLIDAYS=b.holidays||new Set(); notifs=b.notifs||[]; activity=b.activity||[]; users=b.users||[];
   PROF_SCHEDULE=b.profSchedule||[]; PROF_FLEX=!!b.profFlexible; PROF_CLASSES=b.profClasses||[]; ABSENCES=b.absences||[]; MAINT_SCHEDULE=b.maintSchedule||[]; CLASS_TEMPLATE=b.classTemplate||[];
-  RECURRING=b.recurring||[]; PERM_ENABLED=!!b.permEnabled; PERM_ROUTE=b.permRoute||'both';
+  RECURRING=b.recurring||[]; PERM_ENABLED=true; PERM_ROUTE=b.permRoute||'both';   // permanentes siempre activos
   houses=(b.houses||[]).map(h=>h.label); houseIdByLabel={}; houseLabelById={};
   (b.houses||[]).forEach(h=>{ houseIdByLabel[h.label]=h.id; houseLabelById[h.id]=h.label; });
   CUPO=b.cupo||2;
@@ -1986,11 +2005,6 @@ async function setCupo(n){ try{ await DB.Admin.setCupo(n); CUPO=n; render(); toa
 async function setOpenHour(which,val){ try{ await DB.Admin.setOpenHour(which,val); if(which==='start')OPEN_START=val; else OPEN_END=val; rebuildHours(); render(); toast('Horario de la cancha actualizado'); }catch(e){ toast(e.message,'warn'); } }
 async function setHalfHours(on){ try{ await DB.Admin.setHalfHours(on); HALF_HOURS=on; render(); toast(on?'Ahora se puede reservar media hora':'Reservas de 1 hora completa'); }catch(e){ toast(e.message,'warn'); } }
 /* ===== Horarios permanentes (admin) ===== */
-async function setPermEnabled(on){
-  try{ await DB.Admin.setPermEnabled(on); PERM_ENABLED=on; render();
-    toast(on?'Horarios permanentes habilitados':'Horarios permanentes deshabilitados'); }
-  catch(e){ toast(e.message,'warn'); }
-}
 function recLabel(r){ return `${r.house||'Casa'} · ${SCHED_DOW_NAMES[r.dow]} ${schedMinLabel(r.startMin)}–${schedMinLabel(r.endMin)}`; }
 function openRecurringList(){
   const act=RECURRING.filter(r=>r.status==='active');
@@ -2103,56 +2117,35 @@ function viewSettings(){
   const startSeg=[4,5,6].map(n=>`<button class="${OPEN_START===n?'on':''}" onclick="setOpenHour('start',${n})">${n} am</button>`).join('');
   const endSeg=[22,23].map(n=>`<button class="${OPEN_END===n?'on':''}" onclick="setOpenHour('end',${n})">${n===22?'10 pm':'11 pm'}</button>`).join('');
   const halfSeg=`<div class="seg"><button class="${!HALF_HOURS?'on':''}" onclick="setHalfHours(false)">1 hora</button><button class="${HALF_HOURS?'on':''}" onclick="setHalfHours(true)">Media hora</button></div>`;
-  const permSeg=`<div class="seg"><button class="${!PERM_ENABLED?'on':''}" onclick="setPermEnabled(false)">Apagado</button><button class="${PERM_ENABLED?'on':''}" onclick="setPermEnabled(true)">Activo</button></div>`;
   const permPend=RECURRING.filter(r=>r.status==='pending').length, permAct=RECURRING.filter(r=>r.status==='active').length;
-  return `<div class="panel">
-    <div style="padding:16px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;border-bottom:1px solid var(--line)">
-      <div style="flex:1;min-width:170px"><b style="font-size:14px">Cupo semanal por casa</b><p style="font-size:12px;color:var(--muted);margin-top:2px">Horas que cada casa puede reservar por semana.</p></div>
-      <div class="seg cupo-seg">${cupoSeg}</div>
-    </div>
-    <div style="padding:16px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;border-bottom:1px solid var(--line)">
-      <div style="flex:1;min-width:200px"><b style="font-size:14px">Horario de la cancha</b><p style="font-size:12px;color:var(--muted);margin-top:2px">A qué hora abre y cierra la cancha para reservas.</p></div>
-      <div style="display:flex;flex-direction:column;gap:8px">
-        <div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:var(--muted);min-width:42px">Abre</span><div class="seg">${startSeg}</div></div>
-        <div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:var(--muted);min-width:42px">Cierra</span><div class="seg">${endSeg}</div></div>
+  const docIco='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h8M8 9h2"/></svg>';
+  return `
+    <div class="set-head">${svgIco(ICONS.ball,15)} La cancha</div>
+    <div class="panel">
+      <div class="set-row"><div class="set-t"><b>Cupo semanal por casa</b><p>Horas que cada casa puede reservar por semana.</p></div><div class="seg cupo-seg">${cupoSeg}</div></div>
+      <div class="set-row"><div class="set-t"><b>Horario de la cancha</b><p>A qué hora abre y cierra la cancha para reservas.</p></div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:var(--muted);min-width:42px">Abre</span><div class="seg">${startSeg}</div></div>
+          <div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:var(--muted);min-width:42px">Cierra</span><div class="seg">${endSeg}</div></div>
+        </div>
       </div>
+      <div class="set-row"><div class="set-t"><b>Duración de las reservas</b><p>Por defecto, cada reserva es de 1 hora completa. Si lo activas, se puede reservar media hora.</p></div>${halfSeg}</div>
     </div>
-    <div style="padding:16px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;border-bottom:1px solid var(--line)">
-      <div style="flex:1;min-width:200px"><b style="font-size:14px">Duración de las reservas</b><p style="font-size:12px;color:var(--muted);margin-top:2px">Por defecto, cada reserva es de 1 hora completa. Si lo activas, se puede reservar media hora.</p></div>
-      ${halfSeg}
-    </div>
-    <div style="padding:16px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap${PERM_ENABLED?';border-bottom:1px solid var(--line)':''}">
-      <div style="flex:1;min-width:210px"><b style="font-size:14px">Horarios permanentes (clases fijas)</b><p style="font-size:12px;color:var(--muted);margin-top:2px">Permite que los residentes soliciten una clase fija semanal con el profesor, en un horario de clase que haya quedado sin casa asignada. Las solicitudes le llegan al profesor y a la administración (con que uno apruebe basta).</p></div>
-      ${permSeg}
-    </div>
-    ${PERM_ENABLED?`
-    <div style="padding:16px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-      <div style="flex:1;min-width:210px"><b style="font-size:14px">Clases fijas activas</b><p style="font-size:12px;color:var(--muted);margin-top:2px">${permAct} activa${permAct===1?'':'s'}${permPend?' · '+permPend+' por aprobar':''}.</p></div>
-      <button class="btn-ghost" style="box-shadow:none" onclick="openRecurringList()">Ver y gestionar</button>
-    </div>`:''}
-    <div style="padding:16px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;border-top:1px solid var(--line)">
-      <div style="flex:1;min-width:200px"><b style="font-size:14px">Plantilla de clases (Excel)</b><p style="font-size:12px;color:var(--muted);margin-top:2px">Descarga el Excel con las clases actuales (casa y nombre), edítalo en tu computador y súbelo para actualizar. Las celdas que dejes vacías quedan sin asignar.</p></div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn-ghost" style="box-shadow:none" onclick="exportTemplate()">Descargar</button>
-        <button class="btn-ghost" style="box-shadow:none" onclick="document.getElementById('tplFile').click()">Importar</button>
+
+    <div class="set-head">${svgIco(ICONS.check,15)} Clases del profesor</div>
+    <div class="panel">
+      <div class="tpl-cta">
+        <div class="tpl-ic">${docIco}</div>
+        <div class="tpl-txt"><b>Plantilla de clases (Excel)</b><p>Descarga el Excel con las clases actuales (casa y nombre, por día y hora), edítalo en tu computador y súbelo. <b>Subir una plantilla nueva reemplaza todo el periodo:</b> las clases que dejes vacías quedan libres.</p></div>
+        <div class="tpl-btns">
+          <button class="tpl-dl" onclick="exportTemplate()">Descargar</button>
+          <button class="tpl-im" onclick="document.getElementById('tplFile').click()">Importar</button>
+        </div>
       </div>
+      <div class="set-row"><div class="set-t"><b>Clases fijas activas</b><p>${permAct} activa${permAct===1?'':'s'}${permPend?' · <b style="color:var(--court)">'+permPend+' por aprobar</b>':''}. Los residentes pueden pedir una clase fija semanal en un horario que quede sin casa asignada; el profesor o la administración la aprueban.</p></div><button class="btn-ghost" style="box-shadow:none" onclick="openRecurringList()">Ver y gestionar</button></div>
       <input type="file" id="tplFile" accept=".xlsx,.xls" style="display:none" onchange="if(this.files&&this.files[0]){importTemplate(this.files[0]);this.value='';}">
-    </div>
-    <div style="padding:16px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;border-top:1px solid var(--line)">
-      <div style="flex:1;min-width:210px"><b style="font-size:14px">Periodo de clases fijas</b><p style="font-size:12px;color:var(--muted);margin-top:2px">Al empezar un nuevo trimestre, cierra el periodo actual (borra la plantilla y las clases fijas) para cargar una plantilla nueva. El horario base y el mantenimiento no se tocan.</p></div>
-      <button class="btn-ghost" style="box-shadow:none;color:var(--danger)" onclick="openResetPeriod()">Reiniciar periodo</button>
-    </div>
-  </div>`;
+    </div>`;
 }
-function openResetPeriod(){
-  const m=document.getElementById('modal');
-  m.innerHTML=`<div class="grab"></div><h3>Reiniciar periodo de clases fijas</h3>
-    <p style="font-size:13px;color:var(--muted);margin:2px 0 14px">Cierra el periodo actual: borra la plantilla de clases fijas, cancela las clases permanentes y quita las clases futuras. El horario base del profesor y el mantenimiento no se tocan. Úsalo antes de cargar una plantilla nueva.</p>
-    <div class="modal-actions"><button class="btn-soft" onclick="closeModal()">Cancelar</button>
-    <button class="btn-primary" style="background:var(--danger)" onclick="confirmResetPeriod()">Reiniciar periodo</button></div>`;
-  document.getElementById('modalBg').classList.add('show');
-}
-async function confirmResetPeriod(){ closeModal(); try{ await DB.Admin.resetClassPeriod(); await loadData(); render(); toast('Periodo de clases fijas reiniciado'); }catch(e){ toast(e.message,'warn'); } }
 function classMatrix(){                    // matriz: días (columnas) x horas (filas) de clase
   const days=[{dow:1,name:'Lunes'},{dow:2,name:'Martes'},{dow:3,name:'Miércoles'},{dow:4,name:'Jueves'},{dow:5,name:'Viernes'},{dow:6,name:'Sábado'}];
   const slotsByDow={}, hourSet=new Set();
