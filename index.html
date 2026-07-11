@@ -890,6 +890,10 @@ function recomputeOpenWeek(){OPEN_WEEK_START=_computeOWS();OPEN_WEEK_END=ymd(add
 
 let OPEN_START=5, OPEN_END=23;   // horario de operación (configurable en Ajustes): inicio 4/5/6, cierre 22/23
 let HALF_HOURS=false;            // ¿se permite reservar media hora? (por defecto NO: reservas de 1 hora)
+// ── TEMPORAL (etapa de pruebas) ─────────────────────────────────────────────
+// Mientras se maneja la planilla en portería, las reservas por la app están CERRADAS
+// para los residentes. Cuando se quieran abrir, pon esto en true (o borra el bloqueo).
+const RESERVAS_ABIERTAS = false;
 let HOURS=[];
 function rebuildHours(){ HOURS.length=0; for(let h=OPEN_START;h<OPEN_END;h++) HOURS.push(h); }
 rebuildHours();
@@ -2870,9 +2874,22 @@ function openProfRes(id){
     <button class="btn-primary" style="background:var(--danger)" onclick="cancelRes(${r.id})">Cancelar clase</button></div>`;
   document.getElementById('modalBg').classList.add('show');
 }
+function showReservasCerradas(){
+  const m=document.getElementById('modal');
+  m.innerHTML=`<div class="grab"></div>
+    <div style="text-align:center;padding:6px 4px 2px">
+      <div style="width:54px;height:54px;border-radius:15px;background:var(--court-soft);color:var(--court);display:flex;align-items:center;justify-content:center;margin:0 auto 12px">${svgIco(ICONS.clock,26)}</div>
+      <h3 style="margin:0 0 8px">Reservas aún no disponibles</h3>
+      <p style="font-size:13.5px;color:var(--muted);line-height:1.6;margin:0 0 6px">Las reservas por la aplicación estarán disponibles <b style="color:var(--court)">a partir del 19 de julio</b>.</p>
+      <p style="font-size:13.5px;color:var(--muted);line-height:1.6;margin:0">Si quieres hacer tu reserva esta semana, comunícate con <b>portería</b>.</p>
+    </div>
+    <button class="btn-primary" style="width:100%;margin-top:16px" onclick="closeModal()">Entendido</button>`;
+  document.getElementById('modalBg').classList.add('show');
+}
 function openBook(date,h,ctx){
   if(state.role==='admin') return;                 // el admin no hace reservas
   if(state.role==='prof') return openProfBook(date,h);
+  if(!RESERVAS_ABIERTAS && isMember()){ showReservasCerradas(); return; }   // TEMPORAL: reservas por app aún cerradas
   const d=dateAt(date,h);
   const isHalf=(ctx==='h0'||ctx==='h1');
   const isFlex=(ctx==='flexfull'||ctx==='flexh0'||ctx==='flexh1');   // hora del profesor en modo flexible
