@@ -282,7 +282,7 @@ async function getClosures(){
   const {data}=await sb.from('closures').select('id,starts_at,ends_at,reason,kind');
   return mapClosures(data);
 }
-// Calendario: miembros ven solo casa+hora (vista v_calendar); el staff ve nombres
+// Calendario: todos ven casa + nombre del dueño (vista v_calendar expone el nombre). El staff además puede contactar/gestionar.
 async function getCalendar(role){
   // La app solo muestra la semana actual en adelante, así que no traemos historial
   // viejo (8 días de margen cubren toda la semana en curso). Mantiene la carga liviana.
@@ -300,7 +300,7 @@ async function getCalendar(role){
       m.fromHouse = (home && home!==m.house) ? home : null;   // su casa, si reservó a nombre de otra
       return m; });
   }
-  const {data}=await sb.from('v_calendar').select('id,house_label,starts_at,ends_at,type,student_name').gte('starts_at', cutoff).order('starts_at');
+  const {data}=await sb.from('v_calendar').select('id,house_label,starts_at,ends_at,type,student_name,name').gte('starts_at', cutoff).order('starts_at');
   return (data||[]).map(mapReservation);
 }
 async function primaryHouseMap(){                   // profile_id -> etiqueta de su casa principal
