@@ -401,21 +401,22 @@
   .sched-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
   @media(max-width:760px){ .sched-grid{grid-template-columns:repeat(2,minmax(0,1fr))} }
   @media(max-width:480px){ .sched-grid{grid-template-columns:1fr} }
-  .sched-day{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff}
+  .sched-day{border:1px solid var(--line);border-radius:14px;background:#fff}   /* sin overflow:hidden: deja que el desplegable se salga de la tarjeta */
   .sched-day.off{opacity:.55}
-  .sched-dh{position:relative;background:var(--court-dark);color:#fff;padding:11px 12px;text-align:center}
+  .sched-day.psel-open{position:relative;z-index:40}                            /* la tarjeta con el desplegable abierto pasa por encima de las vecinas */
+  .sched-dh{position:relative;background:var(--court-dark);color:#fff;padding:11px 12px;text-align:center;border-radius:13px 13px 0 0}
   .sched-dh b{font-size:15px;font-weight:700}
   .sched-count{position:absolute;right:9px;top:50%;transform:translateY(-50%);font-size:10.5px;font-weight:700;background:rgba(255,255,255,.18);padding:3px 8px;border-radius:20px;white-space:nowrap}
   .sched-body{padding:11px 11px 13px;display:flex;flex-direction:column;gap:8px}
   .sched-off{text-align:center;color:var(--muted);font-size:12.5px;padding:6px 0}
-  .sched-add{align-self:flex-start;font-size:12.5px;color:var(--court);font-weight:600;padding:5px 11px;border-radius:9px;border:1px dashed #cfe0da;margin-top:2px}
-  .sched-add:hover{background:var(--court-soft)}
+  .sched-add{align-self:flex-start;font-size:12.5px;color:#fff;font-weight:600;padding:6px 13px;border-radius:9px;border:none;background:var(--court);margin-top:2px;transition:background .12s}
+  .sched-add:hover{background:var(--court-dark)}
   .sched-row{display:flex;align-items:center;gap:8px;margin:6px 0}
   .sched-row select{flex:1;padding:9px 28px 9px 11px;border:1.5px solid var(--line);border-radius:10px;font-size:13px;font-weight:500;background-color:#fafcfb;color:var(--ink);font-family:inherit;cursor:pointer;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2314564a' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;transition:border .15s,box-shadow .15s}
   .sched-row select:focus{outline:none;border-color:var(--court);box-shadow:0 0 0 3px var(--court-soft);background-color:#fff}
   .sched-row .psel{flex:1;margin-bottom:0;min-width:0}
   .sched-row .psel-trigger{padding:9px 11px;font-size:13px;gap:6px}
-  .sched-row .psel-menu{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:6}
+  .sched-row .psel-menu{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:41}
   .sched-row .psel.up .psel-menu{top:auto;bottom:calc(100% + 6px);margin-top:0}   /* se abre hacia ARRIBA cuando queda poco espacio abajo */
   .panel.of-visible{overflow:visible}                                              /* deja que los desplegables salgan de la tarjeta */
   .sched-save{display:flex;justify-content:flex-end;margin-top:14px}
@@ -1671,16 +1672,22 @@ function pselSet(id,opts,value){          // reconstruye opciones (para 'desde/h
   w.querySelector('.psel-val').textContent=cur.label;
   w.querySelector('.psel-menu').innerHTML=pselItems(id,opts,String(cur.v));
 }
+function pselRaiseCard(w){ // sube la tarjeta del wizard que tiene el desplegable abierto por encima de las vecinas
+  document.querySelectorAll('.sched-day.psel-open').forEach(el=>el.classList.remove('psel-open'));
+  const card=w&&w.closest('.sched-day'); if(card) card.classList.add('psel-open');
+}
 function pselToggle(id){
   const w=document.getElementById('ps_'+id); if(!w||w.classList.contains('dis')) return;
   const willOpen=!w.classList.contains('open');
   document.querySelectorAll('.psel.open').forEach(el=>el.classList.remove('open'));
+  document.querySelectorAll('.sched-day.psel-open').forEach(el=>el.classList.remove('psel-open'));
   if(willOpen){
-    // si queda poco espacio abajo y sí hay arriba, abre hacia ARRIBA (para no quedar tapado por la tarjeta)
+    // si queda poco espacio abajo y sí hay arriba, abre hacia ARRIBA (para no quedar tapado por otra tarjeta)
     const r=w.getBoundingClientRect();
     const up = (window.innerHeight - r.bottom) < 250 && r.top > 260;
     w.classList.toggle('up', up);
     w.classList.add('open');
+    pselRaiseCard(w);
   }
 }
 function pselPick(id,el){
@@ -1689,9 +1696,10 @@ function pselPick(id,el){
   w.querySelector('.psel-val').textContent=el.dataset.label;
   w.querySelectorAll('.psel-opt').forEach(o=>o.classList.toggle('on',o===el));
   w.classList.remove('open');
+  document.querySelectorAll('.sched-day.psel-open').forEach(c=>c.classList.remove('psel-open'));
   const cb=w.dataset.cb; if(cb && typeof window[cb]==='function') window[cb]();
 }
-document.addEventListener('click',e=>{ if(!e.target.closest('.psel')) document.querySelectorAll('.psel.open').forEach(el=>el.classList.remove('open')); });
+document.addEventListener('click',e=>{ if(!e.target.closest('.psel')){ document.querySelectorAll('.psel.open').forEach(el=>el.classList.remove('open')); document.querySelectorAll('.sched-day.psel-open').forEach(c=>c.classList.remove('psel-open')); } });
 const ROLE_OPTS=[{v:'member',label:'Residente'},{v:'portero',label:'Portería'},{v:'prof',label:'Profesor'},{v:'admin',label:'Administración'}];
 function apRoleChange(){const r=document.getElementById('apRole'),row=document.getElementById('apHouseRow');if(r&&row)row.style.display=r.value==='member'?'':'none';}
 function nuRoleChange(){const r=document.getElementById('nuRole'),row=document.getElementById('nuHouseRow');if(r&&row)row.style.display=r.value==='member'?'':'none';}
@@ -2280,6 +2288,7 @@ function initSchedDraft(){
   state.schedDraft={}; for(let d=0;d<7;d++) state.schedDraft[d]=[];
   src.forEach(r=>{ (state.schedDraft[r.dow]=state.schedDraft[r.dow]||[]).push({startMin:r.startMin,endMin:r.endMin}); });
   for(let d=0;d<7;d++) state.schedDraft[d].sort((a,b)=>a.startMin-b.startMin);
+  state.schedDirty=false;
 }
 function schedEditorHTML(){
   if(!state.schedDraft) initSchedDraft();
@@ -2308,17 +2317,18 @@ function schedEditorHTML(){
     </div>`;
   }).join('');
   const grid=onDays.length? `<div class="sched-grid">${cards}</div>` : `<div class="sched-off" style="padding:14px 0">Todos los días apagados. Prende un día arriba para agregar su horario.</div>`;
-  return `<div class="wiz-top">${toggles}</div>${grid}`;
+  const save=state.schedDirty ? `<div class="sched-save"><button class="btn-mini" onclick="saveProfSchedule()">Guardar cambios</button></div>` : '';
+  return `<div class="wiz-top">${toggles}</div>${grid}${save}`;
 }
 function schedToggleDay(d){
   const rgs=state.schedDraft[d]||[];
   state.schedDraft[d]= rgs.length? [] : [{startMin:360,endMin:420}];   // apagar (vaciar) / prender (1 clase 6–7)
-  schedRerender();
+  state.schedDirty=true; schedRerender();
 }
 function schedRerender(){ const el=document.getElementById('schedInline'); if(el) el.innerHTML=schedEditorHTML(); }
-function schedAdd(d){ (state.schedDraft[d]=state.schedDraft[d]||[]).push({startMin:360,endMin:420}); schedRerender(); }
-function schedDel(d,i){ state.schedDraft[d].splice(i,1); schedRerender(); }
-function schedSet(d,i,k,v){ const r=state.schedDraft[d]&&state.schedDraft[d][i]; if(!r) return; r[k]=+v; if(k==='startMin'){ if(r.endMin<=r.startMin) r.endMin=r.startMin+(HALF_HOURS?30:60); schedRerender(); } }
+function schedAdd(d){ (state.schedDraft[d]=state.schedDraft[d]||[]).push({startMin:360,endMin:420}); state.schedDirty=true; schedRerender(); }
+function schedDel(d,i){ state.schedDraft[d].splice(i,1); state.schedDirty=true; schedRerender(); }
+function schedSet(d,i,k,v){ const r=state.schedDraft[d]&&state.schedDraft[d][i]; if(!r) return; r[k]=+v; if(k==='startMin'){ if(r.endMin<=r.startMin) r.endMin=r.startMin+(HALF_HOURS?30:60); state.schedDirty=true; schedRerender(); } }
 function profClash(d,rg){ return (MAINT_SCHEDULE||[]).some(m=>m.dow===d && rg.startMin<m.endMin && rg.endMin>m.startMin); }
 function schedSync(){
   for(let d=1;d<=6;d++){ (state.schedDraft[d]||[]).forEach((rg,i)=>{
@@ -2328,7 +2338,7 @@ function schedSync(){
     const dur=rg.endMin-rg.startMin;
     if(dur<60 || dur%60!==0) rg.endMin=rg.startMin+Math.max(1,Math.round(dur/60))*60;
   }); }
-  schedRerender();
+  state.schedDirty=true; schedRerender();
 }
 async function saveProfSchedule(){
   const rows=[]; let bad=false, notWhole=false; const conflicts=[];
@@ -2349,6 +2359,7 @@ function initMaintDraft(){
   state.maintDraft={}; for(let d=0;d<7;d++) state.maintDraft[d]=[];
   src.forEach(r=>{ (state.maintDraft[r.dow]=state.maintDraft[r.dow]||[]).push({startMin:r.startMin,endMin:r.endMin}); });
   for(let d=0;d<7;d++) state.maintDraft[d].sort((a,b)=>a.startMin-b.startMin);
+  state.maintDirty=false;
 }
 function maintEditorHTML(){
   if(!state.maintDraft) initMaintDraft();
@@ -2373,25 +2384,26 @@ function maintEditorHTML(){
     </div>`;
   }).join('');
   const grid=onDays.length? `<div class="sched-grid">${cards}</div>` : `<div class="sched-off" style="padding:14px 0">Todos los días apagados. Prende un día arriba para agregar su horario.</div>`;
-  return `<div class="wiz-top">${toggles}</div>${grid}`;
+  const save=state.maintDirty ? `<div class="sched-save"><button class="btn-mini" onclick="saveMaintSchedule()">Guardar cambios</button></div>` : '';
+  return `<div class="wiz-top">${toggles}</div>${grid}${save}`;
 }
 function maintToggleDay(d){
   const rgs=state.maintDraft[d]||[];
   state.maintDraft[d]= rgs.length? [] : [{startMin:360,endMin:420}];
-  maintRerender();
+  state.maintDirty=true; maintRerender();
 }
 function maintClash(d,rg){ return PROF_SCHEDULE.some(p=>p.dow===d && rg.startMin<p.endMin && rg.endMin>p.startMin); }
 function maintRerender(){ const el=document.getElementById('maintInline'); if(el) el.innerHTML=maintEditorHTML(); }
-function maintAdd(d){ (state.maintDraft[d]=state.maintDraft[d]||[]).push({startMin:360,endMin:420}); maintRerender(); }
-function maintDel(d,i){ state.maintDraft[d].splice(i,1); maintRerender(); }
-function maintSet(d,i,k,v){ const r=state.maintDraft[d]&&state.maintDraft[d][i]; if(!r) return; r[k]=+v; if(k==='startMin'){ if(r.endMin<=r.startMin) r.endMin=r.startMin+(HALF_HOURS?30:60); maintRerender(); } }
+function maintAdd(d){ (state.maintDraft[d]=state.maintDraft[d]||[]).push({startMin:360,endMin:420}); state.maintDirty=true; maintRerender(); }
+function maintDel(d,i){ state.maintDraft[d].splice(i,1); state.maintDirty=true; maintRerender(); }
+function maintSet(d,i,k,v){ const r=state.maintDraft[d]&&state.maintDraft[d][i]; if(!r) return; r[k]=+v; if(k==='startMin'){ if(r.endMin<=r.startMin) r.endMin=r.startMin+(HALF_HOURS?30:60); state.maintDirty=true; maintRerender(); } }
 function maintSync(){
   for(let d=1;d<=6;d++){ (state.maintDraft[d]||[]).forEach((rg,i)=>{
     const s=document.getElementById('pmnt_s_'+d+'_'+i), e=document.getElementById('pmnt_e_'+d+'_'+i);
     if(s) rg.startMin=+s.value; if(e) rg.endMin=+e.value;
     if(rg.endMin<=rg.startMin) rg.endMin=rg.startMin+(HALF_HOURS?30:60);
   }); }
-  maintRerender();
+  state.maintDirty=true; maintRerender();
 }
 async function saveMaintSchedule(){
   const rows=[]; let bad=false; const conflicts=[];
@@ -2824,7 +2836,6 @@ function viewAvail(){
       <div class="panel-h center"><h3>Horario de clases con el profesor</h3></div>
       <div style="padding:10px 18px 14px">
         <div id="schedInline">${schedEditorHTML()}</div>
-        <div class="sched-save"><button class="btn-mini" onclick="saveProfSchedule()">Guardar</button></div>
       </div>
     </div>` : '';
   let html=schedPanel+`<div class="panel"><div class="panel-h center"><h3>Ausencia del profesor</h3><div class="ph-ctrl">${checkbox}</div></div>
@@ -2871,7 +2882,6 @@ function viewMaint(){
       <div class="panel-h center"><h3>Mantenimiento semanal</h3></div>
       <div style="padding:10px 18px 14px">
         <div id="maintInline">${maintEditorHTML()}</div>
-        <div class="sched-save"><button class="btn-mini" onclick="saveMaintSchedule()">Guardar</button></div>
       </div>
     </div>`;
   let html=fixedPanel+`<div class="panel"><div class="panel-h center"><h3>Mantenimiento extraordinario</h3><div class="ph-ctrl">${checkbox}</div></div>
