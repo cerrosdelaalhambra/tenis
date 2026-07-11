@@ -179,8 +179,13 @@ const Auth = {
   // ¿esa casa ya existe (ya tiene cuenta)? — una casa = una cuenta
   async houseTaken(label){
     const norm=normHouse(label); if(!norm) return false;
-    const {data}=await sb.from('houses').select('id').ilike('label',norm).limit(1);
-    return !!(data && data.length);
+    // "Ocupada" solo si la casa YA tiene una cuenta vinculada (house_members), no solo por
+    // existir en la tabla. Así las casas creadas por la plantilla (sin cuenta) no bloquean el registro.
+    const {data,error}=await sb.rpc('house_has_account',{p_label:norm});
+    if(!error) return data===true;
+    // Respaldo si el RPC aún no está desplegado: comportamiento anterior (existe la casa).
+    const {data:h}=await sb.from('houses').select('id').ilike('label',norm).limit(1);
+    return !!(h && h.length);
   },
   async signOut(){ await sb.auth.signOut(); },
   async resetPassword(identifier){
