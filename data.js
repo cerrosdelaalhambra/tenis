@@ -164,8 +164,11 @@ const Auth = {
     const u=(username||'').trim().toLowerCase();
     const contact=(email||'').trim();
     const authEmail = contact || (u + '@cerros.co');        // sin correo → correo interno desde el usuario
+    // Si Supabase tuviera activada la confirmación de correo, el enlace debe volver a la app,
+    // no al "Site URL" del panel (que puede quedar en localhost).
+    const redirectTo = (typeof location!=='undefined') ? (location.origin + location.pathname.replace(/index\.html$/,'')) : undefined;
     const {error}=await sb.auth.signUp({email:authEmail,password,
-      options:{data:{full_name, phone, requested_house: house||null, username: u||null, contact_email: contact||null}}});  // queda 'pending'
+      options:{emailRedirectTo: redirectTo, data:{full_name, phone, requested_house: house||null, username: u||null, contact_email: contact||null}}});  // queda 'pending'
     if(error) throw new Error(authErr(error.message));
   },
   async usernameAvailable(username){
