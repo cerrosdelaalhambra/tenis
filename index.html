@@ -487,6 +487,9 @@
   .row .info{flex:1}
   .row .info b{font-size:14px;display:block}
   .row .info span{font-size:12.5px;color:var(--muted)}
+  .urow .info{min-width:0}
+  .urow .info>span{overflow-wrap:anywhere}
+  .urow-acts{display:flex;align-items:center;gap:8px;flex:none;flex-wrap:wrap;justify-content:flex-end}
   .pill{font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;white-space:nowrap}
   .pill.green{background:var(--court-soft);color:var(--court)}
   .pill.amber{background:#fdf0d9;color:#9a6c12}
@@ -660,6 +663,9 @@
     .sidebar{display:none}
     .main{margin-left:0;padding-bottom:74px}
     .topbar{display:none}
+    /* Usuarios: en móvil los botones de cada fila bajan a una segunda línea (evita el corte horizontal) */
+    .row.urow{flex-wrap:wrap;align-items:center}
+    .urow-acts{flex-basis:100%;margin-top:8px}
     .mobile-head{display:block;position:sticky;top:0;z-index:15;background:var(--court-dark);color:#fff;
       padding:14px 18px 16px}
     .mh-top{display:flex;align-items:center;gap:12px;margin-bottom:14px}
@@ -2487,11 +2493,11 @@ function userRow(u,i){
       <button class="btn-cancel" style="border-color:#eecaca;color:#b3261e;background:#fff" onclick="openDeleteUser(${i})">Eliminar</button>`;
   }
   const extras=isFixed?'':`${u.status!=='pending'?`<button class="btn-ghost" style="box-shadow:none" onclick="openLinkHouses(${i})">Vincular casas</button>`:''}${(u.active&&u.phone)?`<a class="btn-wa btn-wa-sm" href="${waNotifyLink(u)}" target="_blank" rel="noopener" title="Avisar por WhatsApp que su cuenta está activa" aria-label="Avisar por WhatsApp">${WA_ICON}</a>`:''}`;
-  return `<div class="row">
+  return `<div class="row urow">
     <div class="avatar" style="background:${u.active?'var(--ball)':'#e4eae8'};color:var(--court-dark)">${(u.name||'?').split(' ').map(s=>s[0]).slice(0,2).join('')}</div>
     <div class="info"><b>${u.name} ${u.houses.length>1?'<span class="pill green" style="margin-left:4px">'+u.houses.length+' casas</span>':''}${u.status==='pending'?'<span class="pill amber" style="margin-left:4px">pendiente</span>':''}</b>
       <span>${sub}</span></div>
-    ${extras}${actions}
+    <div class="urow-acts">${extras}${actions}</div>
   </div>`;
 }
 function viewUsers(){
