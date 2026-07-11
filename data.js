@@ -99,6 +99,7 @@ const ERR_MSG = {
   CASA_NO_TUYA:'Esa casa no está vinculada a tu cuenta.',
   FUERA_DE_VENTANA:'Ya no se puede cancelar (muy cerca de la hora).',
   MANT_CHOCA_CLASE:'El mantenimiento no puede caer en horas de clase del profesor. Ponlo en una hora sin clase.',
+  CLASE_CHOCA_MANT:'El horario del profesor choca con un bloque de mantenimiento. Ajusta el mantenimiento primero.',
   SIN_PERMISO:'No tienes permiso para esta acción.',
   NO_EXISTE:'La reserva ya no existe.',
   PERM_DESHABILITADO:'Los horarios permanentes no están habilitados por ahora.',

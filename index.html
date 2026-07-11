@@ -862,7 +862,7 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<script src="data.js?v=20260710a"></script>
+<script src="data.js?v=20260710b"></script>
 <script>
 /* PWA: registra el service worker (ruta relativa para que funcione bajo /tenis/) */
 if('serviceWorker' in navigator){
@@ -2279,12 +2279,16 @@ function schedEditorHTML(){
   const order=[1,2,3,4,5,6];   // lunes a sábado (sin domingo: el profesor no asiste)
   return `<div class="sched-grid">`+order.map(d=>{
     const rgs=state.schedDraft[d]||[];
-    const rows=rgs.length? rgs.map((rg,i)=>`<div class="sched-row">
+    const rows=rgs.length? rgs.map((rg,i)=>{
+      // Las clases son de 1 hora: el "Hasta" solo ofrece horas completas desde el "Desde".
+      const endOpts=[]; for(let m=rg.startMin+60;m<=1380;m+=60) endOpts.push({v:m,label:schedMinLabel(m)});
+      const clash=profClash(d,rg);
+      return `<div class="sched-row${clash?' clash':''}">
         ${psel('psch_s_'+d+'_'+i, opts, rg.startMin, 'schedSync')}
         <span class="sched-a">a</span>
-        ${psel('psch_e_'+d+'_'+i, opts.filter(o=>o.v>rg.startMin), rg.endMin, 'schedSync')}
+        ${psel('psch_e_'+d+'_'+i, endOpts, rg.endMin, 'schedSync')}
         <button class="sched-del" title="Quitar" onclick="schedDel(${d},${i})">✕</button>
-      </div>`).join('')
+      </div>${clash?`<div class="sched-warn">⚠ Choca con un bloque de mantenimiento. Cámbialo o ajusta el mantenimiento.</div>`:''}`; }).join('')
       : `<div class="sched-empty">Sin horario (el profesor no asiste)</div>`;
     return `<div class="sched-day"><div class="sched-dh"><b>${SCHED_DOW_NAMES[d]}</b><button class="sched-add" onclick="schedAdd(${d})">+ Agregar</button></div>${rows}</div>`;
   }).join('')+`</div>`;
@@ -2293,18 +2297,28 @@ function schedRerender(){ const el=document.getElementById('schedInline'); if(el
 function schedAdd(d){ (state.schedDraft[d]=state.schedDraft[d]||[]).push({startMin:360,endMin:420}); schedRerender(); }
 function schedDel(d,i){ state.schedDraft[d].splice(i,1); schedRerender(); }
 function schedSet(d,i,k,v){ const r=state.schedDraft[d]&&state.schedDraft[d][i]; if(!r) return; r[k]=+v; if(k==='startMin'){ if(r.endMin<=r.startMin) r.endMin=r.startMin+(HALF_HOURS?30:60); schedRerender(); } }
+function profClash(d,rg){ return (MAINT_SCHEDULE||[]).some(m=>m.dow===d && rg.startMin<m.endMin && rg.endMin>m.startMin); }
 function schedSync(){
   for(let d=1;d<=6;d++){ (state.schedDraft[d]||[]).forEach((rg,i)=>{
     const s=document.getElementById('psch_s_'+d+'_'+i), e=document.getElementById('psch_e_'+d+'_'+i);
     if(s) rg.startMin=+s.value; if(e) rg.endMin=+e.value;
-    if(rg.endMin<=rg.startMin) rg.endMin=rg.startMin+(HALF_HOURS?30:60);
+    // Clases de 1 hora: el rango debe durar horas completas (ajusta si quedó incompleto).
+    const dur=rg.endMin-rg.startMin;
+    if(dur<60 || dur%60!==0) rg.endMin=rg.startMin+Math.max(1,Math.round(dur/60))*60;
   }); }
   schedRerender();
 }
 async function saveProfSchedule(){
-  const rows=[]; let bad=false;
-  for(let d=1;d<=6;d++){ (state.schedDraft[d]||[]).forEach(r=>{ if(r.endMin<=r.startMin) bad=true; else rows.push({dow:d,startMin:r.startMin,endMin:r.endMin}); }); }
+  const rows=[]; let bad=false, notWhole=false; const conflicts=[];
+  for(let d=1;d<=6;d++){ (state.schedDraft[d]||[]).forEach(r=>{
+    if(r.endMin<=r.startMin){ bad=true; return; }
+    if((r.endMin-r.startMin)%60!==0){ notWhole=true; return; }                 // clases de 1 hora
+    if(profClash(d,r)){ conflicts.push(SCHED_DOW_NAMES[d]+' '+schedMinLabel(r.startMin)+'–'+schedMinLabel(r.endMin)); return; }
+    rows.push({dow:d,startMin:r.startMin,endMin:r.endMin});
+  }); }
   if(bad){ toast('Revisa: la hora de fin debe ser mayor que la de inicio.','warn'); return; }
+  if(notWhole){ toast('Las clases son de 1 hora: cada rango debe durar horas completas (ej. 7:00–8:00, no 7:00–8:30).','warn'); return; }
+  if(conflicts.length){ toast('Ese horario choca con mantenimiento ('+conflicts.join(', ')+'). Ajusta el mantenimiento primero.','warn'); return; }
   try{ await DB.Admin.setProfSchedule(rows); state.schedDraft=null; await loadData(); render(); toast('Horario del profesor actualizado'); }
   catch(e){ toast(e.message,'warn'); }
 }
