@@ -457,6 +457,8 @@
   .ccard .cc-endpill{font-size:11px;font-weight:700;color:var(--gray);background:#eef1f0;padding:4px 8px;border-radius:8px;flex:none}
   .half.h-bonus:hover{background:var(--court-soft)}
   .half.h-na{background:#fafbfb;border:1px solid #eef1f0;color:#c2c8c6;justify-content:center;font-size:9px}
+  .half.h-maint{background:var(--clay);border:1.5px solid var(--clay);color:#fff;justify-content:center;align-items:center;cursor:pointer}
+  .half.h-maint svg{width:12px;height:12px;flex:none}
   .wgrid.filtering .slot:not(.s-free):not(.s-bonus):not(.s-flex){opacity:.12;pointer-events:none}
   .wgrid.filtering .half.h-mine,.wgrid.filtering .half.h-reserved,.wgrid.filtering .half.h-na,.wgrid.filtering .half.h-prof{opacity:.12;pointer-events:none}
   .wgrid.filtering .half.h-free,.wgrid.filtering .half.h-bonus,.wgrid.filtering .half.h-flex{box-shadow:0 0 0 2px rgba(169,207,46,.45)}
@@ -1744,7 +1746,8 @@ function halfCell(date,h,half,s){
   if(k==='flex') return `<div class="half h-flex" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'flexh${half}')"`:''} title="Hora del profesor · reservable, con o sin profesor"><span><span class="cdot cdot-amber"></span>Profesor</span><span class="plus">+</span></div>`;
   if(k==='class'||k==='open') return `<div class="half h-bonus" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'h${half}')"`:''} title="No gasta cupo${k==='class'?' · profesor disponible':''}"><span><span class="plus">+</span>Libre</span><span class="bstar">★</span></div>`;
   if(k==='rain') return `<div class="half h-na">${svgIco(RAIN_P,12,'#5b7fc0')}</div>`;
-  if(k==='maint'||k==='past'||k==='locked'||k==='na') return `<div class="half h-na"></div>`;
+  if(k==='maint') return `<div class="half h-maint" title="${s.mc?s.mc.reason:'Mantenimiento'}" onclick="toast(this.title)">${svgIco(ICONS.tool,12,'#fff')}</div>`;
+  if(k==='past'||k==='locked'||k==='na') return `<div class="half h-na"></div>`;
   // Media hora libre: se muestra siempre como "Libre" (igual que la hora completa);
   // clickeable solo si quien mira puede reservar (el admin gestiona, no reserva).
   return `<div class="half h-free" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'h${half}')"`:''} title="${canBookFree(date,h)?'Reservar '+rangeLabel(h,half*30,30):rangeLabel(h,half*30,30)+' · libre'}"><span class="plus">+</span>Libre</div>`;
@@ -1813,6 +1816,7 @@ function mHalf(date,h,half,s){
   if(k==='prof') return `<div class="mslot prof"><div class="bar"></div>${tt}<div class="ml"><b>Profesor</b><span>30 min</span></div></div>`;
   if(k==='flex'){ if(!canBookFree(date,h)) return `<div class="mslot prof"><div class="bar"></div>${tt}<div class="ml"><b>Profesor</b><span>30 min</span></div></div>`; return `<div class="mslot flex" onclick="openBook('${date}',${h},'flexh${half}')"><div class="bar"></div>${tt}<div class="ml"><b>Profesor · reservar</b><span>Con o sin profesor · no gasta cupo</span></div>${M_CHEV}</div>`; }
   if(k==='class'||k==='open'){ if(!canBookFree(date,h)) return ''; return `<div class="mslot bonus" onclick="openBook('${date}',${h},'h${half}')"><div class="bar"></div>${tt}<div class="ml"><b><span class="bstar">★</span> Libre</b><span>No gasta cupo</span></div>${M_CHEV}</div>`; }
+  if(k==='maint') return `<div class="mslot maint"><div class="bar"></div>${tt}<div class="ml"><b>${svgIco(ICONS.tool,14,'#fff')}Mantenimiento</b><span>${s.mc?s.mc.reason:'Cancha en mantenimiento'}</span></div></div>`;
   if(k!=='free') return '';
   if(!canBookFree(date,h)) return '';
   return `<div class="mslot free" onclick="openBook('${date}',${h},'h${half}')"><div class="bar"></div>${tt}<div class="ml"><b>Disponible</b><span>Toca para reservar</span></div>${M_CHEV}</div>`;
