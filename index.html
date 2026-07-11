@@ -409,8 +409,22 @@
   .sched-count{position:absolute;right:9px;top:50%;transform:translateY(-50%);font-size:10.5px;font-weight:700;background:rgba(255,255,255,.18);padding:3px 8px;border-radius:20px;white-space:nowrap}
   .sched-body{padding:11px 11px 13px;display:flex;flex-direction:column;gap:8px}
   .sched-off{text-align:center;color:var(--muted);font-size:12.5px;padding:6px 0}
-  .sched-add{align-self:flex-start;font-size:12.5px;color:#fff;font-weight:600;padding:6px 13px;border-radius:9px;border:none;background:var(--court);margin-top:2px;transition:background .12s}
+  .sched-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:4px}
+  .sched-add{font-size:12.5px;color:#fff;font-weight:600;padding:6px 13px;border-radius:9px;border:none;background:var(--court);transition:background .12s}
   .sched-add:hover{background:var(--court-dark)}
+  .sched-savebtn{font-size:12.5px;color:#fff;font-weight:700;padding:6px 15px;border-radius:9px;border:none;background:var(--court-dark);transition:background .12s}
+  .sched-savebtn:hover{background:#0a2f28}
+  /* popup de días (on/off) */
+  .day-sw-list{display:flex;flex-direction:column;margin:2px 0}
+  .day-sw{display:flex;align-items:center;justify-content:space-between;padding:13px 4px;border-bottom:1px solid var(--line)}
+  .day-sw:last-child{border-bottom:none}
+  .day-sw-name{font-size:15.5px;font-weight:600;color:var(--ink)}
+  .sw{width:48px;height:28px;border-radius:20px;background:#d3dbd8;position:relative;transition:background .18s;flex:none;cursor:pointer;border:none;padding:0}
+  .sw .sw-k{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.28);transition:transform .18s}
+  .sw.on{background:var(--court)}
+  .sw.on .sw-k{transform:translateX(20px)}
+  .day-sw-note{font-size:12.5px;color:var(--muted);background:#f4f7f6;border-radius:11px;padding:12px 14px;margin:12px 0 4px;line-height:1.5}
+  .day-sw-note b{color:var(--ink)}
   .sched-row{display:flex;align-items:center;gap:8px;margin:6px 0}
   .sched-row select{flex:1;padding:9px 28px 9px 11px;border:1.5px solid var(--line);border-radius:10px;font-size:13px;font-weight:500;background-color:#fafcfb;color:var(--ink);font-family:inherit;cursor:pointer;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2314564a' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;transition:border .15s,box-shadow .15s}
   .sched-row select:focus{outline:none;border-color:var(--court);box-shadow:0 0 0 3px var(--court-soft);background-color:#fff}
@@ -419,7 +433,7 @@
   .sched-row .psel-menu{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:41}
   .sched-row .psel.up .psel-menu{top:auto;bottom:calc(100% + 6px);margin-top:0}   /* se abre hacia ARRIBA cuando queda poco espacio abajo */
   .panel.of-visible{overflow:visible}                                              /* deja que los desplegables salgan de la tarjeta */
-  .sched-save{display:flex;justify-content:flex-end;margin-top:14px}
+  .sched-save{display:flex;justify-content:flex-end;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
   .sched-warn{font-size:11.5px;color:var(--danger);margin:4px 2px 2px;line-height:1.3}
   .sched-row.clash .psel-trigger{border-color:var(--danger);background:#fdecea}
   .sched-a{font-size:12px;color:var(--muted)}
@@ -484,7 +498,11 @@
   .panel-h{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
   .panel-h h3{font-size:15px}
   .panel-h .spacer{flex:1}
-  .panel-h.center{flex-direction:column;gap:10px;text-align:center}
+  .panel-h.center{flex-direction:column;gap:10px;text-align:center;position:relative}
+  .ph-btn{position:absolute;right:14px;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;gap:6px;padding:8px 13px;border-radius:10px;border:1.5px solid var(--court);background:#fff;color:var(--court);font-size:12.5px;font-weight:700;white-space:nowrap;transition:.12s}
+  .ph-btn:hover{background:var(--court-soft)}
+  .ph-btn svg{flex:none}
+  @media(max-width:720px){ .panel-h.center .ph-btn{position:static;transform:none;margin-top:2px} }
   .panel-h.center h3{font-size:18px;margin:0}
   .panel-h.center .ph-ctrl{display:flex;justify-content:center;flex-wrap:wrap;gap:8px}
   .row{display:flex;align-items:center;gap:14px;padding:14px 18px;border-bottom:1px solid var(--line)}
@@ -2283,24 +2301,33 @@ const DOW_ABBR=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 function fmtHoras(mins){ if(mins<=0) return '0'; const h=Math.floor(mins/60), rem=mins%60; if(h===0) return rem+' min'; return h+(rem>=30?'½':'')+' h'; }
 function schedMinLabel(m){const h=Math.floor(m/60),mm=m%60;const ap=h<12?'am':'pm';let hh=h%12;if(hh===0)hh=12;return hh+(mm?':'+String(mm).padStart(2,'0'):'')+ap;}
 function schedFallbackRows(){ const r=[]; [2,3,4,5].forEach(d=>{r.push({dow:d,startMin:360,endMin:750});r.push({dow:d,startMin:810,endMin:1020});}); r.push({dow:6,startMin:360,endMin:720}); return r; }
+const PROF_DAY_BASE=[{startMin:420,endMin:540},{startMin:600,endMin:720},{startMin:840,endMin:1020}];  // base al prender un día de clases: 7–9, 10–12, 2–5pm
+const MAINT_DAY_BASE=[{startMin:360,endMin:420}];  // base al prender un día de mantenimiento: 6–7
+function cpRanges(a){ return (a||[]).map(r=>({startMin:r.startMin,endMin:r.endMin})); }
+function rangesEqual(a,b){
+  a=cpRanges(a).sort((x,y)=>x.startMin-y.startMin||x.endMin-y.endMin);
+  b=cpRanges(b).sort((x,y)=>x.startMin-y.startMin||x.endMin-y.endMin);
+  if(a.length!==b.length) return false;
+  for(let i=0;i<a.length;i++) if(a[i].startMin!==b[i].startMin||a[i].endMin!==b[i].endMin) return false;
+  return true;
+}
 function initSchedDraft(){
   const src=(PROF_SCHEDULE&&PROF_SCHEDULE.length)?PROF_SCHEDULE:schedFallbackRows();
   state.schedDraft={}; for(let d=0;d<7;d++) state.schedDraft[d]=[];
   src.forEach(r=>{ (state.schedDraft[r.dow]=state.schedDraft[r.dow]||[]).push({startMin:r.startMin,endMin:r.endMin}); });
   for(let d=0;d<7;d++) state.schedDraft[d].sort((a,b)=>a.startMin-b.startMin);
-  state.schedDirty=false;
+  state.schedSaved={}; for(let d=0;d<7;d++) state.schedSaved[d]=cpRanges(state.schedDraft[d]);
 }
 function schedEditorHTML(){
   if(!state.schedDraft) initSchedDraft();
   const step=HALF_HOURS?30:60, first=HALF_HOURS?240:300;
   const opts=[]; for(let m=first;m<=1380;m+=step) opts.push({v:m,label:schedMinLabel(m)});
   const order=[1,2,3,4,5,6];   // lunes a sábado (sin domingo: el profesor no asiste)
-  const toggles=order.map(d=>{const on=(state.schedDraft[d]||[]).length>0; return `<button class="wiz-tog${on?' on':''}" onclick="schedToggleDay(${d})">${DOW_ABBR[d]}</button>`;}).join('');
   const onDays=order.filter(d=>(state.schedDraft[d]||[]).length>0);
   const cards=onDays.map(d=>{
     const rgs=state.schedDraft[d];
     const nCl=rgs.reduce((s,r)=>s+Math.max(0,Math.round((r.endMin-r.startMin)/60)),0);
-    const body=rgs.map((rg,i)=>{
+    const rows=rgs.map((rg,i)=>{
       // Las clases son de 1 hora: el "Hasta" solo ofrece horas completas desde el "Desde".
       const endOpts=[]; for(let m=rg.startMin+60;m<=1380;m+=60) endOpts.push({v:m,label:schedMinLabel(m)});
       const clash=profClash(d,rg);
@@ -2309,26 +2336,20 @@ function schedEditorHTML(){
         <span class="sched-a">a</span>
         ${psel('psch_e_'+d+'_'+i, endOpts, rg.endMin, 'schedSync')}
         <button class="sched-del" title="Quitar" onclick="schedDel(${d},${i})">✕</button>
-      </div>${clash?`<div class="sched-warn">⚠ Choca con mantenimiento.</div>`:''}`; }).join('')
-      +`<button class="sched-add" onclick="schedAdd(${d})">+ Agregar</button>`;
+      </div>${clash?`<div class="sched-warn">⚠ Choca con mantenimiento.</div>`:''}`; }).join('');
+    const dirty=!rangesEqual(state.schedDraft[d], state.schedSaved[d]);
+    const foot=`<div class="sched-foot"><button class="sched-add" onclick="schedAdd(${d})">+ Agregar</button>${dirty?`<button class="sched-savebtn" onclick="saveProfDay(${d})">Guardar</button>`:''}</div>`;
     return `<div class="sched-day">
       <div class="sched-dh"><b>${SCHED_DOW_NAMES[d]}</b><span class="sched-count">${nCl} ${nCl===1?'clase':'clases'}</span></div>
-      <div class="sched-body">${body}</div>
+      <div class="sched-body">${rows}${foot}</div>
     </div>`;
   }).join('');
-  const grid=onDays.length? `<div class="sched-grid">${cards}</div>` : `<div class="sched-off" style="padding:14px 0">Todos los días apagados. Prende un día arriba para agregar su horario.</div>`;
-  const save=state.schedDirty ? `<div class="sched-save"><button class="btn-mini" onclick="saveProfSchedule()">Guardar cambios</button></div>` : '';
-  return `<div class="wiz-top">${toggles}</div>${grid}${save}`;
-}
-function schedToggleDay(d){
-  const rgs=state.schedDraft[d]||[];
-  state.schedDraft[d]= rgs.length? [] : [{startMin:360,endMin:420}];   // apagar (vaciar) / prender (1 clase 6–7)
-  state.schedDirty=true; schedRerender();
+  return onDays.length? `<div class="sched-grid">${cards}</div>` : `<div class="sched-off" style="padding:16px 0">No hay días con clases. Agrégalos con el botón “Días con clases”.</div>`;
 }
 function schedRerender(){ const el=document.getElementById('schedInline'); if(el) el.innerHTML=schedEditorHTML(); }
-function schedAdd(d){ (state.schedDraft[d]=state.schedDraft[d]||[]).push({startMin:360,endMin:420}); state.schedDirty=true; schedRerender(); }
-function schedDel(d,i){ state.schedDraft[d].splice(i,1); state.schedDirty=true; schedRerender(); }
-function schedSet(d,i,k,v){ const r=state.schedDraft[d]&&state.schedDraft[d][i]; if(!r) return; r[k]=+v; if(k==='startMin'){ if(r.endMin<=r.startMin) r.endMin=r.startMin+(HALF_HOURS?30:60); state.schedDirty=true; schedRerender(); } }
+function schedAdd(d){ (state.schedDraft[d]=state.schedDraft[d]||[]).push({startMin:360,endMin:420}); schedRerender(); }
+function schedDel(d,i){ state.schedDraft[d].splice(i,1); schedRerender(); }
+function schedSet(d,i,k,v){ const r=state.schedDraft[d]&&state.schedDraft[d][i]; if(!r) return; r[k]=+v; if(k==='startMin'){ if(r.endMin<=r.startMin) r.endMin=r.startMin+(HALF_HOURS?30:60); schedRerender(); } }
 function profClash(d,rg){ return (MAINT_SCHEDULE||[]).some(m=>m.dow===d && rg.startMin<m.endMin && rg.endMin>m.startMin); }
 function schedSync(){
   for(let d=1;d<=6;d++){ (state.schedDraft[d]||[]).forEach((rg,i)=>{
@@ -2338,84 +2359,145 @@ function schedSync(){
     const dur=rg.endMin-rg.startMin;
     if(dur<60 || dur%60!==0) rg.endMin=rg.startMin+Math.max(1,Math.round(dur/60))*60;
   }); }
-  state.schedDirty=true; schedRerender();
+  schedRerender();
 }
-async function saveProfSchedule(){
-  const rows=[]; let bad=false, notWhole=false; const conflicts=[];
-  for(let d=1;d<=6;d++){ (state.schedDraft[d]||[]).forEach(r=>{
-    if(r.endMin<=r.startMin){ bad=true; return; }
-    if((r.endMin-r.startMin)%60!==0){ notWhole=true; return; }                 // clases de 1 hora
-    if(profClash(d,r)){ conflicts.push(SCHED_DOW_NAMES[d]+' '+schedMinLabel(r.startMin)+'–'+schedMinLabel(r.endMin)); return; }
-    rows.push({dow:d,startMin:r.startMin,endMin:r.endMin});
-  }); }
+// Guarda SOLO ese día (los demás días conservan su estado guardado y sus ediciones pendientes).
+async function saveProfDay(d){
+  const draft=state.schedDraft, saved=state.schedSaved;
+  let bad=false, notWhole=false; const conflicts=[];
+  (draft[d]||[]).forEach(r=>{
+    if(r.endMin<=r.startMin) bad=true;
+    else if((r.endMin-r.startMin)%60!==0) notWhole=true;
+    else if(profClash(d,r)) conflicts.push(schedMinLabel(r.startMin)+'–'+schedMinLabel(r.endMin));
+  });
   if(bad){ toast('Revisa: la hora de fin debe ser mayor que la de inicio.','warn'); return; }
   if(notWhole){ toast('Las clases son de 1 hora: cada rango debe durar horas completas (ej. 7:00–8:00, no 7:00–8:30).','warn'); return; }
   if(conflicts.length){ toast('Ese horario choca con mantenimiento ('+conflicts.join(', ')+'). Ajusta el mantenimiento primero.','warn'); return; }
-  try{ await DB.Admin.setProfSchedule(rows); state.schedDraft=null; await loadData(); render(); toast('Horario del profesor actualizado'); }
-  catch(e){ toast(e.message,'warn'); }
+  const rows=[];
+  for(let x=1;x<=6;x++){ const src=(x===d)?(draft[x]||[]):(saved[x]||[]); src.forEach(r=>rows.push({dow:x,startMin:r.startMin,endMin:r.endMin})); }
+  try{ await DB.Admin.setProfSchedule(rows); }
+  catch(e){ toast(e.message,'warn'); return; }
+  saved[d]=cpRanges(draft[d]);
+  await loadData(); render();
+  toast(SCHED_DOW_NAMES[d]+' · clases guardadas');
 }
 function initMaintDraft(){
   const src=MAINT_SCHEDULE||[];
   state.maintDraft={}; for(let d=0;d<7;d++) state.maintDraft[d]=[];
   src.forEach(r=>{ (state.maintDraft[r.dow]=state.maintDraft[r.dow]||[]).push({startMin:r.startMin,endMin:r.endMin}); });
   for(let d=0;d<7;d++) state.maintDraft[d].sort((a,b)=>a.startMin-b.startMin);
-  state.maintDirty=false;
+  state.maintSaved={}; for(let d=0;d<7;d++) state.maintSaved[d]=cpRanges(state.maintDraft[d]);
 }
 function maintEditorHTML(){
   if(!state.maintDraft) initMaintDraft();
   const step=HALF_HOURS?30:60, first=HALF_HOURS?240:300;
   const opts=[]; for(let m=first;m<=1380;m+=step) opts.push({v:m,label:schedMinLabel(m)});
   const order=[1,2,3,4,5,6];
-  const toggles=order.map(d=>{const on=(state.maintDraft[d]||[]).length>0; return `<button class="wiz-tog${on?' on':''}" onclick="maintToggleDay(${d})">${DOW_ABBR[d]}</button>`;}).join('');
   const onDays=order.filter(d=>(state.maintDraft[d]||[]).length>0);
   const cards=onDays.map(d=>{
     const rgs=state.maintDraft[d];
     const mins=rgs.reduce((s,r)=>s+Math.max(0,r.endMin-r.startMin),0);
-    const body=rgs.map((rg,i)=>{ const clash=maintClash(d,rg); return `<div class="sched-row${clash?' clash':''}">
+    const rows=rgs.map((rg,i)=>{ const clash=maintClash(d,rg); return `<div class="sched-row${clash?' clash':''}">
         ${psel('pmnt_s_'+d+'_'+i, opts, rg.startMin, 'maintSync')}
         <span class="sched-a">a</span>
         ${psel('pmnt_e_'+d+'_'+i, opts.filter(o=>o.v>rg.startMin), rg.endMin, 'maintSync')}
         <button class="sched-del" title="Quitar" onclick="maintDel(${d},${i})">✕</button>
-      </div>${clash?`<div class="sched-warn">⚠ Choca con una clase del profesor.</div>`:''}`; }).join('')
-      +`<button class="sched-add" onclick="maintAdd(${d})">+ Agregar</button>`;
+      </div>${clash?`<div class="sched-warn">⚠ Choca con una clase del profesor.</div>`:''}`; }).join('');
+    const dirty=!rangesEqual(state.maintDraft[d], state.maintSaved[d]);
+    const foot=`<div class="sched-foot"><button class="sched-add" onclick="maintAdd(${d})">+ Agregar</button>${dirty?`<button class="sched-savebtn" onclick="saveMaintDay(${d})">Guardar</button>`:''}</div>`;
     return `<div class="sched-day">
       <div class="sched-dh"><b>${SCHED_DOW_NAMES[d]}</b><span class="sched-count">${fmtHoras(mins)}</span></div>
-      <div class="sched-body">${body}</div>
+      <div class="sched-body">${rows}${foot}</div>
     </div>`;
   }).join('');
-  const grid=onDays.length? `<div class="sched-grid">${cards}</div>` : `<div class="sched-off" style="padding:14px 0">Todos los días apagados. Prende un día arriba para agregar su horario.</div>`;
-  const save=state.maintDirty ? `<div class="sched-save"><button class="btn-mini" onclick="saveMaintSchedule()">Guardar cambios</button></div>` : '';
-  return `<div class="wiz-top">${toggles}</div>${grid}${save}`;
-}
-function maintToggleDay(d){
-  const rgs=state.maintDraft[d]||[];
-  state.maintDraft[d]= rgs.length? [] : [{startMin:360,endMin:420}];
-  state.maintDirty=true; maintRerender();
+  return onDays.length? `<div class="sched-grid">${cards}</div>` : `<div class="sched-off" style="padding:16px 0">No hay días con mantenimiento. Agrégalos con el botón “Días con mantenimiento”.</div>`;
 }
 function maintClash(d,rg){ return PROF_SCHEDULE.some(p=>p.dow===d && rg.startMin<p.endMin && rg.endMin>p.startMin); }
 function maintRerender(){ const el=document.getElementById('maintInline'); if(el) el.innerHTML=maintEditorHTML(); }
-function maintAdd(d){ (state.maintDraft[d]=state.maintDraft[d]||[]).push({startMin:360,endMin:420}); state.maintDirty=true; maintRerender(); }
-function maintDel(d,i){ state.maintDraft[d].splice(i,1); state.maintDirty=true; maintRerender(); }
-function maintSet(d,i,k,v){ const r=state.maintDraft[d]&&state.maintDraft[d][i]; if(!r) return; r[k]=+v; if(k==='startMin'){ if(r.endMin<=r.startMin) r.endMin=r.startMin+(HALF_HOURS?30:60); state.maintDirty=true; maintRerender(); } }
+function maintAdd(d){ (state.maintDraft[d]=state.maintDraft[d]||[]).push({startMin:360,endMin:420}); maintRerender(); }
+function maintDel(d,i){ state.maintDraft[d].splice(i,1); maintRerender(); }
+function maintSet(d,i,k,v){ const r=state.maintDraft[d]&&state.maintDraft[d][i]; if(!r) return; r[k]=+v; if(k==='startMin'){ if(r.endMin<=r.startMin) r.endMin=r.startMin+(HALF_HOURS?30:60); maintRerender(); } }
 function maintSync(){
   for(let d=1;d<=6;d++){ (state.maintDraft[d]||[]).forEach((rg,i)=>{
     const s=document.getElementById('pmnt_s_'+d+'_'+i), e=document.getElementById('pmnt_e_'+d+'_'+i);
     if(s) rg.startMin=+s.value; if(e) rg.endMin=+e.value;
     if(rg.endMin<=rg.startMin) rg.endMin=rg.startMin+(HALF_HOURS?30:60);
   }); }
-  state.maintDirty=true; maintRerender();
+  maintRerender();
 }
-async function saveMaintSchedule(){
-  const rows=[]; let bad=false; const conflicts=[];
-  for(let d=0;d<=6;d++){ (state.maintDraft[d]||[]).forEach(r=>{
-    if(r.endMin<=r.startMin){ bad=true; return; }
-    if(maintClash(d,r)){ conflicts.push(SCHED_DOW_NAMES[d]+' '+schedMinLabel(r.startMin)+'–'+schedMinLabel(r.endMin)); return; }
-    rows.push({dow:d,startMin:r.startMin,endMin:r.endMin});
-  }); }
+// Guarda SOLO ese día (los demás conservan su estado guardado y ediciones pendientes).
+async function saveMaintDay(d){
+  const draft=state.maintDraft, saved=state.maintSaved;
+  let bad=false; const conflicts=[];
+  (draft[d]||[]).forEach(r=>{
+    if(r.endMin<=r.startMin) bad=true;
+    else if(maintClash(d,r)) conflicts.push(schedMinLabel(r.startMin)+'–'+schedMinLabel(r.endMin));
+  });
   if(bad){ toast('Revisa: la hora de fin debe ser mayor que la de inicio.','warn'); return; }
-  if(conflicts.length){ toast('El mantenimiento no puede caer en horas de clase ('+conflicts.join(', ')+'). Ponlo en una hora sin clase: antes, después o en el descanso del mediodía.','warn'); return; }
-  try{ await DB.Admin.setMaintSchedule(rows); state.maintDraft=null; await loadData(); render(); toast('Mantenimiento actualizado'); }
-  catch(e){ toast(e.message,'warn'); }
+  if(conflicts.length){ toast('El mantenimiento no puede caer en horas de clase ('+conflicts.join(', ')+'). Ponlo antes, después o en el descanso del mediodía.','warn'); return; }
+  const rows=[];
+  for(let x=1;x<=6;x++){ const src=(x===d)?(draft[x]||[]):(saved[x]||[]); src.forEach(r=>rows.push({dow:x,startMin:r.startMin,endMin:r.endMin})); }
+  try{ await DB.Admin.setMaintSchedule(rows); }
+  catch(e){ toast(e.message,'warn'); return; }
+  saved[d]=cpRanges(draft[d]);
+  await loadData(); render();
+  toast(SCHED_DOW_NAMES[d]+' · mantenimiento guardado');
+}
+/* ===== Popup: días con clases / con mantenimiento ===== */
+function openDaysModal(kind){
+  if(kind==='prof' && !state.schedDraft) initSchedDraft();
+  if(kind==='maint' && !state.maintDraft) initMaintDraft();
+  state.daysModal=kind;
+  const draft = kind==='prof'? state.schedDraft : state.maintDraft;
+  state.daysModalOn={}; for(let d=1;d<=6;d++) state.daysModalOn[d]=(draft[d]||[]).length>0;
+  renderDaysModal();
+}
+function toggleDayModal(d){ state.daysModalOn[d]=!state.daysModalOn[d]; renderDaysModal(); }
+function renderDaysModal(){
+  const kind=state.daysModal, on=state.daysModalOn;
+  const title = kind==='prof'?'Días con clases':'Días con mantenimiento';
+  const rows=[1,2,3,4,5,6].map(d=>`<div class="day-sw">
+      <span class="day-sw-name">${SCHED_DOW_NAMES[d]}</span>
+      <button type="button" class="sw${on[d]?' on':''}" onclick="toggleDayModal(${d})" aria-label="${SCHED_DOW_NAMES[d]}"><span class="sw-k"></span></button>
+    </div>`).join('');
+  const note = kind==='prof'
+    ? 'Al <b>confirmar</b>: los días que apagues quedarán <b>sin clases</b> (se quitan del horario de una vez). Los que prendas aparecerán con un horario base (7–9, 10–12 y 2–5) que luego ajustas.'
+    : 'Al <b>confirmar</b>: los días que apagues quedarán <b>sin mantenimiento</b>. Los que prendas aparecerán con un bloque base (6–7) que luego ajustas.';
+  const m=document.getElementById('modal');
+  m.innerHTML=`<div class="grab"></div><h3 style="text-align:center">${title}</h3>
+    <div class="day-sw-list">${rows}</div>
+    <div class="day-sw-note">${note}</div>
+    <div class="modal-actions"><button class="btn-soft" onclick="closeModal()">Cancelar</button><button class="btn-primary" onclick="confirmDaysModal()">Confirmar</button></div>`;
+  document.getElementById('modalBg').classList.add('show');
+}
+async function confirmDaysModal(){
+  const kind=state.daysModal, on=state.daysModalOn;
+  const draft = kind==='prof'? state.schedDraft : state.maintDraft;
+  const saved = kind==='prof'? state.schedSaved : state.maintSaved;
+  const base  = kind==='prof'? PROF_DAY_BASE : MAINT_DAY_BASE;
+  const turnedOn=[], turnedOff=[]; const rows=[];
+  for(let d=1;d<=6;d++){
+    const wasOn=(saved[d]||[]).length>0;
+    if(on[d]){
+      if(wasOn){ (saved[d]).forEach(r=>rows.push({dow:d,startMin:r.startMin,endMin:r.endMin})); }
+      else { turnedOn.push(d); base.forEach(r=>rows.push({dow:d,startMin:r.startMin,endMin:r.endMin})); }
+    } else if(wasOn){ turnedOff.push(d); }
+  }
+  if(!turnedOn.length && !turnedOff.length){ state.daysModal=null; closeModal(); return; }   // sin cambios de días
+  try{
+    if(kind==='prof') await DB.Admin.setProfSchedule(rows); else await DB.Admin.setMaintSchedule(rows);
+  }catch(e){
+    const msg=(e.message==='CLASE_CHOCA_MANT'||e.message==='MANT_CHOCA_CLASE')
+      ? 'Un día que prendiste choca en su horario base con el otro calendario. Ajusta primero el otro y vuelve a intentar.' : e.message;
+    toast(msg,'warn'); return;
+  }
+  turnedOff.forEach(d=>{ draft[d]=[]; saved[d]=[]; });
+  turnedOn.forEach(d=>{ draft[d]=cpRanges(base); saved[d]=cpRanges(base); });
+  const flat=rows.map(r=>({dow:r.dow,startMin:r.startMin,endMin:r.endMin}));
+  if(kind==='prof') PROF_SCHEDULE=flat; else MAINT_SCHEDULE=flat;
+  state.daysModal=null; state.daysModalOn=null;
+  closeModal(); await loadData(); render();
+  toast(kind==='prof'?'Días con clases actualizados':'Días con mantenimiento actualizados');
 }
 async function setUserActive(id, makeActive){ try{ await DB.Admin.setStatus(id, makeActive?'active':'inactive'); await loadData(); render(); toast(makeActive?'Usuario activado':'Usuario desactivado'); }catch(e){ toast(e.message,'warn'); } }
 function viewSettings(){
@@ -2833,7 +2915,7 @@ function viewAvail(){
   const warn = (!multi&&noProf) ? `<p style="font-size:12.5px;color:var(--clay);background:#fbeee9;border-radius:10px;padding:10px 12px;margin:0">Ese día el profesor no tiene clases (ej. lunes o domingo). No hay horas para marcar.</p>` : '';
   const btnDis = (!multi&&noProf) ? 'disabled' : '';
   const schedPanel = state.role==='admin' ? `<div class="panel of-visible" style="margin-bottom:16px">
-      <div class="panel-h center"><h3>Horario de clases con el profesor</h3></div>
+      <div class="panel-h center"><h3>Horario de clases con el profesor</h3><button class="ph-btn" onclick="openDaysModal('prof')"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg>Días con clases</button></div>
       <div style="padding:10px 18px 14px">
         <div id="schedInline">${schedEditorHTML()}</div>
       </div>
@@ -2879,7 +2961,7 @@ function viewMaint(){
             <div class="field"><label>Hasta</label>${psel('cTo',hourArr(9,23),12,'')}</div>
           </div>`;
   const fixedPanel=`<div class="panel of-visible" style="margin-bottom:16px">
-      <div class="panel-h center"><h3>Mantenimiento semanal</h3></div>
+      <div class="panel-h center"><h3>Mantenimiento semanal</h3><button class="ph-btn" onclick="openDaysModal('maint')"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9h18M8 2.5v4M16 2.5v4"/></svg>Días con mantenimiento</button></div>
       <div style="padding:10px 18px 14px">
         <div id="maintInline">${maintEditorHTML()}</div>
       </div>
