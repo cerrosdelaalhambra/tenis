@@ -325,7 +325,7 @@
   .wgrid .hr .hrn-end{top:auto;bottom:1px;transform:none}                   /* etiqueta de cierre (ej. 11 pm) al pie del riel */
   .wgrid .hr .hrl{font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.2px}
   .wgrid .cell{position:relative;border-top:1px solid var(--line);border-left:1px solid var(--line);min-height:38px;padding:3px}
-  .wgrid .cell.cell-past{opacity:.28}
+  .wgrid .cell.cell-past{opacity:.45;pointer-events:none}   /* ya pasó: se ve el contenido real pero tenue y no clickeable */
   .wgrid .cell.cell-past .slot{cursor:default}
   .wgrid .hr.hr-now .hrl{color:var(--now);font-weight:700}
   .nowline{position:absolute;left:0;right:0;top:-1.5px;height:2.5px;background:var(--now);z-index:5;pointer-events:none}
@@ -728,7 +728,7 @@
     .mslot.maint .ml b svg{vertical-align:-2px;margin-right:4px}
     .mslot.locked .bar{background:#e7eae9} .mslot.locked{opacity:.6}
     .mslot.past{opacity:.45}
-    .mslot.m-faded{opacity:.32}
+    .mslot.m-faded{opacity:.45;pointer-events:none}
     .m-now{display:flex;align-items:center;gap:9px;margin:2px 2px;color:var(--now);font-size:12px;font-weight:700}
     .m-now::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--now);flex:none}
     .m-now::after{content:'';flex:1;height:2px;background:var(--now);border-radius:2px;opacity:.55}
@@ -1406,9 +1406,7 @@ function halfState(date,h,half){
     const rel=findReleasedHalf(date,h,half);
     if(rel){
       if(rel.type==='flex'){                         // el profesor abrió esta franja: reservable con/sin profesor
-        const startHalf=new Date(dateAt(date,h).getTime()+half*30*60000);
-        if(startHalf<NOW) return {kind:'past'};
-        return {kind:'flex',rel};
+        return {kind:'flex',rel};                    // el difuminado de "ya pasó" lo maneja la celda (cell-past / m-faded)
       }
       return {kind:rel.type==='class'?'class':'open',rel};
     }
@@ -1420,8 +1418,8 @@ function halfState(date,h,half){
     return {kind:'prof'};                             // hora del profesor, sin clase asignada
   }
   if(h<OPEN_START||h>=OPEN_END) return {kind:'na'};   // fuera del horario de operación (configurable)
-  const startHalf=new Date(dateAt(date,h).getTime()+half*30*60000);
-  if(startHalf<NOW) return {kind:'past'};
+  // Nota: los slots ya pasados YA NO devuelven 'past'; muestran su contenido real (libre/clase/etc.)
+  // y la celda los difumina (cell-past en escritorio, m-faded en celular), en ambas vistas.
   if(date>OPEN_WEEK_END) return {kind:'locked'};
   if(state.rainUntil && date===ymd(NOW)){const st=dateAt(date,h).getTime()+half*30*60000; if(st>=NOW.getTime() && st<state.rainUntil) return {kind:'rain'};}
   return {kind:'free'};
@@ -1735,7 +1733,7 @@ function desktopGrid(){
     rows+=`<div class="hr${isLine?' hr-now':''}"><span class="hrn"><span class="hrl">${hlabel(h)}</span></span>${endLbl}</div>`;
     idxs.forEach(i=>{
       const d=addDays(state.weekStart,i);const date=ymd(d);
-      const past=faded && dateAt(date,h+1).getTime()<=NOW.getTime();
+      const past=dateAt(date,h+1).getTime()<=NOW.getTime();   // ya pasó (hora terminada) — difumina en ambas vistas
       const todayCol=date===todayYmd;
       let lineEl='';
       if(isLine && date<=todayYmd) lineEl = todayCol
@@ -1802,7 +1800,7 @@ function mobileDay(){
     const sc=slotCat(date,h);
     if(sc.cat==='na') continue;
     if(faded && isToday && h===lineHour) rows+=`<div class="m-now">Ahora · ${hlabel(lineHour)}</div>`;
-    const past=faded && dateAt(date,h+1).getTime()<=NOW.getTime();
+    const past=dateAt(date,h+1).getTime()<=NOW.getTime();   // ya pasó — difumina en ambas vistas
     const fade=(s)=> past ? s.replace('class="mslot','class="mslot m-faded') : s;
     if(sc.cat==='split'){
       [0,1].forEach(half=>{const s=half?sc.s1:sc.s0;
