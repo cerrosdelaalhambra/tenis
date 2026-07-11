@@ -395,13 +395,20 @@
   .half.h-flex{background:#fff7e6;border:1.5px dashed #e0a92e;color:#7a5410;cursor:pointer;justify-content:space-between}
   .half.h-flex .plus{color:#d9932a}
   .sched-wrap{max-height:46vh;overflow-y:auto;margin:4px 0 6px;padding-right:2px}
-  .sched-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-  .sched-grid .sched-day{margin-bottom:0}
-  @media(max-width:600px){ .sched-grid{grid-template-columns:1fr} }
-  .sched-day{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:10px}
-  .sched-dh{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
-  .sched-dh b{font-size:13.5px}
-  .sched-add{font-size:12px;color:var(--court);font-weight:600;padding:4px 8px;border-radius:8px}
+  .wiz-top{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 16px}
+  .wiz-tog{padding:8px 15px;border-radius:20px;border:1.5px solid var(--line);background:#fff;font-size:13px;font-weight:600;color:var(--muted);transition:.12s}
+  .wiz-tog.on{border-color:var(--court);background:var(--court);color:#fff}
+  .sched-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+  @media(max-width:760px){ .sched-grid{grid-template-columns:repeat(2,minmax(0,1fr))} }
+  @media(max-width:480px){ .sched-grid{grid-template-columns:1fr} }
+  .sched-day{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff}
+  .sched-day.off{opacity:.55}
+  .sched-dh{position:relative;background:var(--court-dark);color:#fff;padding:11px 12px;text-align:center}
+  .sched-dh b{font-size:15px;font-weight:700}
+  .sched-count{position:absolute;right:9px;top:50%;transform:translateY(-50%);font-size:10.5px;font-weight:700;background:rgba(255,255,255,.18);padding:3px 8px;border-radius:20px;white-space:nowrap}
+  .sched-body{padding:11px 11px 13px;display:flex;flex-direction:column;gap:8px}
+  .sched-off{text-align:center;color:var(--muted);font-size:12.5px;padding:6px 0}
+  .sched-add{align-self:flex-start;font-size:12.5px;color:var(--court);font-weight:600;padding:5px 11px;border-radius:9px;border:1px dashed #cfe0da;margin-top:2px}
   .sched-add:hover{background:var(--court-soft)}
   .sched-row{display:flex;align-items:center;gap:8px;margin:6px 0}
   .sched-row select{flex:1;padding:9px 28px 9px 11px;border:1.5px solid var(--line);border-radius:10px;font-size:13px;font-weight:500;background-color:#fafcfb;color:var(--ink);font-family:inherit;cursor:pointer;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2314564a' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;transition:border .15s,box-shadow .15s}
@@ -2264,6 +2271,8 @@ async function doCancelRecurring(id, fromList){
   catch(e){ toast(e.message,'warn'); }
 }
 const SCHED_DOW_NAMES=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const DOW_ABBR=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+function fmtHoras(mins){ if(mins<=0) return '0'; const h=Math.floor(mins/60), rem=mins%60; if(h===0) return rem+' min'; return h+(rem>=30?'½':'')+' h'; }
 function schedMinLabel(m){const h=Math.floor(m/60),mm=m%60;const ap=h<12?'am':'pm';let hh=h%12;if(hh===0)hh=12;return hh+(mm?':'+String(mm).padStart(2,'0'):'')+ap;}
 function schedFallbackRows(){ const r=[]; [2,3,4,5].forEach(d=>{r.push({dow:d,startMin:360,endMin:750});r.push({dow:d,startMin:810,endMin:1020});}); r.push({dow:6,startMin:360,endMin:720}); return r; }
 function initSchedDraft(){
@@ -2277,9 +2286,12 @@ function schedEditorHTML(){
   const step=HALF_HOURS?30:60, first=HALF_HOURS?240:300;
   const opts=[]; for(let m=first;m<=1380;m+=step) opts.push({v:m,label:schedMinLabel(m)});
   const order=[1,2,3,4,5,6];   // lunes a sábado (sin domingo: el profesor no asiste)
-  return `<div class="sched-grid">`+order.map(d=>{
-    const rgs=state.schedDraft[d]||[];
-    const rows=rgs.length? rgs.map((rg,i)=>{
+  const toggles=order.map(d=>{const on=(state.schedDraft[d]||[]).length>0; return `<button class="wiz-tog${on?' on':''}" onclick="schedToggleDay(${d})">${DOW_ABBR[d]}</button>`;}).join('');
+  const onDays=order.filter(d=>(state.schedDraft[d]||[]).length>0);
+  const cards=onDays.map(d=>{
+    const rgs=state.schedDraft[d];
+    const nCl=rgs.reduce((s,r)=>s+Math.max(0,Math.round((r.endMin-r.startMin)/60)),0);
+    const body=rgs.map((rg,i)=>{
       // Las clases son de 1 hora: el "Hasta" solo ofrece horas completas desde el "Desde".
       const endOpts=[]; for(let m=rg.startMin+60;m<=1380;m+=60) endOpts.push({v:m,label:schedMinLabel(m)});
       const clash=profClash(d,rg);
@@ -2288,10 +2300,20 @@ function schedEditorHTML(){
         <span class="sched-a">a</span>
         ${psel('psch_e_'+d+'_'+i, endOpts, rg.endMin, 'schedSync')}
         <button class="sched-del" title="Quitar" onclick="schedDel(${d},${i})">✕</button>
-      </div>${clash?`<div class="sched-warn">⚠ Choca con un bloque de mantenimiento. Cámbialo o ajusta el mantenimiento.</div>`:''}`; }).join('')
-      : `<div class="sched-empty">Sin horario (el profesor no asiste)</div>`;
-    return `<div class="sched-day"><div class="sched-dh"><b>${SCHED_DOW_NAMES[d]}</b><button class="sched-add" onclick="schedAdd(${d})">+ Agregar</button></div>${rows}</div>`;
-  }).join('')+`</div>`;
+      </div>${clash?`<div class="sched-warn">⚠ Choca con mantenimiento.</div>`:''}`; }).join('')
+      +`<button class="sched-add" onclick="schedAdd(${d})">+ Agregar</button>`;
+    return `<div class="sched-day">
+      <div class="sched-dh"><b>${SCHED_DOW_NAMES[d]}</b><span class="sched-count">${nCl} ${nCl===1?'clase':'clases'}</span></div>
+      <div class="sched-body">${body}</div>
+    </div>`;
+  }).join('');
+  const grid=onDays.length? `<div class="sched-grid">${cards}</div>` : `<div class="sched-off" style="padding:14px 0">Todos los días apagados. Prende un día arriba para agregar su horario.</div>`;
+  return `<div class="wiz-top">${toggles}</div>${grid}`;
+}
+function schedToggleDay(d){
+  const rgs=state.schedDraft[d]||[];
+  state.schedDraft[d]= rgs.length? [] : [{startMin:360,endMin:420}];   // apagar (vaciar) / prender (1 clase 6–7)
+  schedRerender();
 }
 function schedRerender(){ const el=document.getElementById('schedInline'); if(el) el.innerHTML=schedEditorHTML(); }
 function schedAdd(d){ (state.schedDraft[d]=state.schedDraft[d]||[]).push({startMin:360,endMin:420}); schedRerender(); }
@@ -2332,17 +2354,31 @@ function maintEditorHTML(){
   if(!state.maintDraft) initMaintDraft();
   const step=HALF_HOURS?30:60, first=HALF_HOURS?240:300;
   const opts=[]; for(let m=first;m<=1380;m+=step) opts.push({v:m,label:schedMinLabel(m)});
-  return `<div class="sched-grid">`+[1,2,3,4,5,6].map(d=>{
-    const rgs=state.maintDraft[d]||[];
-    const rows=rgs.length? rgs.map((rg,i)=>{ const clash=maintClash(d,rg); return `<div class="sched-row${clash?' clash':''}">
+  const order=[1,2,3,4,5,6];
+  const toggles=order.map(d=>{const on=(state.maintDraft[d]||[]).length>0; return `<button class="wiz-tog${on?' on':''}" onclick="maintToggleDay(${d})">${DOW_ABBR[d]}</button>`;}).join('');
+  const onDays=order.filter(d=>(state.maintDraft[d]||[]).length>0);
+  const cards=onDays.map(d=>{
+    const rgs=state.maintDraft[d];
+    const mins=rgs.reduce((s,r)=>s+Math.max(0,r.endMin-r.startMin),0);
+    const body=rgs.map((rg,i)=>{ const clash=maintClash(d,rg); return `<div class="sched-row${clash?' clash':''}">
         ${psel('pmnt_s_'+d+'_'+i, opts, rg.startMin, 'maintSync')}
         <span class="sched-a">a</span>
         ${psel('pmnt_e_'+d+'_'+i, opts.filter(o=>o.v>rg.startMin), rg.endMin, 'maintSync')}
         <button class="sched-del" title="Quitar" onclick="maintDel(${d},${i})">✕</button>
-      </div>${clash?`<div class="sched-warn">⚠ Choca con una clase del profesor. Debe ir en una hora sin clase (antes, después o en el descanso).</div>`:''}`; }).join('')
-      : `<div class="sched-empty">Sin mantenimiento</div>`;
-    return `<div class="sched-day"><div class="sched-dh"><b>${SCHED_DOW_NAMES[d]}</b><button class="sched-add" onclick="maintAdd(${d})">+ Agregar</button></div>${rows}</div>`;
-  }).join('')+`</div>`;
+      </div>${clash?`<div class="sched-warn">⚠ Choca con una clase del profesor.</div>`:''}`; }).join('')
+      +`<button class="sched-add" onclick="maintAdd(${d})">+ Agregar</button>`;
+    return `<div class="sched-day">
+      <div class="sched-dh"><b>${SCHED_DOW_NAMES[d]}</b><span class="sched-count">${fmtHoras(mins)}</span></div>
+      <div class="sched-body">${body}</div>
+    </div>`;
+  }).join('');
+  const grid=onDays.length? `<div class="sched-grid">${cards}</div>` : `<div class="sched-off" style="padding:14px 0">Todos los días apagados. Prende un día arriba para agregar su horario.</div>`;
+  return `<div class="wiz-top">${toggles}</div>${grid}`;
+}
+function maintToggleDay(d){
+  const rgs=state.maintDraft[d]||[];
+  state.maintDraft[d]= rgs.length? [] : [{startMin:360,endMin:420}];
+  maintRerender();
 }
 function maintClash(d,rg){ return PROF_SCHEDULE.some(p=>p.dow===d && rg.startMin<p.endMin && rg.endMin>p.startMin); }
 function maintRerender(){ const el=document.getElementById('maintInline'); if(el) el.innerHTML=maintEditorHTML(); }
