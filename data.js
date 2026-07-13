@@ -482,8 +482,6 @@ const Admin = {
   async resetClassPeriod(){ const {error}=await sb.rpc('reset_class_period'); if(error) throw mapError(error); },
   async setStatus(profileId, status){ const {error}=await sb.from('profiles').update({status}).eq('id',profileId); if(error) throw mapError(error); },
   async approveUser(profileId){ return Admin.setStatus(profileId,'active'); },
-  // Avisa por correo al residente que su cuenta quedó activa. No bloquea ni falla la aprobación.
-  async notifyApproved(profileId){ try{ await sb.functions.invoke('send-approval-email',{body:{profileId}}); }catch(e){ /* silencioso */ } },
   // Busca una casa por etiqueta (sin distinguir mayúsculas) o la crea. Devuelve su id.
   async findOrCreateHouse(label){
     const norm=normHouse(label); if(!norm) return null;

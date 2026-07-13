@@ -918,7 +918,7 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<script src="data.js?v=20260711d"></script>
+<script src="data.js?v=20260711e"></script>
 <script>
 /* PWA: registra el service worker (ruta relativa para que funcione bajo /tenis/) */
 if('serviceWorker' in navigator){
@@ -1188,7 +1188,7 @@ function showPending(){
   document.getElementById('login').style.display='flex'; hideSplash();
   document.getElementById('loginCard').innerHTML =
     '<div class="brand"><div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#c6e84b" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M5 5c4 3 4 11 0 14M19 5c-4 3-4 11 0 14"/></svg></div>'+
-    '<h1>Cuenta pendiente</h1><p>Tu cuenta aún no está activa. La administración debe aprobarla.</p></div>'+
+    '<h1>Cuenta pendiente</h1><p>Tu solicitud quedó registrada. La administración la revisará y te avisará por WhatsApp cuando tu cuenta esté activa.</p></div>'+
     '<button class="btn-primary" onclick="backToLogin()">Volver al inicio</button>';
 }
 async function loadData(){
@@ -1386,7 +1386,7 @@ async function submitSignup(){
     document.getElementById('loginCard').classList.remove('hidden');
     document.getElementById('loginCard').innerHTML =
       '<div class="brand"><div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#c6e84b" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M5 5c4 3 4 11 0 14M19 5c-4 3-4 11 0 14"/></svg></div>'+
-      '<h1>¡Solicitud enviada!</h1><p>Tu cuenta para la casa '+house+' quedó pendiente. La administración la aprobará y podrás entrar con tu correo y contraseña.</p></div>'+
+      '<h1>¡Solicitud enviada!</h1><p>Tu cuenta para la casa '+house+' quedó pendiente. La administración la revisará y te avisará por WhatsApp cuando esté activa; ahí podrás entrar con tu correo o usuario y tu contraseña.</p></div>'+
       '<button class="btn-primary" onclick="backToLogin()">Volver al inicio</button>';
   }catch(e){ toast(e.message,'warn'); if(btn){btn.disabled=false;btn.textContent='Enviar solicitud';} }
 }
@@ -2627,7 +2627,22 @@ async function confirmDaysModal(){
   closeModal(); await loadData(); render();
   toast(kind==='prof'?'Días con clases actualizados':'Días con mantenimiento actualizados');
 }
-async function setUserActive(id, makeActive){ try{ await DB.Admin.setStatus(id, makeActive?'active':'inactive'); if(makeActive) DB.Admin.notifyApproved(id); await loadData(); render(); toast(makeActive?'Usuario activado':'Usuario desactivado'); }catch(e){ toast(e.message,'warn'); } }
+async function setUserActive(id, makeActive){ try{ await DB.Admin.setStatus(id, makeActive?'active':'inactive'); await loadData(); render(); if(makeActive){ approvedWA(id); } else { toast('Usuario desactivado'); } }catch(e){ toast(e.message,'warn'); } }
+// Paso posterior a aprobar/activar: modal con botón de WhatsApp para avisar al residente.
+function approvedWA(id){
+  const u=users.find(x=>x.id===id);
+  if(!u){ toast('Cuenta activada'); return; }
+  const casas=(u.houses&&u.houses.length)?u.houses.join(', '):'';
+  const wa = u.phone
+    ? `<a class="btn-wa" style="width:100%;box-sizing:border-box;padding:14px" href="${waNotifyLink(u)}" target="_blank" rel="noopener" onclick="closeModal()">${WA_ICON} Avisar por WhatsApp</a>`
+    : `<div class="quota-mini" style="background:#fbeee9;color:var(--clay)">Esta cuenta no tiene teléfono guardado, así que no se puede avisar por WhatsApp.</div>`;
+  const m=document.getElementById('modal');
+  m.innerHTML=`<div class="grab"></div><h3>Cuenta activada ✓</h3>
+    <div class="msub"><b>${u.name}</b>${casas?' · '+casas:''} ya puede entrar y reservar. Avísale que su cuenta quedó activa.</div>
+    ${wa}
+    <button class="btn-soft" style="width:100%;margin-top:10px" onclick="closeModal()">Listo</button>`;
+  document.getElementById('modalBg').classList.add('show');
+}
 function viewSettings(){
   const cupoSeg=[1,2,3,4].map(n=>`<button class="${CUPO===n?'on':''}" onclick="setCupo(${n})">${n}</button>`).join('');
   const resetSeg=[18,19,20,21].map(n=>`<button class="${RESET_HOUR===n?'on':''}" onclick="setReset(${n})">${n-12} pm</button>`).join('');
@@ -2865,7 +2880,7 @@ async function doApprove(id){
   if(!house){toast('Escribe la casa del residente.','warn');return;}
   if(!houseValid(house)){toast('Casa inválida: usa solo números y letras (ej. 29A).','warn');return;}
   closeModal();
-  try{ await DB.Admin.approve(id, house, 'member'); DB.Admin.notifyApproved(id); await loadData(); render(); toast('Residente aprobado · le avisamos por correo'); }
+  try{ await DB.Admin.approve(id, house, 'member'); await loadData(); render(); approvedWA(id); }
   catch(e){ toast(e.message,'warn'); }
 }
 function openReject(i){
