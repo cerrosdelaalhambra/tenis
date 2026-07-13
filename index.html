@@ -918,7 +918,7 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<script src="data.js?v=20260711c"></script>
+<script src="data.js?v=20260711d"></script>
 <script>
 /* PWA: registra el service worker (ruta relativa para que funcione bajo /tenis/) */
 if('serviceWorker' in navigator){
@@ -2627,7 +2627,7 @@ async function confirmDaysModal(){
   closeModal(); await loadData(); render();
   toast(kind==='prof'?'Días con clases actualizados':'Días con mantenimiento actualizados');
 }
-async function setUserActive(id, makeActive){ try{ await DB.Admin.setStatus(id, makeActive?'active':'inactive'); await loadData(); render(); toast(makeActive?'Usuario activado':'Usuario desactivado'); }catch(e){ toast(e.message,'warn'); } }
+async function setUserActive(id, makeActive){ try{ await DB.Admin.setStatus(id, makeActive?'active':'inactive'); if(makeActive) DB.Admin.notifyApproved(id); await loadData(); render(); toast(makeActive?'Usuario activado':'Usuario desactivado'); }catch(e){ toast(e.message,'warn'); } }
 function viewSettings(){
   const cupoSeg=[1,2,3,4].map(n=>`<button class="${CUPO===n?'on':''}" onclick="setCupo(${n})">${n}</button>`).join('');
   const resetSeg=[18,19,20,21].map(n=>`<button class="${RESET_HOUR===n?'on':''}" onclick="setReset(${n})">${n-12} pm</button>`).join('');
@@ -2865,7 +2865,7 @@ async function doApprove(id){
   if(!house){toast('Escribe la casa del residente.','warn');return;}
   if(!houseValid(house)){toast('Casa inválida: usa solo números y letras (ej. 29A).','warn');return;}
   closeModal();
-  try{ await DB.Admin.approve(id, house, 'member'); await loadData(); render(); toast('Residente aprobado'); }
+  try{ await DB.Admin.approve(id, house, 'member'); DB.Admin.notifyApproved(id); await loadData(); render(); toast('Residente aprobado · le avisamos por correo'); }
   catch(e){ toast(e.message,'warn'); }
 }
 function openReject(i){
