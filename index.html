@@ -2804,7 +2804,7 @@ function copyUsersList(){
   const lines=[];
   users.filter(u=>!isFx(u) && u.active).forEach(u=>{
     const hs=(u.houses&&u.houses.length)?u.houses:[u.requestedHouse].filter(Boolean);
-    hs.forEach(lbl=>{ const num=String(lbl).replace(/[^\d]/g,'')||String(lbl); lines.push({n:parseInt(num,10)||999999, text:`- #${num}, ${u.name}`}); });
+    hs.forEach(lbl=>{ const short=String(lbl).replace(/^\s*casa\s+/i,'').trim()||String(lbl); const n=parseInt(short.replace(/[^\d]/g,''),10)||999999; lines.push({n, text:`- #${short}, ${u.name}`}); });
   });
   lines.sort((a,b)=>a.n-b.n);
   const txt=lines.map(l=>l.text).join('\n');
