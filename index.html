@@ -154,16 +154,45 @@
     min-width:19px;height:19px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 5px}
   .nav button.active .badge{background:var(--court-dark);color:#fff}
   .side-foot{margin-top:auto;border-top:1px solid rgba(255,255,255,.1);padding-top:14px}
-  .user-chip{display:flex;align-items:center;gap:11px;padding:6px 8px}
+  .user-chip{display:flex;align-items:center;gap:11px;padding:8px;width:100%;text-align:left;border-radius:12px;transition:background .12s}
+  .user-chip:hover{background:rgba(255,255,255,.08)}
+  .user-chip.active{background:rgba(198,232,75,.15)}
   .avatar{width:36px;height:36px;border-radius:50%;background:var(--ball);color:var(--court-dark);
     display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex:none}
-  .user-chip .meta{overflow:hidden}
+  .user-chip .meta{overflow:hidden;flex:1;min-width:0}
   .user-chip b{display:block;font-size:13px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .user-chip span{font-size:11px;color:#9fc4ba}
+  .user-chip .meta span{font-size:11px;color:#9fc4ba}
+  .chip-chev{color:#9fc4ba;font-size:18px;font-weight:700;flex:none;line-height:1}
   .logout{margin-top:8px;width:100%;text-align:left;padding:9px 12px;border-radius:10px;color:#9fc4ba;font-size:13px}
   .logout:hover{background:rgba(255,255,255,.07);color:#fff}
   .logout.danger{color:#f0a6a6}
   .logout.danger:hover{background:rgba(225,90,90,.16);color:#ffbcbc}
+  /* Mi perfil */
+  .pf-top{display:flex;align-items:center;gap:15px;padding:18px;margin-bottom:16px}
+  .pf-ava{width:56px;height:56px;border-radius:50%;background:var(--court);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px;flex:none}
+  .pf-nm{font-size:18px;font-weight:700;color:var(--ink)}
+  .pf-rl{font-size:13px;color:var(--muted);margin-top:2px}
+  .pf-info{padding:6px 18px;margin-bottom:16px}
+  .pf-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--line)}
+  .pf-row:last-of-type{border-bottom:none}
+  .pf-k{font-size:12.5px;color:var(--muted);font-weight:600;flex:none}
+  .pf-v{font-size:14.5px;color:var(--ink);font-weight:600;text-align:right;word-break:break-word;display:flex;align-items:center;gap:6px;justify-content:flex-end}
+  .pf-empty{color:var(--muted);font-weight:500}
+  .pf-lock{font-size:11px;opacity:.6}
+  .pf-edit{display:inline-flex;align-items:center;gap:7px;margin:14px 0 6px;padding:10px 16px;border-radius:11px;background:var(--court-soft);color:var(--court);font-weight:700;font-size:13.5px;transition:background .12s}
+  .pf-edit:hover{background:#dcebe5}
+  .pf-field{margin:12px 0}
+  .pf-field label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.03em}
+  .pf-field input{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:11px;font-size:15px;background:#fafcfb;color:var(--ink);font-family:inherit}
+  .pf-field input:focus{outline:none;border-color:var(--court);box-shadow:0 0 0 3px var(--court-soft);background:#fff}
+  .pf-editrow{display:flex;justify-content:flex-end;gap:10px;margin-top:16px}
+  .pf-acts{padding:4px 10px;margin-top:16px}
+  .pf-action{width:100%;display:flex;align-items:center;justify-content:space-between;padding:14px 8px;font-size:14.5px;font-weight:600;color:var(--ink);border-bottom:1px solid var(--line);transition:background .12s}
+  .pf-action:last-child{border-bottom:none}
+  .pf-action:hover{background:var(--court-soft)}
+  .pf-action.danger{color:var(--danger)}
+  .pf-action.danger:hover{background:#fdecea}
+  .pf-achev{color:var(--muted);font-size:18px;font-weight:700}
 
   /* Main */
   .main{margin-left:248px;min-height:100vh;display:flex;flex-direction:column}
@@ -717,6 +746,9 @@
     .day-strip button .dw{font-size:10px;text-transform:uppercase;font-weight:600}
     .day-strip button .dn{font-size:16px;font-weight:700}
     .day-strip button.on{background:var(--ball);color:var(--court-dark)}
+    .day-strip .ds-nav{flex:0 0 auto;flex-direction:row;padding:0 3px;color:var(--ball)}
+    .day-strip .ds-nav svg{width:22px;height:22px}
+    .day-strip .ds-nav:active{opacity:.6}
     .content{padding:14px 14px 20px}
     /* encabezado del calendario en móvil: ordenado en dos renglones */
     .cal-head{gap:9px 14px;margin:0 0 12px}
@@ -827,13 +859,11 @@
     </div>
     <nav class="nav" id="nav"></nav>
     <div class="side-foot">
-      <div class="user-chip">
+      <button class="user-chip" id="profileChip" onclick="go('profile')">
         <div class="avatar" id="avatar">AP</div>
         <div class="meta"><b id="uname">Ana Pérez</b><span id="urole">Casa 12 · Miembro</span></div>
-      </div>
-      <button class="logout danger" id="sideDelete" style="display:none" onclick="openDeleteSelf()">Eliminar mi cuenta</button>
-      <button class="logout" onclick="openChangePassword()">Cambiar contraseña</button>
-      <button class="logout" onclick="logout()">Cerrar sesión</button>
+        <span class="chip-chev">›</span>
+      </button>
     </div>
   </aside>
 
@@ -847,7 +877,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg>
           <span class="bdot" id="mbell">2</span>
         </button>
-        <button class="mh-acct" onclick="openAccount()" aria-label="Mi cuenta">
+        <button class="mh-acct" onclick="go('profile')" aria-label="Mi perfil">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/></svg>
         </button>
       </div>
@@ -888,7 +918,7 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<script src="data.js?v=20260711a"></script>
+<script src="data.js?v=20260711c"></script>
 <script>
 /* PWA: registra el service worker (ruta relativa para que funcione bajo /tenis/) */
 if('serviceWorker' in navigator){
@@ -919,6 +949,17 @@ let OPEN_WEEK_START=_computeOWS();
 let OPEN_WEEK_END=ymd(addDays(OPEN_WEEK_START,6));
 let AVAIL_MAX=ymd(addDays(OPEN_WEEK_START,13)); // fin de la próxima semana (admin/profe abren disponibilidad solo esta y la próxima)
 function recomputeOpenWeek(){OPEN_WEEK_START=_computeOWS();OPEN_WEEK_END=ymd(addDays(OPEN_WEEK_START,6));AVAIL_MAX=ymd(addDays(OPEN_WEEK_START,13));}
+// Ventana para asomarse a la semana ANTERIOR: solo el domingo, tras el corte y antes de medianoche.
+// Usa la hora en vivo para que se cierre sola al pasar la medianoche.
+function canPeekPrev(){ const n=(typeof liveNow==='function'?liveNow():NOW); return n.getDay()===0 && n.getHours()>=RESET_HOUR; }
+// Ajusta la semana visible: por defecto la semana abierta; -1 (anterior) solo dentro de la ventana.
+function applyWeekView(){
+  if(!canPeekPrev() || (state.weekView!==0 && state.weekView!==-1)) state.weekView=0;
+  state.weekStart=addDays(OPEN_WEEK_START, state.weekView*7);
+  const ws=ymd(state.weekStart), we=ymd(addDays(state.weekStart,6)), todayY=ymd(NOW);
+  if(state.mobileDay<ws || state.mobileDay>we) state.mobileDay=(todayY>=ws&&todayY<=we)?todayY:ws;   // día móvil dentro de la semana visible
+}
+function setWeekView(v){ state.weekView=v; applyWeekView(); render(); scrollTop(); fadeContent(); }
 
 let OPEN_START=5, OPEN_END=23;   // horario de operación (configurable en Ajustes): inicio 4/5/6, cierre 22/23
 let HALF_HOURS=false;            // ¿se permite reservar media hora? (por defecto NO: reservas de 1 hora)
@@ -1004,7 +1045,7 @@ let reservations = [];   // se llena desde la base
 let resId = 100;
 let notifId = 100;
 let CUPO = 2; // horas semanales por casa (configurable por el admin: 1–4)
-const CUPO_INFO = 'El cupo se reinicia cada domingo a las 8:00 p.m.<br>Los espacios que libera el profesor no consumen cupo.<br>Siempre puedes usar la cancha cuando esté libre, sin reservar y sin gastar cupo. Eso sí, si llega alguien que la reservó por la app, tendrás que cederla.';
+const CUPO_INFO = 'Las horas se reinician cada domingo.<br>Los espacios que libera el profesor no consumen horas.<br>Siempre puedes usar la cancha cuando esté libre, sin reservar y sin gastar horas. Eso sí, si llega alguien que la reservó por la app, tendrás que cederla.';
 
 let released = [];   // huecos liberados por el profesor, desde la base
 let closures = [];   // cierres (mantenimiento/lluvia), desde la base
@@ -1035,6 +1076,7 @@ let state = {
   role:'member',
   view:'calendar',
   weekStart:startOfWeek(NOW),
+  weekView:0,          // 0 = semana abierta; -1 = semana anterior (solo domingo tras el corte, hasta medianoche)
   mobileDay:ymd(NOW),
   classDay:ymd(NOW),
   user:users[0],
@@ -1164,7 +1206,7 @@ async function loadData(){
   (b.houses||[]).forEach(h=>{ houseIdByLabel[h.label]=h.id; houseLabelById[h.id]=h.label; });
   CUPO=b.cupo||2;
   OPEN_START=b.openStart||5; OPEN_END=b.openEnd||23; rebuildHours(); HALF_HOURS=!!b.halfHours;
-  RESET_HOUR=(b.resetHour!=null?b.resetHour:20); recomputeOpenWeek();
+  RESET_HOUR=(b.resetHour!=null?b.resetHour:20); recomputeOpenWeek(); applyWeekView();
   const myLabels=(b.myHouses||[]).map(h=>h.label);
   state.role = prof.role==='member' ? (myLabels.length>1?'master':'member') : prof.role;
   if(!navItems().some(i=>i.id===state.view)) state.view = navItems()[0].id;   // cae en una pestaña válida del rol
@@ -1174,8 +1216,9 @@ async function loadData(){
   const init=(state.user.name||'?').split(' ').map(s=>s[0]).slice(0,2).join('');
   document.getElementById('avatar').textContent=init;
   document.getElementById('uname').textContent=state.user.name;
-  const houseText = state.role==='master' ? `${myLabels.length} casas` : state.user.house;
-  document.getElementById('urole').textContent = houseText+' · '+(ROLE_LABEL[state.role]||'');
+  const isStaffRole = state.role==='admin'||state.role==='prof'||state.role==='portero';
+  const houseText = state.role==='master' ? `${myLabels.length} casas` : (isStaffRole && !myLabels.length ? '' : state.user.house);
+  document.getElementById('urole').textContent = houseText ? houseText+' · '+(ROLE_LABEL[state.role]||'') : (ROLE_LABEL[state.role]||'');
 }
 async function logout(){
   try{ closeModal(); }catch(e){}
@@ -1245,6 +1288,73 @@ async function doChangePassword(){
   if(a!==b){ toast('Las contraseñas no coinciden.','warn'); return; }
   try{ await DB.Auth.updatePassword(a); closeModal(); toast('Contraseña actualizada'); }
   catch(e){ toast(e.message,'warn'); }
+}
+/* ===== Vista: Mi perfil (residente y staff) ===== */
+function viewProfile(){
+  const p=state.profile||{}, su=state.user||{};
+  const roleLabel=ROLE_LABEL[state.role]||'';
+  const houses=(su.houses&&su.houses.length)?su.houses.join(', '):(su.house||'—');
+  const houseLbl=(su.houses&&su.houses.length>1)?'Casas':'Casa';
+  const init=(su.name||'?').split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase();
+  const esc=v=>String(v==null?'':v).replace(/"/g,'&quot;');
+  const editIco='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>';
+  let card;
+  if(state.editProfile){
+    card=`
+      <div class="pf-field"><label>Nombre y apellido</label><input id="pfName" value="${esc(su.name)}" placeholder="Nombre y apellido"></div>
+      <div class="pf-field"><label>Usuario</label><input id="pfUser" value="${esc(p.username)}" placeholder="usuario (para entrar)" autocapitalize="off" autocomplete="off"></div>
+      <div class="pf-field"><label>Teléfono</label><input id="pfPhone" value="${esc(su.phone)}" placeholder="Número de celular" inputmode="tel"></div>
+      <div class="pf-editrow"><button class="btn-soft" onclick="cancelEditProfile()">Cancelar</button><button class="btn-primary" onclick="saveProfile()">Guardar cambios</button></div>`;
+  } else {
+    const row=(k,v,lock)=>`<div class="pf-row"><span class="pf-k">${k}</span><span class="pf-v">${(v&&String(v).trim())?v:'<span class="pf-empty">—</span>'}${lock?'<span class="pf-lock" title="No se puede editar">🔒</span>':''}</span></div>`;
+    card=`
+      ${row('Nombre y apellido', su.name)}
+      ${row('Usuario', p.username)}
+      ${row('Correo', p.email, true)}
+      ${row('Teléfono', su.phone)}
+      ${row(houseLbl, houses, true)}
+      ${row('Rol', roleLabel, true)}
+      <button class="pf-edit" onclick="startEditProfile()">${editIco} Editar mi información</button>`;
+  }
+  const del = isMember()? `<button class="pf-action danger" onclick="openDeleteSelf()"><span>Eliminar mi cuenta</span><span class="pf-achev">›</span></button>` : '';
+  return `
+    <div class="panel pf-top">
+      <div class="pf-ava">${init}</div>
+      <div class="pf-id"><div class="pf-nm">${su.name||'—'}</div><div class="pf-rl">${roleLabel}${(su.houses&&su.houses.length)?' · '+houses:''}</div></div>
+    </div>
+    <div class="panel pf-info">${card}</div>
+    <div class="panel pf-acts">
+      <button class="pf-action" onclick="openChangePassword()"><span>Cambiar contraseña</span><span class="pf-achev">›</span></button>
+      <button class="pf-action" onclick="logout()"><span>Cerrar sesión</span><span class="pf-achev">›</span></button>
+      ${del}
+    </div>`;
+}
+function startEditProfile(){ state.editProfile=true; render(); }
+function cancelEditProfile(){ state.editProfile=false; render(); }
+async function saveProfile(){
+  const name=(document.getElementById('pfName').value||'').trim();
+  const user=(document.getElementById('pfUser').value||'').trim().toLowerCase();
+  const phone=(document.getElementById('pfPhone').value||'').trim();
+  if(!name){ toast('El nombre no puede quedar vacío.','warn'); return; }
+  if(user && !/^[a-z0-9._-]{3,}$/.test(user)){ toast('El usuario debe tener al menos 3 caracteres: letras, números, punto, guion o guion bajo.','warn'); return; }
+  const cur=state.profile||{};
+  const patch={};
+  if(name!==(state.user.name||'')) patch.full_name=name;
+  if(phone!==(state.user.phone||'')) patch.phone=phone;
+  if(user!==(cur.username||'')) patch.username=user||null;
+  if(!Object.keys(patch).length){ state.editProfile=false; render(); toast('No hubo cambios'); return; }
+  if(patch.username){
+    try{ const ok=await DB.Auth.usernameAvailable(patch.username); if(!ok){ toast('Ese usuario ya está en uso. Elige otro.','warn'); return; } }catch(e){}
+  }
+  try{
+    await DB.Auth.updateMyProfile(cur.id, patch);
+    if(patch.full_name!==undefined) state.profile.full_name=patch.full_name;
+    if(patch.phone!==undefined) state.profile.phone=patch.phone;
+    if(patch.username!==undefined) state.profile.username=patch.username;
+    state.editProfile=false;
+    await loadData(); render();
+    toast('Perfil actualizado');
+  }catch(e){ toast(e.message,'warn'); }
 }
 function showSignup(show){
   document.getElementById('loginCard').classList.toggle('hidden',show);
@@ -1320,6 +1430,7 @@ const ICONS={
   ban:'<circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/>',
 };
 function go(view){ state.view=view; try{localStorage.setItem('tcv',view);}catch(e){}
+  state.editProfile=false;   // el perfil siempre abre en modo lectura
   if(view==='avail'){ state.schedDraft=null; state.maintDraft=null; }   // los editores se reinician con lo guardado al entrar
   if(view==='notif'){
     visibleNotifs().forEach(n=>n.unread=false);
@@ -1334,6 +1445,7 @@ function fadeContent(){ const c=document.getElementById('content'); if(!c)return
 
 /* ======================= RENDER ======================= */
 function render(){
+  applyWeekView();   // mantiene la semana visible correcta (y cierra el asomo a la anterior al pasar medianoche)
   // sidebar nav
   const items=navItems();
   document.getElementById('nav').innerHTML=items.map(it=>`
@@ -1357,8 +1469,8 @@ function render(){
   document.getElementById('nav').style.display = soloUna ? 'none' : '';
   document.getElementById('tabbar').style.display = soloUna ? 'none' : '';
 
-  // "Eliminar mi cuenta" en la barra lateral (web): solo residentes
-  const sd=document.getElementById('sideDelete'); if(sd) sd.style.display = isMember() ? '' : 'none';
+  // chip de perfil (barra lateral): resáltalo cuando estás en "Mi perfil"
+  const pchip=document.getElementById('profileChip'); if(pchip) pchip.classList.toggle('active', state.view==='profile');
 
   // bell count
   const unread=visibleNotifs().filter(n=>n.unread).length;
@@ -1368,11 +1480,11 @@ function render(){
 
   // titles
   const titles={calendar:'Calendario de reservas',mine:'Mis reservas',lights:'Iluminación',rain:'Modo lluvia',porteria:'Cancha de tenis',classes:'Mis clases',
-    notif:'Notificaciones',users:'Gestión de usuarios',settings:'Ajustes',avail:'Profesor',maint:'Mantenimiento de la cancha',history:'Historial de actividad',reglamento:'Reglamento de uso'};
-  const _ttl = state.view==='calendar' ? titles.calendar+' · '+cap1(MESES[state.weekStart.getMonth()]) : titles[state.view];
+    notif:'Notificaciones',users:'Gestión de usuarios',settings:'Ajustes',avail:'Profesor',maint:'Mantenimiento de la cancha',history:'Historial de actividad',reglamento:'Reglamento de uso',profile:'Mi perfil'};
+  const _ttl = state.view==='calendar' ? titles.calendar+' · '+monthTitle() : titles[state.view];
   document.getElementById('ttitle').textContent=_ttl;
   document.getElementById('mtitle').textContent=_ttl;
-  const subs={calendar:'',mine:'Tus reservas y tu cupo de la semana',lights:'Horarios para prender y apagar las luces',rain:'Cierra la cancha cuando esté lloviendo o encharcada',porteria:'Luces de la cancha y modo lluvia',classes:'Tus clases del día',notif:'Avisos de la cancha',users:'Cuentas fijas y residentes',settings:'Configuración de la cancha',avail:state.role==='prof'?'Abre tus horarios para práctica libre o clase':'Horario del profesor y ausencias',maint:'',history:'Quién reserva y cancela, y a qué hora',reglamento:'Normas de uso de la cancha de tenis'};
+  const subs={calendar:'',mine:'Tus reservas y tus horas de la semana',lights:'Horarios para prender y apagar las luces',rain:'Cierra la cancha cuando esté lloviendo o encharcada',porteria:'Luces de la cancha y modo lluvia',classes:'Tus clases del día',notif:'Avisos de la cancha',users:'Cuentas fijas y residentes',settings:'Configuración de la cancha',avail:state.role==='prof'?'Abre tus horarios para práctica libre o clase':'Horario del profesor y ausencias',maint:'',history:'Quién reserva y cancela, y a qué hora',reglamento:'Normas de uso de la cancha de tenis',profile:'Tu información y tu cuenta'};
   document.getElementById('tsub').textContent=subs[state.view]||'';
   document.getElementById('weekNav').style.display='none';
 
@@ -1400,6 +1512,7 @@ function render(){
   else if(state.view==='maint') c.innerHTML=viewMaint();
   else if(state.view==='history') c.innerHTML=viewHistory();
   else if(state.view==='reglamento') c.innerHTML=viewReglamento();
+  else if(state.view==='profile') c.innerHTML=viewProfile();
 }
 function plusIcon(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>'}
 function topActionClick(){const a=document.getElementById('topAction').dataset.act; if(a==='newuser')openNewUser();}
@@ -1493,8 +1606,8 @@ const BALL_P='<circle cx="12" cy="12" r="9"/><path d="M5 5c4 3 4 11 0 14M19 5c-4
 function cupoRules(){
   return `<div class="cc-rules">
     <div class="cc-rule"><span class="cc-ric">${svgIco(REFRESH_P,15)}</span><div><b>Reinicio de horas</b><span>Las horas disponibles se reinician todos los domingos a las ${rhLong()}</span></div></div>
-    <div class="cc-rule"><span class="cc-ric star">★</span><div><b>Clases con el profesor</b><span>Las clases con el profesor no consumen cupos.</span></div></div>
-    <div class="cc-rule"><span class="cc-ric">${svgIco(BALL_P,15)}</span><div><b>Cancha libre</b><span>Si la cancha está libre porque nadie ha reservado, pero no tienes cupos, puedes jugar; pero si llega alguien con reserva debes ceder la cancha.</span></div></div>
+    <div class="cc-rule"><span class="cc-ric star">★</span><div><b>Clases con el profesor</b><span>Las clases con el profesor no consumen horas.</span></div></div>
+    <div class="cc-rule"><span class="cc-ric">${svgIco(BALL_P,15)}</span><div><b>Cancha libre</b><span>Si la cancha está libre porque nadie ha reservado, pero no te quedan horas, puedes jugar; pero si llega alguien con reserva debes ceder la cancha.</span></div></div>
   </div>`;
 }
 /* ======================= REGLAMENTO (admin, residentes y profesor) ======================= */
@@ -1586,8 +1699,8 @@ function regGeneral(){
 }
 function regClases(){
   return `<div class="panel reg-panel">
-    ${regItem(ICONS.ball,'Clases con el profesor',`<p>Las clases con el profesor duran <b class="hl">una hora</b> y no consumen tu cupo de reservas. El horario de clases está siempre disponible en el calendario para consultarlo.</p>`)}
-    ${regItem(ICONS.cal,'Planilla trimestral',`<p>Cada trimestre se arma una planilla nueva con el horario semanal de clases y el cupo de cada casa con el profesor. Esto se coordina con la <b class="hl">administración</b>, no por la aplicación. Si en la planilla queda un espacio de clase sin asignar, cualquier residente puede reservarlo por la aplicación.</p>`)}
+    ${regItem(ICONS.ball,'Clases con el profesor',`<p>Las clases con el profesor duran <b class="hl">una hora</b> y no consumen tus horas de reserva. El horario de clases está siempre disponible en el calendario para consultarlo.</p>`)}
+    ${regItem(ICONS.cal,'Planilla trimestral',`<p>Cada trimestre se arma una planilla nueva con el horario semanal de clases y las horas de cada casa con el profesor. Esto se coordina con la <b class="hl">administración</b>, no por la aplicación. Si en la planilla queda un espacio de clase sin asignar, cualquier residente puede reservarlo por la aplicación.</p>`)}
     ${regItem(ICONS.clock,'Cancelar una clase',`<p>Si vas a cancelar una clase, avísale al profesor con <b class="hl">mínimo un día de anticipación</b>. La cancelación de clases se coordina directamente con el profesor; no se hace por la aplicación.</p>`)}
     ${regItem(ICONS.bell,'¿Qué pasa si al profesor le cancelan una clase?',`<p>Con el fin de que otros residentes puedan hacer uso de la clase con el profesor y que no se pierda el espacio, este es el paso a paso a seguir:</p>
       <ol class="reg-steps">
@@ -1596,7 +1709,7 @@ function regClases(){
         <li>En caso de encontrar un alumno nuevo, el profesor entra a la app, sección <b class="hl">"Mis clases"</b>, selecciona la clase que le cancelaron y hace clic en <b class="hl">"Cambiar casa"</b> para asignarle la clase al alumno nuevo.</li>
         <li>Solo si no encuentra a nadie, el profesor <b class="hl">libera el espacio</b> desde la app.</li>
         <li>La app envía una notificación a <b class="hl">todo el condominio</b> avisando que ese horario quedó libre.</li>
-        <li>Desde ese momento, cualquier residente puede reservar ese espacio <b class="hl">sin consumir cupo</b>, ya sea con profesor o sin profesor.</li>
+        <li>Desde ese momento, cualquier residente puede reservar ese espacio <b class="hl">sin consumir horas</b>, ya sea con profesor o sin profesor.</li>
       </ol>`)}
   </div>`;
 }
@@ -1604,7 +1717,7 @@ function regReservas(){
   const cupoTxt = CUPO+(CUPO===1?' hora':' horas');
   return `<div class="panel reg-panel">
     ${regItem(ICONS.ball,'Qué se puede reservar',`<p>Solo se pueden reservar los horarios <b class="hl">libres</b>: los que no son del profesor (clases) ni de mantenimiento. Esos horarios no están disponibles para reserva.</p>`)}
-    ${regItem(ICONS.check,'Cupo semanal',`<p>Cada usuario tiene <b class="hl">${cupoTxt} de reserva por semana</b>. La administración puede ajustar el cupo.</p>`)}
+    ${regItem(ICONS.check,'Horas por semana',`<p>Cada usuario tiene <b class="hl">${cupoTxt} de reserva por semana</b>. La administración puede ajustar las horas.</p>`)}
     ${regItem(ICONS.clock,'Reservas de 2 horas seguidas',`<p>El sistema no permite que una misma casa reserve <b class="hl">más de dos horas seguidas</b> (ej.: 7:00 a 10:00).</p>`)}
     ${regItem(ICONS.phone,'Solo por la aplicación',`<p>Todas las reservas se hacen por la aplicación. La portería ya no toma reservas.</p>`)}
     ${regItem(ICONS.cal,'Cuándo se reservan',`<p>Las reservas de la semana se habilitan cada <b class="hl">domingo a las ${rhLong()}</b>. Antes de esa hora de corte no puedes reservar horas de la semana siguiente.</p>`)}
@@ -1643,7 +1756,7 @@ function cupoCard(){
     const total=hs.reduce((s,h)=>s+Math.max(0,CUPO-houseUsed(h)),0);
     body=`<div class="cc-big">${cupoTxt(total)}</div>
       <div class="cc-sub">Repartidas entre tus ${hs.length} casas · máx. ${fmtH(CUPO)} por casa</div>
-      <div class="cc-houses">${hs.map(h=>{const left=Math.max(0,CUPO-houseUsed(h));return `<div class="cc-house"><span class="cc-hic">${HOUSE_ICON}</span><span class="cc-hn">${h}</span><span class="cc-hh${left<=0?' none':''}">${left>0?fmtH(left)+' disp.':'Sin cupo'}</span></div>`;}).join('')}</div>`;
+      <div class="cc-houses">${hs.map(h=>{const left=Math.max(0,CUPO-houseUsed(h));return `<div class="cc-house"><span class="cc-hic">${HOUSE_ICON}</span><span class="cc-hn">${h}</span><span class="cc-hh${left<=0?' none':''}">${left>0?fmtH(left)+' disp.':'Sin horas'}</span></div>`;}).join('')}</div>`;
   }else{
     const left=Math.max(0,CUPO-houseUsed(hs[0]));
     body=`<div class="cc-big">${cupoTxt(left)}</div><div class="cc-sub">${hs[0]} · máximo ${fmtH(CUPO)} por semana</div>`;
@@ -1659,7 +1772,7 @@ function viewCalendar(){
   return calHeader()+desktopGrid()+mobileDay();
 }
 function cupoTxt(n){
-  if(n<=0) return 'Sin cupo disponible';
+  if(n<=0) return 'Sin horas disponibles';
   const num=(n%1)?String(n).replace('.',','):String(n);
   return 'Tienes '+num+(n===1?' hora disponible':' horas disponibles');
 }
@@ -1727,30 +1840,37 @@ function calHeader(){
   if(isMember()){
     const hs=myHouses();
     const left = hs.length>1 ? hs.reduce((s,h)=>s+Math.max(0,CUPO-houseUsed(h)),0) : Math.max(0,CUPO-houseUsed(hs[0]));
-    info += `<button class="cb-chip cb-cupo" onclick="go('mine')"><span class="cb-k">Cupo</span><span class="cb-v">${cupoTxt(left)}</span><span class="cb-go">›</span></button>`;
+    info += `<button class="cb-chip cb-cupo" onclick="go('mine')"><span class="cb-k">Horas</span><span class="cb-v">${cupoTxt(left)}</span><span class="cb-go">›</span></button>`;
   }
   if(state.role!=='admin'){                              // el admin no reserva → no necesita la leyenda de ★
-    info += `<span class="cb-chip cb-star"><span class="bstar">★</span>No gasta cupo</span>`;
+    info += `<span class="cb-chip cb-star"><span class="bstar">★</span>No gasta horas</span>`;
   }
   const week=`<button class="cb-btn${state.fullWeek?' on':''}" onclick="toggleFullWeek()">${state.fullWeek?CLK_ICON:CAL_ICON}<span>${state.fullWeek?'Desde ahora':'Toda la semana'}</span></button>`;
+  const backIco='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>';
+  const fwdIco='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+  const peek = canPeekPrev()
+    ? `<button class="cb-btn${state.weekView===-1?' on':''}" onclick="setWeekView(${state.weekView===-1?0:-1})">${state.weekView===-1?fwdIco:backIco}<span>${state.weekView===-1?'Semana actual':'Semana anterior'}</span></button>`
+    : '';
   const a=rainActive();
   const rain=(state.role==='admin'||state.role==='portero')
     ? `<button class="cb-btn cb-rain${a?' on':''}" onclick="${a?'openRainAffected()':'openRainModal()'}">${RAIN_ICON}<span>${a?'Lluvia activa':'Modo lluvia'}</span></button>` : '';
-  return `<div class="cal-bar"><div class="cb-info">${info}</div><div class="cb-actions">${week}${rain}</div></div>`;
+  return `<div class="cal-bar"><div class="cb-info">${info}</div><div class="cb-actions">${peek}${week}${rain}</div></div>`;
 }
 function toggleFullWeek(){state.fullWeek=!state.fullWeek;render();}
 function horasTexto(n){if(n<=0)return '';const f=Math.floor(n),half=(n-f)>=0.5;if(f===0)return 'media hora';const base=f===1?'una hora':f===2?'dos horas':f===3?'tres horas':f+' horas';return half?base+' y media':base;}
 function fmtH(n){if(n<=0)return '0 h';const f=Math.floor(n),half=(n-f)>=0.5;return (f>0?f:'')+(half?'½':'')+' h';}
-function cupoFrase(n){return n<=0?'sin cupo':((n<=1?'le queda ':'le quedan ')+horasTexto(n));}        // "Casa 12 · le queda media hora"
-function cupoFraseMember(n){return n<=0?'No te queda cupo':('Te '+(n<=1?'queda ':'quedan ')+horasTexto(n));} // "Te quedan dos horas y media"
+function cupoFrase(n){return n<=0?'sin horas':((n<=1?'le queda ':'le quedan ')+horasTexto(n));}        // "Casa 12 · le queda media hora"
+function cupoFraseMember(n){return n<=0?'No te quedan horas':('Te '+(n<=1?'queda ':'quedan ')+horasTexto(n));} // "Te quedan dos horas y media"
 function houseUsed(house){
   const ws=ymd(OPEN_WEEK_START), we=OPEN_WEEK_END;
   return reservations.filter(r=>r.house===house&&r.type==='normal'&&r.date>=ws&&r.date<=we)
     .reduce((s,r)=>s+r.dur/60,0);
 }
 function monthTag(){const a=state.weekStart,b=addDays(a,6);return a.getMonth()===b.getMonth()?MON[a.getMonth()].toUpperCase():(MON[a.getMonth()]+'/'+MON[b.getMonth()]).toUpperCase();}
+// Título del mes: si la semana cae en dos meses, "Julio / Agosto".
+function monthTitle(){const a=state.weekStart,b=addDays(a,6);return a.getMonth()===b.getMonth()?cap1(MESES[a.getMonth()]):cap1(MESES[a.getMonth()])+' / '+cap1(MESES[b.getMonth()]);}
 function desktopGrid(){
-  const faded=!state.fullWeek, lineHour=NOW.getHours(), todayYmd=ymd(NOW);
+  const faded=!state.fullWeek && state.weekView===0, lineHour=NOW.getHours(), todayYmd=ymd(NOW);
   // en "Desde ahora" ocultamos los días que ya pasaron: el calendario arranca en HOY
   let todayIdx=0; for(let i=0;i<7;i++){ if(ymd(addDays(state.weekStart,i))===todayYmd){ todayIdx=i; break; } }
   const startIdx = faded ? todayIdx : 0;
@@ -1785,7 +1905,7 @@ function halfCell(date,h,half,s){
   if(k==='classinfo'){const r=s.res;return `<div class="half h-clase" title="Clase${r.name?' · '+r.name:''}">${HOUSE_ICON}${houseNum(r.house)}${r.name?' · '+r.name.split(' ')[0]:''}</div>`;}
   if(k==='prof') return `<div class="half h-prof" title="Profesor"><span class="cdot cdot-black"></span>Profesor</div>`;
   if(k==='flex') return `<div class="half h-flex" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'flexh${half}')"`:''} title="Hora del profesor · reservable, con o sin profesor"><span><span class="cdot cdot-amber"></span>Profesor</span><span class="plus">+</span></div>`;
-  if(k==='class'||k==='open') return `<div class="half h-bonus" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'h${half}')"`:''} title="No gasta cupo${k==='class'?' · profesor disponible':''}"><span><span class="plus">+</span>Libre</span><span class="bstar">★</span></div>`;
+  if(k==='class'||k==='open') return `<div class="half h-bonus" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'h${half}')"`:''} title="No gasta horas${k==='class'?' · profesor disponible':''}"><span><span class="plus">+</span>Libre</span><span class="bstar">★</span></div>`;
   if(k==='rain') return `<div class="half h-na">${svgIco(RAIN_P,12,'#5b7fc0')}</div>`;
   if(k==='maint') return `<div class="half h-maint" title="${s.mc?s.mc.reason:'Mantenimiento'}" onclick="toast(this.title)">${svgIco(ICONS.tool,12,'#fff')}</div>`;
   if(k==='past'||k==='locked'||k==='na') return `<div class="half h-na"></div>`;
@@ -1801,8 +1921,8 @@ function slotHTML(date,h){
   if(cat==='mine') return `<div class="slot s-mine" onclick="openMyRes(${res.id})"><b>${HOUSE_ICON}${houseNum(res.house)}</b><span class="mtime${slotRain(date,h)?' rn':''}">${rangeLabel(res.h,res.min,res.dur)}</span>${slotRain(date,h)?RAINMARK:''}</div>`;
   if(cat==='reserved') return `<div class="slot s-reserved" ${(isStaff()||profCanRelease(res.type))?`onclick="openAdminRes(${res.id})" style="cursor:pointer"`:''}><b>${HOUSE_ICON}${houseNum(res.house)}</b>${res.name?`<small>${res.name}</small>`:''}${slotRain(date,h)?RAINMARK:''}</div>`;
   if(cat==='split') return `<div class="slot-split">${halfCell(date,h,0,sc.s0)}${halfCell(date,h,1,sc.s1)}</div>`;
-  if(cat==='class') return `<div class="slot s-bonus" title="No gasta cupo · profesor disponible" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'classfull')"`:''}><b><span class="plus">+</span>Libre</b><span class="bstar">★</span></div>`;
-  if(cat==='open') return `<div class="slot s-bonus" title="No gasta cupo" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'openfull')"`:''}><b><span class="plus">+</span>Libre</b><span class="bstar">★</span></div>`;
+  if(cat==='class') return `<div class="slot s-bonus" title="No gasta horas · profesor disponible" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'classfull')"`:''}><b><span class="plus">+</span>Libre</b><span class="bstar">★</span></div>`;
+  if(cat==='open') return `<div class="slot s-bonus" title="No gasta horas" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'openfull')"`:''}><b><span class="plus">+</span>Libre</b><span class="bstar">★</span></div>`;
   if(cat==='prof') return `<div class="slot s-prof" title="Profesor"><b><span class="cdot cdot-black"></span>Profesor</b></div>`;
   if(cat==='flex') return `<div class="slot s-flex" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'flexfull')"`:''} title="Hora del profesor · puedes reservarla, con o sin profesor"><b><span class="cdot cdot-amber"></span>Profesor</b><span class="flex-tag"><span class="plus">+</span>reservar</span></div>`;
   if(cat==='rain') return `<div class="slot s-rain" title="Cerrada por lluvia · no disponible">${svgIco(RAIN_P,15,'#5b7fc0')}</div>`;
@@ -1816,10 +1936,15 @@ function slotHTML(date,h){
 function renderDayStrip(){
   const strip=document.getElementById('dayStrip');
   const faded=!state.fullWeek, todayYmd=ymd(NOW);
-  if(faded && state.mobileDay<todayYmd) state.mobileDay=todayYmd;   // no dejar seleccionado un día ya pasado
+  if(faded && state.weekView===0 && state.mobileDay<todayYmd) state.mobileDay=todayYmd;   // en la semana abierta, no dejar seleccionado un día ya pasado
   let html='';
+  if(canPeekPrev()){                                               // flechita para ir/volver a la semana anterior (solo domingo tras el corte)
+    html+= state.weekView===-1
+      ? `<button class="ds-nav" onclick="setWeekView(0)" title="Volver a la semana actual"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>`
+      : `<button class="ds-nav" onclick="setWeekView(-1)" title="Ver semana anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>`;
+  }
   for(let i=0;i<7;i++){const d=addDays(state.weekStart,i);const date=ymd(d);
-    if(faded && date<todayYmd) continue;                            // ocultar días ya pasados
+    if(faded && state.weekView===0 && date<todayYmd) continue;      // ocultar días ya pasados (solo en la semana abierta)
     html+=`<button class="${date===state.mobileDay?'on':''}" onclick="setDay('${date}')">
       <span class="dw">${DOW[d.getDay()]}</span><span class="dn">${d.getDate()}</span></button>`;}
   strip.innerHTML=html;
@@ -1827,7 +1952,7 @@ function renderDayStrip(){
 function setDay(date){state.mobileDay=date;render();scrollTop();fadeContent();}
 function mobileDay(){
   const date=state.mobileDay;const d=dateAt(date,0);
-  const faded=!state.fullWeek, isToday=date===ymd(NOW), lineHour=NOW.getHours();
+  const faded=!state.fullWeek && state.weekView===0, isToday=date===ymd(NOW), lineHour=NOW.getHours();
   let rows='';
   for(const h of HOURS){
     const sc=slotCat(date,h);
@@ -1855,8 +1980,8 @@ function mHalf(date,h,half,s){
   if(k==='reserved'){const r=s.res;return `<div class="mslot reserved" ${(isStaff()||profCanRelease(r.type))?`onclick="openAdminRes(${r.id})"`:''}><div class="bar"></div>${tt}<div class="ml"><b>${HOUSE_ICON}${houseNum(r.house)}</b><span>${r.name||'Reservada'} · 30 min</span></div>${(isStaff()||profCanRelease(r.type))?M_CHEV:''}</div>`;}
   if(k==='classinfo'){const r=s.res;return `<div class="mslot clasem"><div class="bar"></div>${tt}<div class="ml"><b>${HOUSE_ICON}${houseNum(r.house)}</b><span>Clase${r.name?' · '+r.name:''}</span></div></div>`;}
   if(k==='prof') return `<div class="mslot prof"><div class="bar"></div>${tt}<div class="ml"><b>Profesor</b><span>30 min</span></div></div>`;
-  if(k==='flex'){ if(!canBookFree(date,h)) return `<div class="mslot prof"><div class="bar"></div>${tt}<div class="ml"><b>Profesor</b><span>30 min</span></div></div>`; return `<div class="mslot flex" onclick="openBook('${date}',${h},'flexh${half}')"><div class="bar"></div>${tt}<div class="ml"><b>Profesor · reservar</b><span>Con o sin profesor · no gasta cupo</span></div>${M_CHEV}</div>`; }
-  if(k==='class'||k==='open'){ if(!canBookFree(date,h)) return ''; return `<div class="mslot bonus" onclick="openBook('${date}',${h},'h${half}')"><div class="bar"></div>${tt}<div class="ml"><b><span class="bstar">★</span> Libre</b><span>No gasta cupo</span></div>${M_CHEV}</div>`; }
+  if(k==='flex'){ if(!canBookFree(date,h)) return `<div class="mslot prof"><div class="bar"></div>${tt}<div class="ml"><b>Profesor</b><span>30 min</span></div></div>`; return `<div class="mslot flex" onclick="openBook('${date}',${h},'flexh${half}')"><div class="bar"></div>${tt}<div class="ml"><b>Profesor · reservar</b><span>Con o sin profesor · no gasta horas</span></div>${M_CHEV}</div>`; }
+  if(k==='class'||k==='open'){ if(!canBookFree(date,h)) return ''; return `<div class="mslot bonus" onclick="openBook('${date}',${h},'h${half}')"><div class="bar"></div>${tt}<div class="ml"><b><span class="bstar">★</span> Libre</b><span>No gasta horas</span></div>${M_CHEV}</div>`; }
   if(k==='maint') return `<div class="mslot maint"><div class="bar"></div>${tt}<div class="ml"><b>${svgIco(ICONS.tool,14,'#fff')}Mantenimiento</b><span>${s.mc?s.mc.reason:'Cancha en mantenimiento'}</span></div></div>`;
   if(k!=='free') return '';
   if(!canBookFree(date,h)) return '';
@@ -1872,9 +1997,9 @@ function mSlot(date,h,sc){
   if(cat==='reserved') return `<div class="mslot reserved" ${(isStaff()||profCanRelease(res.type))?`onclick="openAdminRes(${res.id})"`:''}><div class="bar"></div>${t}<div class="ml"><b>${HOUSE_ICON}${houseNum(res.house)}</b><span>${res.name||'Reservada'}</span></div>${(isStaff()||profCanRelease(res.type))?chev:''}</div>`;
   if(cat==='classinfo') return `<div class="mslot clasem"><div class="bar"></div>${t}<div class="ml"><b>${HOUSE_ICON}${houseNum(res.house)}</b><span>Clase con el profesor${res.name?' · '+res.name:''}</span></div></div>`;
   if(cat==='prof') return `<div class="mslot prof"><div class="bar"></div>${t}<div class="ml"><b>Profesor</b><span>Reservado para el profesor</span></div></div>`;
-  if(cat==='flex') return `<div class="mslot flex" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'flexfull')"`:''}><div class="bar"></div>${t}<div class="ml"><b>Profesor · reservar</b><span>${canBookFree(date,h)?'Con o sin profesor · no gasta cupo':'Hora del profesor'}</span></div>${canBookFree(date,h)?chev:''}</div>`;
-  if(cat==='class') return `<div class="mslot bonus" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'classfull')"`:''}><div class="bar"></div>${t}<div class="ml"><b><span class="bstar">★</span> Libre</b><span>No gasta cupo</span></div>${canBookFree(date,h)?chev:''}</div>`;
-  if(cat==='open') return `<div class="mslot bonus" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'openfull')"`:''}><div class="bar"></div>${t}<div class="ml"><b><span class="bstar">★</span> Libre</b><span>No gasta cupo</span></div>${canBookFree(date,h)?chev:''}</div>`;
+  if(cat==='flex') return `<div class="mslot flex" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'flexfull')"`:''}><div class="bar"></div>${t}<div class="ml"><b>Profesor · reservar</b><span>${canBookFree(date,h)?'Con o sin profesor · no gasta horas':'Hora del profesor'}</span></div>${canBookFree(date,h)?chev:''}</div>`;
+  if(cat==='class') return `<div class="mslot bonus" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'classfull')"`:''}><div class="bar"></div>${t}<div class="ml"><b><span class="bstar">★</span> Libre</b><span>No gasta horas</span></div>${canBookFree(date,h)?chev:''}</div>`;
+  if(cat==='open') return `<div class="mslot bonus" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'openfull')"`:''}><div class="bar"></div>${t}<div class="ml"><b><span class="bstar">★</span> Libre</b><span>No gasta horas</span></div>${canBookFree(date,h)?chev:''}</div>`;
   if(cat==='maint') return `<div class="mslot maint"><div class="bar"></div>${t}<div class="ml"><b>${svgIco(ICONS.tool,14,'#fff')}Mantenimiento</b><span>${mc?mc.reason:'Cancha en mantenimiento'}</span></div></div>`;
   if(cat==='rain') return `<div class="mslot rain"><div class="bar"></div>${t}<div class="ml"><b>${svgIco(RAIN_P,15,'#5b7fc0')} Cerrada por lluvia</b><span>No disponible ahora</span></div></div>`;
   if(cat==='locked') return `<div class="mslot locked"><div class="bar"></div>${t}<div class="ml"><b>Aún no habilitado</b><span>Abre el domingo ${rhShort()}</span></div></div>`;
@@ -1988,7 +2113,7 @@ function openReleaseSpace(id){
   const m=document.getElementById('modal');
   m.innerHTML=`<div class="grab"></div><h3>Liberar espacio</h3>
     <div class="msub">${rangeLabel(c.h,c.min,c.dur)}</div>
-    <p style="font-size:13px;color:var(--muted);margin:2px 0 14px">Se abrirá este horario para los residentes. Podrán reservarlo <b>con profesor</b> (no gasta cupo) o <b>sin profesor</b> (gasta cupo). Se les avisará.</p>
+    <p style="font-size:13px;color:var(--muted);margin:2px 0 14px">Se abrirá este horario para los residentes. Podrán reservarlo <b>con profesor</b> (no gasta horas) o <b>sin profesor</b> (gasta horas). Se les avisará.</p>
     <div class="modal-actions"><button class="btn-soft" onclick="closeModal()">Cancelar</button>
     <button class="btn-primary" onclick="confirmRelease(${id})">Liberar</button></div>`;
   document.getElementById('modalBg').classList.add('show');
@@ -2113,7 +2238,7 @@ function openRainAffected(){
 async function deactivateRain(){ closeModal(); try{ await DB.Rain.deactivate(); await loadData(); render(); toast('Modo lluvia desactivado · solicitudes retiradas'); }catch(e){ toast(e.message,'warn'); } }
 async function rainAccept(nid){
   const n=notifs.find(x=>x.id===nid); if(!n)return;
-  try{ if(n.resId) await DB.cancel(n.resId); await DB.markNotif(n.id,'accepted'); await loadData(); render(); toast('Cancelaste tu reserva · tus horas volvieron a tu cupo'); }
+  try{ if(n.resId) await DB.cancel(n.resId); await DB.markNotif(n.id,'accepted'); await loadData(); render(); toast('Cancelaste tu reserva · recuperaste tus horas'); }
   catch(e){ toast(e.message,'warn'); }
 }
 async function rainReject(nid){
@@ -2133,7 +2258,7 @@ async function permReject(nid){
 }
 async function cancelReqAccept(nid){                 // admin/portería aprueban una solicitud de cancelación
   const n=notifs.find(x=>x.id===nid); if(!n||!n.resId)return;
-  try{ await DB.decideCancel(n.resId,true); await loadData(); render(); toast('Cancelación aprobada · el cupo volvió a la casa'); }
+  try{ await DB.decideCancel(n.resId,true); await loadData(); render(); toast('Cancelación aprobada · las horas volvieron a la casa'); }
   catch(e){ toast(e.message,'warn'); }
 }
 async function cancelReqReject(nid){
@@ -2184,7 +2309,8 @@ function viewNotif(){
     perm_res:['var(--court)','#eef6df','<path d="M20 6L9 17l-5-5"/>'],
     cancel_req:['#c0672f','#fbeee3','<circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/>'],
     cancel_res:['#3a6ea5','#e7eef7','<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'],
-    freed:['var(--court)','#e7f1ee','<circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/>']};
+    freed:['var(--court)','#e7f1ee','<circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/>'],
+    reset:['var(--court)','#e7f1ee','<path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/>']};
   const settingsPanel = isMember() ? `<div class="panel" style="margin-bottom:14px"><div style="padding:14px 18px;display:flex;align-items:center;gap:12px">
       <div style="flex:1;min-width:0"><b style="font-size:14px">Notificaciones</b><p style="font-size:12px;color:var(--muted);margin-top:2px">Recibe los avisos en tu celular. Actívalas aquí.</p></div>
       <button class="btn-ghost" style="box-shadow:none" onclick="openNotifSettings()">Ajustes</button></div></div>` : '';
@@ -2193,7 +2319,7 @@ function viewNotif(){
   const rows=vis.map(n=>{const[col,bg,path]=ic[n.type]||ic.open;
     let extra='';
     if(n.type==='rain' && n.status==='pending') extra=`<div class="notif-act"><button class="na-yes" onclick="rainAccept(${n.id})">Aceptar y cancelar</button><button class="na-no" onclick="rainReject(${n.id})">Rechazar</button></div>`;
-    else if(n.type==='rain' && n.status==='accepted') extra=`<div class="notif-st ok">Cancelaste tu reserva. Tus horas volvieron a tu cupo.</div>`;
+    else if(n.type==='rain' && n.status==='accepted') extra=`<div class="notif-st ok">Cancelaste tu reserva. Recuperaste tus horas.</div>`;
     else if(n.type==='rain' && n.status==='rejected') extra=`<div class="notif-st">Mantuviste tu reserva. Si tienes dudas, comunícate con la ${n.by||'portería'}.</div>`;
     else if(n.type==='perm_req' && n.status==='pending') extra=`<div class="notif-act"><button class="na-yes" onclick="permAccept(${n.id})">Aprobar</button><button class="na-no" onclick="permReject(${n.id})">Rechazar</button></div>`;
     else if(n.type==='perm_req' && n.status==='accepted') extra=`<div class="notif-st ok">Aprobaste esta solicitud.</div>`;
@@ -2231,7 +2357,7 @@ async function disablePush(){
 }
 async function openNotifSettings(){
   const p=state.profile||{};
-  const prefs=p.notif_prefs||{release:true,rain:true,perm:true,reminder:true,freed:true};
+  const prefs=p.notif_prefs||{release:true,rain:true,perm:true,reminder:true,freed:true,reset:true};
   let stateHtml;
   if(!pushSupported()){
     stateHtml=`<div class="perm-note"><b>Tu navegador no soporta notificaciones.</b><span>Prueba con Chrome en Android, o instala la app en la pantalla de inicio de tu iPhone.</span></div>`;
@@ -2251,6 +2377,7 @@ async function openNotifSettings(){
     <div class="opt-label" style="margin-top:14px">¿Qué avisos quieres recibir?</div>
     ${chk('release','Cuando el profesor libera un horario')}
     ${chk('freed','Cuando alguien cancela y la cancha queda libre')}
+    ${chk('reset','Cuando se reinician tus horas de la semana')}
     ${chk('rain','Modo lluvia (te piden cancelar tu reserva)')}
     ${chk('perm','Resultado de tu horario permanente')}
     ${chk('reminder','Recordatorio 15 minutos antes de tu reserva')}
@@ -2262,6 +2389,7 @@ function toggleNotifPref(k,e){ if(e)e.stopPropagation(); const box=document.getE
 async function saveNotifPrefs(){
   const prefs={ release:document.getElementById('np_release').classList.contains('on'),
                 freed:document.getElementById('np_freed').classList.contains('on'),
+                reset:document.getElementById('np_reset').classList.contains('on'),
                 rain:document.getElementById('np_rain').classList.contains('on'),
                 perm:document.getElementById('np_perm').classList.contains('on'),
                 reminder:document.getElementById('np_reminder').classList.contains('on') };
@@ -2271,9 +2399,9 @@ async function saveNotifPrefs(){
 }
 
 /* ---- ADMIN: USERS ---- */
-async function setCupo(n){ try{ await DB.Admin.setCupo(n); CUPO=n; render(); toast('Cupo semanal: '+n+(n===1?' hora':' horas')+' por casa'); }catch(e){ toast(e.message,'warn'); } }
+async function setCupo(n){ try{ await DB.Admin.setCupo(n); CUPO=n; render(); toast('Ahora cada casa tiene '+n+(n===1?' hora':' horas')+' por semana'); }catch(e){ toast(e.message,'warn'); } }
 async function setOpenHour(which,val){ try{ await DB.Admin.setOpenHour(which,val); if(which==='start')OPEN_START=val; else OPEN_END=val; rebuildHours(); render(); toast('Horario de la cancha actualizado'); }catch(e){ toast(e.message,'warn'); } }
-async function saveResetHour(){ const el=document.getElementById('resetHourSel'); if(!el)return; const v=+el.value; try{ await DB.Admin.setResetHour(v); RESET_HOUR=v; recomputeOpenWeek(); render(); toast('Cupos se reinician el domingo a las '+rhLong()); }catch(e){ toast(e.message,'warn'); } }
+async function setReset(v){ try{ await DB.Admin.setResetHour(v); RESET_HOUR=v; recomputeOpenWeek(); render(); toast('Las horas se reinician el domingo a las '+rhLong()); }catch(e){ toast(e.message,'warn'); } }
 async function setHalfHours(on){ try{ await DB.Admin.setHalfHours(on); HALF_HOURS=on; render(); toast(on?'Ahora se puede reservar media hora':'Reservas de 1 hora completa'); }catch(e){ toast(e.message,'warn'); } }
 /* ===== Horarios permanentes (admin) ===== */
 function recLabel(r){ return `${r.house||'Casa'} · ${SCHED_DOW_NAMES[r.dow]} ${schedMinLabel(r.startMin)}–${schedMinLabel(r.endMin)}`; }
@@ -2502,6 +2630,7 @@ async function confirmDaysModal(){
 async function setUserActive(id, makeActive){ try{ await DB.Admin.setStatus(id, makeActive?'active':'inactive'); await loadData(); render(); toast(makeActive?'Usuario activado':'Usuario desactivado'); }catch(e){ toast(e.message,'warn'); } }
 function viewSettings(){
   const cupoSeg=[1,2,3,4].map(n=>`<button class="${CUPO===n?'on':''}" onclick="setCupo(${n})">${n}</button>`).join('');
+  const resetSeg=[18,19,20,21].map(n=>`<button class="${RESET_HOUR===n?'on':''}" onclick="setReset(${n})">${n-12} pm</button>`).join('');
   const startSeg=[4,5,6].map(n=>`<button class="${OPEN_START===n?'on':''}" onclick="setOpenHour('start',${n})">${n} am</button>`).join('');
   const endSeg=[22,23].map(n=>`<button class="${OPEN_END===n?'on':''}" onclick="setOpenHour('end',${n})">${n===22?'10 pm':'11 pm'}</button>`).join('');
   const halfSeg=`<div class="seg"><button class="${!HALF_HOURS?'on':''}" onclick="setHalfHours(false)">Apagado</button><button class="${HALF_HOURS?'on':''}" onclick="setHalfHours(true)">Encendido</button></div>`;
@@ -2510,8 +2639,8 @@ function viewSettings(){
   return `
     <div class="set-head">${svgIco(ICONS.ball,15)} La cancha</div>
     <div class="panel">
-      <div class="set-row"><div class="set-t"><b>Cupo de horas semanal por casa</b></div><div class="seg cupo-seg">${cupoSeg}</div></div>
-      <div class="set-row"><div class="set-t"><b>Hora de reinicio de cupos (domingo)</b></div><div style="min-width:120px">${psel('resetHourSel', hourArr(0,23), RESET_HOUR, 'saveResetHour')}</div></div>
+      <div class="set-row"><div class="set-t"><b>Horas de reserva por semana (por casa)</b></div><div class="seg cupo-seg">${cupoSeg}</div></div>
+      <div class="set-row"><div class="set-t"><b>Hora de reinicio semanal (domingo)</b></div><div class="seg">${resetSeg}</div></div>
       <div class="set-row"><div class="set-t"><b>Horario de la cancha</b></div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:var(--muted);min-width:42px">Abre</span><div class="seg">${startSeg}</div></div>
@@ -2650,7 +2779,7 @@ function viewUsers(){
   const resRows=residents.length?residents.map(x=>userRow(x.u,x.i)).join(''):'<div class="empty" style="padding:26px">Aún no hay residentes.</div>';
   return `<div class="panel" style="margin-bottom:16px"><div class="panel-h"><h3>Cuentas fijas</h3><div class="spacer"></div><span style="font-size:12px;color:var(--muted)">No se eliminan</span></div>${fixedRows}</div>
     <div class="panel"><div class="panel-h"><h3>Residentes${residents.length?' · '+residents.length:''}</h3><div class="spacer"></div><button class="btn-mini" onclick="openNewUser()">+ Nuevo</button></div>${resRows}</div>
-    <p style="font-size:12.5px;color:var(--muted);margin:14px 4px">Con "Vincular casas" asocias varias casas a una cuenta (usuario maestro). Las cuentas con varias casas comparten cupo de forma transparente.</p>`;
+    <p style="font-size:12.5px;color:var(--muted);margin:14px 4px">Con "Vincular casas" asocias varias casas a una cuenta (usuario maestro). Las cuentas con varias casas comparten las horas de forma transparente.</p>`;
 }
 function openLinkHouses(i){
   const u=users[i];
@@ -2939,7 +3068,7 @@ function viewAvail(){
     html+=`<div class="panel" style="margin-top:18px"><div class="panel-h"><h3>Ausencias marcadas</h3></div>${
       sorted.map(a=>{const d=dateAt(a.date,0),whole=a.startMin<=0&&a.endMin>=1440;return `<div class="row">
         <div class="when"><div class="d">${DOW[d.getDay()]} ${d.getDate()}</div><div class="h">${whole?'Todo el día':timeMin(a.startMin)}</div></div>
-        <div class="info"><b>${whole?'Todo el día':timeMin(a.startMin)+'–'+timeMin(a.endMin)}</b><span>El profesor no viene · práctica libre (gasta cupo)</span></div>
+        <div class="info"><b>${whole?'Todo el día':timeMin(a.startMin)+'–'+timeMin(a.endMin)}</b><span>El profesor no viene · práctica libre (gasta horas)</span></div>
         <span class="pill lime">Libre</span>
         <button class="btn-cancel" onclick="unmarkAbs(${a.id})">Quitar</button></div>`}).join('')}</div>`;
   }
@@ -2990,6 +3119,40 @@ function viewMaint(){
 function fmtRange(s,e){const a=dateAt(s,0),b=dateAt(e,0);return s===e?`${DOWL[a.getDay()]} ${a.getDate()} ${MON[a.getMonth()]}`:`${a.getDate()} ${MON[a.getMonth()]} – ${b.getDate()} ${MON[b.getMonth()]}`;}
 async function removeClosure(i){ try{ await DB.Admin.deleteClosure(closures[i].id); await loadData(); render(); toast('Cierre eliminado · cancha reabierta'); }catch(e){ toast(e.message,'warn'); } }
 function segPick(btn,group){document.querySelectorAll('#'+group+' button').forEach(b=>b.classList.remove('on'));btn.classList.add('on');}
+// ---- Reservar varias horas de una ----
+// Minutos libres seguidos (bloques normales) desde una hora/media, hasta el cierre.
+function freeRunMin(date,h,half){
+  let mins=0, ch=h, chalf=half||0, guard=0;
+  while(guard++<48){
+    if(ch>=OPEN_END) break;
+    if(halfState(date,ch,chalf).kind!=='free') break;
+    mins+=30; chalf++; if(chalf>1){chalf=0;ch++;}
+  }
+  return mins;
+}
+function durLabel(m){ if(m<60) return m+' min'; const H=Math.floor(m/60), r=m%60; return H+(r>=30?'½':'')+' h'; }
+// Opciones de duración según lo libre que esté la cancha y las horas que le quedan a la casa.
+function durSegHTML(date,h,house){
+  const left=Math.max(0,CUPO-houseUsed(house));
+  const cap=Math.min(freeRunMin(date,h,0), Math.round(left*60));   // tope = min(libre seguido, horas de la casa)
+  const step=HALF_HOURS?30:60;
+  const durs=[];
+  if(HALF_HOURS && cap>=30) durs.push(30);          // media hora (solo si está permitida)
+  for(let d=60; d<=cap; d+=step) durs.push(d);       // 1h, (1½), 2h, ... hasta el tope
+  if(!durs.length) durs.push(HALF_HOURS?30:60);
+  const def = durs.includes(60)?60:durs[0];
+  const btns = durs.map(d=>`<button class="${d===def?'on':''}" data-d="${d}" onclick="durPick(this)">${durLabel(d)}</button>`).join('');
+  return `<div class="opt-label">Duración</div>
+    <div class="seg seg-wrap" id="durSeg">${btns}</div>
+    <div id="halfWrap" style="display:${def===30?'block':'none'}">
+      <div class="opt-label">¿Cuál media hora?</div>
+      <div class="seg" id="halfSeg">
+        <button class="on" data-m="0" onclick="segPick(this,'halfSeg')">${rangeLabel(h,0,30)}</button>
+        <button data-m="30" onclick="segPick(this,'halfSeg')">${rangeLabel(h,30,30)}</button>
+      </div>
+    </div>`;
+}
+function durPick(el){ segPick(el,'durSeg'); const hw=document.getElementById('halfWrap'); if(hw) hw.style.display=(+el.dataset.d===30)?'block':'none'; }
 
 /* ======================= MODAL / ACTIONS ======================= */
 function openProfBook(date,h){
@@ -3054,7 +3217,7 @@ function openBook(date,h,ctx){
   const msubRange = (isHalf||isFlexHalf)?rangeLabel(h, (ctx==='h1'||ctx==='flexh1')?30:0, 30):rangeLabel(h,0,60);
   let houseSelect = hasSelect ? `
     <div class="opt-label">${isPortero?'¿A nombre de qué casa?':'¿A nombre de cuál de tus casas?'}</div>
-    ${psel('bkHouse', selHouses.map(hh=>{const lh=Math.max(0,CUPO-houseUsed(hh));return {v:hh,label:`${hh} · ${lh>0?fmtH(lh)+' disponible'+(lh>1?'s':''):'sin cupo'}`};}), bookHouse, 'updateBookHouse')}`:'';
+    ${psel('bkHouse', selHouses.map(hh=>{const lh=Math.max(0,CUPO-houseUsed(hh));return {v:hh,label:`${hh} · ${lh>0?fmtH(lh)+' disponible'+(lh>1?'s':''):'sin horas'}`};}), bookHouse, 'updateBookHouse')}`:'';
   let classChoice = isClass ? `
     <div class="opt-label">¿Qué deseas?</div>
     <div class="seg" id="useType">
@@ -3071,19 +3234,9 @@ function openBook(date,h,ctx){
     </div>
     <div id="permNote" style="display:none;margin-top:10px"><div class="perm-note"><b>Clase fija cada semana</b><span>Se repetirá todos los ${DOWL[dateAt(date,h).getDay()]} a esta hora. Debe aprobarlo ${permWho}. Al confirmar, envías la solicitud (aún no queda reservado).</span></div></div>`:'';
   let durChoice='';
-  if(ctx==='full' && HALF_HOURS){
-    durChoice=`<div class="opt-label">Duración</div>
-      <div class="seg" id="durSeg">
-        <button class="on" data-d="60" onclick="segPick(this,'durSeg');document.getElementById('halfWrap').style.display='none'">1 hora</button>
-        <button data-d="30" onclick="segPick(this,'durSeg');document.getElementById('halfWrap').style.display='block'">30 min</button>
-      </div>
-      <div id="halfWrap" style="display:none">
-        <div class="opt-label">¿Cuál media hora?</div>
-        <div class="seg" id="halfSeg">
-          <button class="on" data-m="0" onclick="segPick(this,'halfSeg')">${rangeLabel(h,0,30)}</button>
-          <button data-m="30" onclick="segPick(this,'halfSeg')">${rangeLabel(h,30,30)}</button>
-        </div>
-      </div>`;
+  if(ctx==='full'){
+    state.bookCtx={date,h};
+    durChoice=`<div id="durBox">${durSegHTML(date,h,bookHouse)}</div>`;
   } else if(isHalf && !bonus){
     durChoice=`<div class="quota-mini" style="background:#eef4f6;color:var(--court)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg> Reserva de <b style="margin:0 4px">30 minutos</b> · ${msubRange}.</div>`;
   }
@@ -3091,7 +3244,7 @@ function openBook(date,h,ctx){
   let quotaBox = isFlex
     ? `<div id="flexCupoNote">${flexCupoNote('con')}</div>`
     : (bonus
-    ? `<div class="bonus-box"><span class="bonus-star">★</span><div><b>Este horario no gasta tu cupo</b><span>${isClass?'El profesor lo abrió y va a estar: puedes tomar clase o jugar libre, sin que te descuente cupo.':'El profesor no asiste a esta hora y la dejó libre: resérvala sin que te descuente cupo.'}</span></div></div>`
+    ? `<div class="bonus-box"><span class="bonus-star">★</span><div><b>Este horario no gasta tus horas</b><span>${isClass?'El profesor lo abrió y va a estar: puedes tomar clase o jugar libre, sin que te descuente horas.':'El profesor no asiste a esta hora y la dejó libre: resérvala sin que te descuente horas.'}</span></div></div>`
     : `<div class="quota-mini"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg> <span id="bkPhrase">${quedaPhrase}</span></div>`);
   const nightCallout = (h>=21||h<6) ? `<div class="rule-night">${svgIco('<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',15)} A esta hora hay vecinos durmiendo. Por favor, juega en silencio y evita gritos, ruido fuerte y música o parlantes a alto volumen.</div>` : '';
   const rulesBox = `<div class="rules"><b>Antes de confirmar, recuerda:</b>${nightCallout}<ul>${RULES.map(r=>`<li>${r}</li>`).join('')}</ul></div>`;
@@ -3107,9 +3260,9 @@ function openBook(date,h,ctx){
   document.getElementById('modalBg').classList.add('show');
 }
 function flexCupoNote(sel){
-  // Espacio liberado por el profesor: NO gasta cupo ni con profesor ni sin profesor.
-  if(sel==='con') return `<div class="bonus-box"><span class="bonus-star">★</span><div><b>No gasta tu cupo</b><span>El profesor liberó su hora: ir con él no te descuenta cupo de la semana.</span></div></div>`;
-  return `<div class="bonus-box"><span class="bonus-star">★</span><div><b>No gasta tu cupo</b><span>Este espacio lo liberó el profesor: resérvalo sin que te descuente cupo, con o sin profesor.</span></div></div>`;
+  // Espacio liberado por el profesor: NO gasta horas ni con profesor ni sin profesor.
+  if(sel==='con') return `<div class="bonus-box"><span class="bonus-star">★</span><div><b>No gasta tus horas</b><span>El profesor liberó su hora: ir con él no te descuenta horas de la semana.</span></div></div>`;
+  return `<div class="bonus-box"><span class="bonus-star">★</span><div><b>No gasta tus horas</b><span>Este espacio lo liberó el profesor: resérvalo sin que te descuente horas, con o sin profesor.</span></div></div>`;
 }
 function flexPick(el){
   segPick(el,'flexType');
@@ -3122,6 +3275,7 @@ function updateBookHouse(){
   const house=document.getElementById('bkHouse').value;
   const left=Math.max(0,CUPO-houseUsed(house));
   const p=document.getElementById('bkPhrase'); if(p)p.textContent=`${house} · ${cupoFrase(left)} esta semana`;
+  const box=document.getElementById('durBox'); if(box && state.bookCtx) box.innerHTML=durSegHTML(state.bookCtx.date, state.bookCtx.h, house);   // recalcula duración según la casa elegida
 }
 async function confirmBook(date,h,ctx){
   // Horario permanente: si se eligió "Permanente" en una hora flexible, se envía una SOLICITUD (no se reserva)
@@ -3169,7 +3323,7 @@ async function confirmBook(date,h,ctx){
   try{
     await DB.book({houseId, date, h, min, dur, type});   // el servidor valida cupo, horario, choque
     await loadData(); render();
-    toast(state.role==='portero'?('Reserva creada a nombre de '+house):(dur===30?'Reserva de 30 min confirmada':'Reserva confirmada'));
+    toast(state.role==='portero'?('Reserva creada a nombre de '+house):('Reserva confirmada'+(dur!==60?' · '+durLabel(dur):'')));
   }catch(e){ await loadData(); render(); toast(e.message,'warn'); }
 }
 function mergeHour(date,h){
@@ -3196,7 +3350,7 @@ function openMyRes(id){
 async function cancelRes(id){
   try{
     await DB.cancel(id);
-    closeModal(); await loadData(); render(); toast('Reserva cancelada · la hora volvió a tu cupo');
+    closeModal(); await loadData(); render(); toast('Reserva cancelada · recuperaste la hora');
   }catch(e){
     if(e.code==='PEDIR_A_ADMIN'){ openRequestCancel(id); return; }   // pasó su límite → ofrecer solicitud
     closeModal(); toast(e.message,'warn');

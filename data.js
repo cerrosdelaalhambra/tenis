@@ -90,7 +90,7 @@ function relTime(iso){
 
 /* ===== Errores del servidor → mensajes amables ===== */
 const ERR_MSG = {
-  SIN_CUPO:'Esa casa ya no tiene cupo esta semana. Puedes reservar horarios que libera el profesor, o ir con el profesor en su horario: eso no consume cupo.',
+  SIN_CUPO:'Esa casa ya no tiene horas esta semana. Puedes reservar horarios que libera el profesor, o ir con el profesor en su horario: eso no consume horas.',
   YA_RESERVADO:'Ese horario ya está reservado.',
   HORARIO_DEL_PROFESOR:'Ese horario es del profesor.',
   FUERA_DE_HORARIO:'Ese horario está fuera del horario de la cancha.',
@@ -196,12 +196,24 @@ const Auth = {
     await sb.auth.resetPasswordForEmail(email, redirectTo ? {redirectTo} : undefined);
   },
   async updatePassword(newPass){ const {error}=await sb.auth.updateUser({password:newPass}); if(error) throw new Error(error.message); },
-  async currentProfile(){                          // {id,full_name,role,status,phone} o null
+  async currentProfile(){                          // {id,full_name,role,status,phone,username,email} o null
     const {data:{user}}=await sb.auth.getUser();
     if(!user) return null;
-    let {data,error}=await sb.from('profiles').select('id,full_name,role,status,phone,notif_seen_at,notif_prefs').eq('id',user.id).single();
-    if(error){ const r=await sb.from('profiles').select('id,full_name,role,status,phone').eq('id',user.id).single(); data=r.data; } // por si aún no existe notif_prefs
+    let {data,error}=await sb.from('profiles').select('id,full_name,role,status,phone,username,notif_seen_at,notif_prefs').eq('id',user.id).single();
+    if(error){ const r=await sb.from('profiles').select('id,full_name,role,status,phone,username').eq('id',user.id).single(); data=r.data; } // por si aún no existe notif_prefs
+    if(data) data.email = user.email || null;       // el correo de login vive en auth, no en profiles
     return data || null;
+  },
+  // El residente edita SU propio perfil (nombre, teléfono, usuario). La RLS ya deja
+  // editar la fila propia y el trigger guard_profile_update impide tocar rol/estado.
+  async updateMyProfile(id, fields){
+    const patch={};
+    if(fields.full_name!==undefined) patch.full_name=fields.full_name;
+    if(fields.phone!==undefined) patch.phone=fields.phone;
+    if(fields.username!==undefined) patch.username=fields.username;
+    if(!Object.keys(patch).length) return;
+    const {error}=await sb.from('profiles').update(patch).eq('id',id);
+    if(error) throw mapError(error);
   },
   // Preferencias de avisos push del residente (qué tipos quiere recibir)
   async setNotifSettings(profileId, {prefs}){
