@@ -1208,7 +1208,7 @@ async function loadData(){
   houses=(b.houses||[]).map(h=>h.label); houseIdByLabel={}; houseLabelById={};
   (b.houses||[]).forEach(h=>{ houseIdByLabel[h.label]=h.id; houseLabelById[h.id]=h.label; });
   CUPO=b.cupo||2;
-  OPEN_START=b.openStart||5; OPEN_END=b.openEnd||23; rebuildHours(); HALF_HOURS=!!b.halfHours;
+  OPEN_START=b.openStart||5; OPEN_END=b.openEnd||23; rebuildHours(); HALF_HOURS=true;   // media hora SIEMPRE activa (modo flexible por defecto)
   RESET_HOUR=(b.resetHour!=null?b.resetHour:20); recomputeOpenWeek(); applyWeekView();
   const myLabels=(b.myHouses||[]).map(h=>h.label);
   state.role = prof.role==='member' ? (myLabels.length>1?'master':'member') : prof.role;
@@ -1406,7 +1406,6 @@ function navItems(){
   if(state.role==='portero') return [{id:'porteria', label:'Inicio', icon:'bulb'}];
   if(state.role==='admin') return [cal,
     {id:'users', label:'Usuarios', icon:'users'},
-    {id:'settings', label:'Ajustes', icon:'gear'},
     {id:'avail', label:'Profesor', icon:'clock'},
     {id:'maint', label:'Mantenimiento', icon:'tool'},
     reg, hist];
@@ -1509,7 +1508,6 @@ function render(){
   else if(state.view==='porteria') c.innerHTML=viewPorteria();
   else if(state.view==='notif') c.innerHTML=viewNotif();
   else if(state.view==='users') c.innerHTML=viewUsers();
-  else if(state.view==='settings') c.innerHTML=viewSettings();
   else if(state.view==='avail') c.innerHTML=viewAvail();
   else if(state.view==='classes') c.innerHTML=viewClasses();
   else if(state.view==='maint') c.innerHTML=viewMaint();
@@ -1857,7 +1855,10 @@ function calHeader(){
   const a=rainActive();
   const rain=(state.role==='admin'||state.role==='portero')
     ? `<button class="cb-btn cb-rain${a?' on':''}" onclick="${a?'openRainAffected()':'openRainModal()'}">${RAIN_ICON}<span>${a?'Lluvia activa':'Modo lluvia'}</span></button>` : '';
-  return `<div class="cal-bar"><div class="cb-info">${info}</div><div class="cb-actions">${peek}${week}${rain}</div></div>`;
+  const clockIco='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg>';
+  const court=(state.role==='admin')
+    ? `<button class="cb-btn" onclick="openCourtHours()">${clockIco}<span>Horario cancha</span></button>` : '';
+  return `<div class="cal-bar"><div class="cb-info">${info}</div><div class="cb-actions">${peek}${week}${court}${rain}</div></div>`;
 }
 function toggleFullWeek(){state.fullWeek=!state.fullWeek;render();}
 function horasTexto(n){if(n<=0)return '';const f=Math.floor(n),half=(n-f)>=0.5;if(f===0)return 'media hora';const base=f===1?'una hora':f===2?'dos horas':f===3?'tres horas':f+' horas';return half?base+' y media':base;}
@@ -2655,40 +2656,41 @@ function approvedWA(id){
     <button class="btn-soft" style="width:100%;margin-top:10px" onclick="closeModal()">Listo</button>`;
   document.getElementById('modalBg').classList.add('show');
 }
-function viewSettings(){
-  const cupoSeg=[1,2,3,4].map(n=>`<button class="${CUPO===n?'on':''}" onclick="setCupo(${n})">${n}</button>`).join('');
-  const resetSeg=[18,19,20,21].map(n=>`<button class="${RESET_HOUR===n?'on':''}" onclick="setReset(${n})">${n-12} pm</button>`).join('');
-  const startSeg=[4,5,6].map(n=>`<button class="${OPEN_START===n?'on':''}" onclick="setOpenHour('start',${n})">${n} am</button>`).join('');
-  const endSeg=[22,23].map(n=>`<button class="${OPEN_END===n?'on':''}" onclick="setOpenHour('end',${n})">${n===22?'10 pm':'11 pm'}</button>`).join('');
-  const halfSeg=`<div class="seg"><button class="${!HALF_HOURS?'on':''}" onclick="setHalfHours(false)">Apagado</button><button class="${HALF_HOURS?'on':''}" onclick="setHalfHours(true)">Encendido</button></div>`;
-  const permPend=RECURRING.filter(r=>r.status==='pending').length, permAct=RECURRING.filter(r=>r.status==='active').length;
+// Panel de plantilla de clases (vive en la pestaña Profesor, bajo el horario de clases).
+function classTemplatePanel(){
   const docIco='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h8M8 9h2"/></svg>';
-  return `
-    <div class="set-head">${svgIco(ICONS.ball,15)} La cancha</div>
-    <div class="panel">
-      <div class="set-row"><div class="set-t"><b>Horas de reserva por semana (por casa)</b></div><div class="seg cupo-seg">${cupoSeg}</div></div>
-      <div class="set-row"><div class="set-t"><b>Hora de reinicio semanal (domingo)</b></div><div class="seg">${resetSeg}</div></div>
-      <div class="set-row"><div class="set-t"><b>Horario de la cancha</b></div>
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:var(--muted);min-width:42px">Abre</span><div class="seg">${startSeg}</div></div>
-          <div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:var(--muted);min-width:42px">Cierra</span><div class="seg">${endSeg}</div></div>
+  return `<div class="panel" style="margin-bottom:16px">
+      <div class="panel-h center"><h3>Plantilla de clases</h3></div>
+      <div style="padding:8px 18px 16px">
+        <div class="tpl-cta">
+          <div class="tpl-ic">${docIco}</div>
+          <div class="tpl-txt"><b>Plantilla de clases (Excel)</b><p>Descarga el Excel con las clases actuales (casa y nombre, por día y hora), edítalo en tu computador y súbelo. <b>Subir una plantilla nueva reemplaza todo el periodo:</b> las clases que dejes vacías quedan libres.</p></div>
+          <div class="tpl-btns">
+            <button class="tpl-dl" onclick="exportTemplate()">Descargar</button>
+            <button class="tpl-im" onclick="document.getElementById('tplFile').click()">Importar</button>
+          </div>
         </div>
+        <input type="file" id="tplFile" accept=".xlsx,.xls" style="display:none" onchange="if(this.files&&this.files[0]){importTemplate(this.files[0]);this.value='';}">
       </div>
-      <div class="set-row"><div class="set-t"><b>Permitir reservas de media hora</b></div>${halfSeg}</div>
-    </div>
-
-    <div class="set-head">${svgIco(ICONS.check,15)} Clases del profesor</div>
-    <div class="panel">
-      <div class="tpl-cta">
-        <div class="tpl-ic">${docIco}</div>
-        <div class="tpl-txt"><b>Plantilla de clases (Excel)</b><p>Descarga el Excel con las clases actuales (casa y nombre, por día y hora), edítalo en tu computador y súbelo. <b>Subir una plantilla nueva reemplaza todo el periodo:</b> las clases que dejes vacías quedan libres.</p></div>
-        <div class="tpl-btns">
-          <button class="tpl-dl" onclick="exportTemplate()">Descargar</button>
-          <button class="tpl-im" onclick="document.getElementById('tplFile').click()">Importar</button>
-        </div>
-      </div>
-      <input type="file" id="tplFile" accept=".xlsx,.xls" style="display:none" onchange="if(this.files&&this.files[0]){importTemplate(this.files[0]);this.value='';}">
     </div>`;
+}
+// Modal: horario de la cancha (se abre desde el botón en la barra del calendario).
+function openCourtHours(){
+  const startSeg=[4,5,6].map(n=>`<button class="${OPEN_START===n?'on':''}" onclick="courtSet('start',${n})">${n} am</button>`).join('');
+  const endSeg=[22,23].map(n=>`<button class="${OPEN_END===n?'on':''}" onclick="courtSet('end',${n})">${n===22?'10 pm':'11 pm'}</button>`).join('');
+  const m=document.getElementById('modal');
+  m.innerHTML=`<div class="grab"></div><h3 style="text-align:center">Horario de la cancha</h3>
+    <div class="msub" style="text-align:center">A qué hora abre y cierra la cancha para reservar.</div>
+    <div style="display:flex;flex-direction:column;gap:12px;margin:4px 0 2px">
+      <div style="display:flex;align-items:center;gap:10px"><span style="min-width:50px;font-size:13px;color:var(--muted);font-weight:600">Abre</span><div class="seg" style="flex:1">${startSeg}</div></div>
+      <div style="display:flex;align-items:center;gap:10px"><span style="min-width:50px;font-size:13px;color:var(--muted);font-weight:600">Cierra</span><div class="seg" style="flex:1">${endSeg}</div></div>
+    </div>
+    <button class="btn-soft" style="width:100%;margin-top:14px" onclick="closeModal()">Listo</button>`;
+  document.getElementById('modalBg').classList.add('show');
+}
+async function courtSet(which,val){
+  try{ await DB.Admin.setOpenHour(which,val); if(which==='start')OPEN_START=val; else OPEN_END=val; rebuildHours(); openCourtHours(); render(); toast('Horario de la cancha actualizado'); }
+  catch(e){ toast(e.message,'warn'); }
 }
 function classDays(){                       // días con clases (sin lunes ni domingo), cada uno con sus horas
   const days=[{dow:2,name:'Martes'},{dow:3,name:'Miércoles'},{dow:4,name:'Jueves'},{dow:5,name:'Viernes'},{dow:6,name:'Sábado'}];
@@ -2805,7 +2807,13 @@ function viewUsers(){
   residents.sort((a,b)=>resHouseNum(a.u)-resHouseNum(b.u) || (a.u.name||'').localeCompare(b.u.name||''));   // orden por número de casa
   const fixedRows=fixed.length?fixed.map(x=>userRow(x.u,x.i)).join(''):'<div class="empty" style="padding:26px">No hay cuentas fijas.</div>';
   const resRows=residents.length?residents.map(x=>userRow(x.u,x.i)).join(''):'<div class="empty" style="padding:26px">Aún no hay residentes.</div>';
-  return `<div class="panel" style="margin-bottom:16px"><div class="panel-h"><h3>Cuentas fijas</h3><div class="spacer"></div><span style="font-size:12px;color:var(--muted)">No se eliminan</span></div>${fixedRows}</div>
+  const cupoSeg=[1,2,3,4].map(n=>`<button class="${CUPO===n?'on':''}" onclick="setCupo(${n})">${n}</button>`).join('');
+  const resetSeg=[18,19,20,21].map(n=>`<button class="${RESET_HOUR===n?'on':''}" onclick="setReset(${n})">${n-12} pm</button>`).join('');
+  const reglas=`<div class="panel" style="margin-bottom:16px"><div class="panel-h"><h3>Reglas de reserva</h3></div>
+      <div class="set-row"><div class="set-t"><b>Horas de reserva por semana</b><p>Cuántas horas puede reservar cada casa por semana.</p></div><div class="seg cupo-seg">${cupoSeg}</div></div>
+      <div class="set-row"><div class="set-t"><b>Reinicio semanal (domingo)</b><p>Hora del domingo en que se reinician las horas de todos.</p></div><div class="seg">${resetSeg}</div></div>
+    </div>`;
+  return reglas+`<div class="panel" style="margin-bottom:16px"><div class="panel-h"><h3>Cuentas fijas</h3><div class="spacer"></div><span style="font-size:12px;color:var(--muted)">No se eliminan</span></div>${fixedRows}</div>
     <div class="panel"><div class="panel-h"><h3>Residentes${residents.length?' · '+residents.length:''}</h3><div class="spacer"></div><button class="btn-ghost" style="box-shadow:none" onclick="copyUsersList()">${svgIco('<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>',14)} Copiar lista</button><button class="btn-mini" onclick="openNewUser()">+ Nuevo</button></div>${resRows}</div>
     <p style="font-size:12.5px;color:var(--muted);margin:14px 4px">Con "Vincular casas" asocias varias casas a una cuenta (usuario maestro). Las cuentas con varias casas comparten las horas de forma transparente.</p>`;
 }
@@ -3101,7 +3109,8 @@ function viewAvail(){
         <div id="schedInline">${schedEditorHTML()}</div>
       </div>
     </div>` : '';
-  let html=schedPanel+`<div class="panel"><div class="panel-h center"><h3>Ausencia del profesor</h3><div class="ph-ctrl">${checkbox}</div></div>
+  const tplPanel = state.role==='admin' ? classTemplatePanel() : '';
+  let html=schedPanel+tplPanel+`<div class="panel"><div class="panel-h center"><h3>Ausencia del profesor</h3><div class="ph-ctrl">${checkbox}</div></div>
     <div style="padding:18px">
       <label class="fld-label">${multi?'Escoge el rango de días que el profesor faltará (toca inicio y fin)':'Escoge el día en que el profesor no viene'}</label>
       <div class="avail-cols vcenter">
