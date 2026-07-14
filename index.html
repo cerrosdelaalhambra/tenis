@@ -1034,9 +1034,11 @@ function waNum(phone){ let t=(phone||'').replace(/\D/g,''); if(t.length===10 && 
 // enlace de WhatsApp para avisar al residente que su cuenta quedó activa
 function appLink(){ return location.origin + location.pathname.replace(/index\.html$/,''); }
 function waNotifyLink(u){
-  const casa = (u.house && u.house!=='—') ? u.house : ((u.houses&&u.houses[0]) || 'vecino');
+  const casa = (u.house && u.house!=='—') ? u.house : ((u.houses&&u.houses[0]) || '');
+  const nombre = (u.name && u.name!=='(sin nombre)') ? u.name : (casa || 'vecino');
+  const saludo = casa ? `Hola ${nombre} de la ${casa},` : `Hola ${nombre},`;
   const cred = u.username ? `Tu usuario es: ${u.username}` : 'Puedes entrar con tu correo';
-  const msg = `Hola ${casa} 👋\n\nTe avisamos que tu cuenta para reservar la cancha de tenis de Cerros de la Alhambra ya está *activada*.\n\n${cred}\n\nEntra aquí: ${appLink()}`;
+  const msg = `${saludo}\n\nTe avisamos que tu cuenta en la aplicación de la cancha de tenis del condominio Cerros de la Alhambra ya está *activada*.\n\n${cred}\n\nEntra aquí: ${appLink()}\n\nPara tenerla como una aplicación en tu celular:\n- iPhone (Safari): toca *Compartir* y luego *Agregar a inicio*.\n- Android (Chrome): abre el menú *⋮* y toca *Agregar a pantalla principal*.\n\nPor último, activa las notificaciones: entra a la app, toca la *campana* arriba y actívalas. Así te avisamos al celular cuando se reinician tus horas o la cancha queda libre.`;
   return `https://wa.me/${waNum(u.phone)}?text=${encodeURIComponent(msg)}`;
 }
 
