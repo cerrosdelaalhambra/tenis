@@ -82,10 +82,15 @@ function mapClosures(rows){                        // → {id,start,end,reason,k
             startTs:new Date(c.starts_at).getTime(), endTs:new Date(c.ends_at).getTime()}; });
 }
 function relTime(iso){
-  const diff=Date.now()-new Date(iso).getTime(), min=Math.round(diff/60000);
-  if(min<1) return 'Ahora'; if(min<60) return 'Hace '+min+' min';
-  const hr=Math.round(min/60); if(hr<24) return 'Hace '+hr+(hr===1?' hora':' horas');
-  const d=Math.round(hr/24); return 'Hace '+d+(d===1?' día':' días');
+  const d=new Date(iso), now=new Date();
+  const hh=d.getHours(), mm=String(d.getMinutes()).padStart(2,'0');
+  const ap=hh<12?'a.m.':'p.m.', h12=(hh%12)||12, hora=h12+':'+mm+' '+ap;
+  const sameDay=(a,b)=>a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();
+  const yest=new Date(now); yest.setDate(now.getDate()-1);
+  if(sameDay(d,now)) return 'Hoy '+hora;
+  if(sameDay(d,yest)) return 'Ayer '+hora;
+  const M=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  return d.getDate()+' '+M[d.getMonth()]+', '+hora;
 }
 
 /* ===== Errores del servidor → mensajes amables ===== */
@@ -199,8 +204,8 @@ const Auth = {
   async currentProfile(){                          // {id,full_name,role,status,phone,username,email} o null
     const {data:{user}}=await sb.auth.getUser();
     if(!user) return null;
-    let {data,error}=await sb.from('profiles').select('id,full_name,role,status,phone,username,notif_seen_at,notif_prefs').eq('id',user.id).single();
-    if(error){ const r=await sb.from('profiles').select('id,full_name,role,status,phone,username').eq('id',user.id).single(); data=r.data; } // por si aún no existe notif_prefs
+    let {data,error}=await sb.from('profiles').select('id,full_name,role,status,phone,username,notif_seen_at,notif_cleared_at,notif_prefs').eq('id',user.id).single();
+    if(error){ const r=await sb.from('profiles').select('id,full_name,role,status,phone,username').eq('id',user.id).single(); data=r.data; } // por si aún no existe alguna columna
     if(data) data.email = user.email || null;       // el correo de login vive en auth, no en profiles
     return data || null;
   },
@@ -319,9 +324,11 @@ async function primaryHouseMap(){                   // profile_id -> etiqueta de
   const {data}=await sb.from('house_members').select('profile_id,is_primary,houses(label)').eq('is_primary',true);
   const o={}; (data||[]).forEach(r=>{ o[r.profile_id]=r.houses && r.houses.label; }); return o;
 }
-async function getNotifications(role, profileId, seenAt){
-  const {data}=await sb.from('notifications').select('*, houses(label)')
-    .or(`profile_id.eq.${profileId},role.eq.${role}`).order('created_at',{ascending:false});
+async function getNotifications(role, profileId, seenAt, clearedAt){
+  let q=sb.from('notifications').select('*, houses(label)')
+    .or(`profile_id.eq.${profileId},role.eq.${role}`);
+  if(clearedAt) q=q.gt('created_at', clearedAt);   // solo lo posterior a la última "limpieza" (o a la creación de la cuenta)
+  const {data}=await q.order('created_at',{ascending:false});
   const seen = seenAt ? new Date(seenAt).getTime() : 0;   // marca de "todo leído" del usuario
   return (data||[]).map(n=>({
     id:n.id, type:n.type, title:n.title, body:n.body,
@@ -373,7 +380,7 @@ async function fetchAll(profile){
   const [myHouses, reservations, releases, closures, holidays, houses, cfg, notifs, profSchedule, recurring, activity, users, profClasses, absences, maintSchedule, classTemplate] = await Promise.all([
     member ? getMyHouses(profile.id) : Promise.resolve([]),
     getCalendar(profile.role), getReleases(), getClosures(), getHolidays(),
-    getHouses(), getConfig(), getNotifications(profile.role, profile.id, profile.notif_seen_at),
+    getHouses(), getConfig(), getNotifications(profile.role, profile.id, profile.notif_seen_at, profile.notif_cleared_at),
     getProfSchedule(), getRecurring(),
     staff ? getActivity() : Promise.resolve([]),
     staff ? getUsers()    : Promise.resolve([]),
@@ -584,11 +591,22 @@ async function markAllRead(profileId){
   }
   return data; // timestamptz del servidor
 }
+async function clearNotifs(profileId){
+  // "Limpiar bandeja": oculta todo lo anterior a ahora (hora del servidor).
+  const {data,error}=await sb.rpc('clear_notifications');
+  if(error){ // respaldo si la función aún no está desplegada
+    console.warn('clear_notifications:', error.message);
+    const now=new Date().toISOString();
+    await sb.from('profiles').update({notif_cleared_at:now}).eq('id',profileId);
+    return now;
+  }
+  return data; // timestamptz del servidor
+}
 
 /* ===== API pública del módulo ===== */
 window.DB = {
   Auth, Admin, Rain,
-  fetchAll, book, cancel, requestCancel, decideCancel, markNotif, markAllRead,
+  fetchAll, book, cancel, requestCancel, decideCancel, markNotif, markAllRead, clearNotifs,
   getProfClasses, changeClassHouse, releaseClass, markAbsence, unmarkAbsence, setClassTemplate,
   requestRecurring, decideRecurring, cancelRecurring, materializeRecurring, materializeClasses,
   VAPID_PUBLIC_KEY, savePushSub, removePushSub,

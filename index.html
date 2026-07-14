@@ -918,7 +918,7 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<script src="data.js?v=20260711e"></script>
+<script src="data.js?v=20260711f"></script>
 <script>
 /* PWA: registra el service worker (ruta relativa para que funcione bajo /tenis/) */
 if('serviceWorker' in navigator){
@@ -1063,6 +1063,7 @@ let PERM_ENABLED = true; // horarios permanentes: SIEMPRE activos (ya no hay int
 let PERM_ROUTE = 'both';  // a quién llegan: 'prof' | 'admin' | 'both'
 function visibleNotifs(){return notifs.filter(n=>{
   if(n.type==='reminder') return false; // el recordatorio es solo push (no llena la campana)
+  if(n.type==='perm_req'||n.type==='perm_res') return false; // las clases fijas ya no se piden por la app (solo planilla)
   if(n.roles && !n.roles.includes(state.role)) return false;
   if(n.type==='rain' && n.house && isMember() && !myHouses().includes(n.house)) return false; // la solicitud por lluvia solo le llega al dueño afectado
   return true;
@@ -1195,7 +1196,7 @@ function showPending(){
 }
 async function loadData(){
   const prof=state.profile;
-  const b=await DB.fetchAll({id:prof.id, role:prof.role, notif_seen_at:prof.notif_seen_at}); // notif_seen_at = marca de "todo leído"
+  const b=await DB.fetchAll({id:prof.id, role:prof.role, notif_seen_at:prof.notif_seen_at, notif_cleared_at:prof.notif_cleared_at}); // marcas de "todo leído" y de "limpieza"
   reservations=b.reservations||[]; released=b.releases||[];
   const allClos=b.closures||[]; const rainC=allClos.find(c=>c.kind==='rain' && c.endTs>Date.now());
   closures=allClos.filter(c=>c.kind!=='rain');                         // mantenimiento → maintAt
@@ -2318,6 +2319,7 @@ function viewNotif(){
       <button class="btn-ghost" style="box-shadow:none" onclick="openNotifSettings()">Ajustes</button></div></div>` : '';
   const vis=visibleNotifs();
   if(!vis.length) return settingsPanel+emptyState('No tienes notificaciones.');
+  const clearBar=`<div style="display:flex;justify-content:flex-end;margin:0 2px 8px"><button class="btn-ghost" style="box-shadow:none;color:var(--muted);display:inline-flex;align-items:center;gap:6px" onclick="clearNotifsInbox()">${svgIco('<path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>',14)} Limpiar</button></div>`;
   const rows=vis.map(n=>{const[col,bg,path]=ic[n.type]||ic.open;
     let extra='';
     if(n.type==='rain' && n.status==='pending') extra=`<div class="notif-act"><button class="na-yes" onclick="rainAccept(${n.id})">Aceptar y cancelar</button><button class="na-no" onclick="rainReject(${n.id})">Rechazar</button></div>`;
@@ -2334,7 +2336,17 @@ function viewNotif(){
       <div class="body"><b>${n.title}</b><p>${n.body}</p>${extra}<time>${n.time}</time></div>
       ${n.unread?'<span class="dot"></span>':''}
     </div>`;}).join('');
-  return settingsPanel+`<div class="panel">${rows}</div>`;
+  return settingsPanel+clearBar+`<div class="panel">${rows}</div>`;
+}
+async function clearNotifsInbox(){
+  if(!state.profile) return;
+  try{
+    const ts=await DB.clearNotifs(state.profile.id);
+    if(ts && state.profile) state.profile.notif_cleared_at=ts;
+    notifs=[];
+    await loadData(); render();
+    toast('Bandeja limpia');
+  }catch(e){ toast(e.message,'warn'); }
 }
 /* ---- Notificaciones push (residente) ---- */
 function pushSupported(){ return ('serviceWorker' in navigator) && ('PushManager' in window) && ('Notification' in window); }
@@ -2381,7 +2393,6 @@ async function openNotifSettings(){
     ${chk('freed','Cuando alguien cancela y la cancha queda libre')}
     ${chk('reset','Cuando se reinician tus horas de la semana')}
     ${chk('rain','Modo lluvia (te piden cancelar tu reserva)')}
-    ${chk('perm','Resultado de tu horario permanente')}
     ${chk('reminder','Recordatorio 15 minutos antes de tu reserva')}
     <div class="modal-actions"><button class="btn-soft" onclick="closeModal()">Cerrar</button>
     <button class="btn-primary" onclick="saveNotifPrefs()">Guardar preferencias</button></div>`;
@@ -2393,7 +2404,6 @@ async function saveNotifPrefs(){
                 freed:document.getElementById('np_freed').classList.contains('on'),
                 reset:document.getElementById('np_reset').classList.contains('on'),
                 rain:document.getElementById('np_rain').classList.contains('on'),
-                perm:document.getElementById('np_perm').classList.contains('on'),
                 reminder:document.getElementById('np_reminder').classList.contains('on') };
   closeModal();
   try{ await DB.Auth.setNotifSettings(state.profile.id, {prefs}); if(state.profile) state.profile.notif_prefs=prefs; toast('Preferencias guardadas'); }
@@ -2677,7 +2687,6 @@ function viewSettings(){
           <button class="tpl-im" onclick="document.getElementById('tplFile').click()">Importar</button>
         </div>
       </div>
-      <div class="set-row"><div class="set-t"><b>Solicitudes para clase semanal</b><p>Cuando un horario de clase queda sin casa, un residente puede pedirlo como clase fija semanal con el profesor; tú o el profesor la aprueban. ${permPend?'<b style="color:var(--court)">'+permPend+' por aprobar</b> · ':''}${permAct} activa${permAct===1?'':'s'}.</p></div><button class="btn-ghost" style="box-shadow:none" onclick="openRecurringList()">Ver y gestionar</button></div>
       <input type="file" id="tplFile" accept=".xlsx,.xls" style="display:none" onchange="if(this.files&&this.files[0]){importTemplate(this.files[0]);this.value='';}">
     </div>`;
 }
@@ -3273,9 +3282,7 @@ function openBook(date,h,ctx){
     <div class="seg seg-wrap" id="flexType">
       <button class="on" data-u="con" onclick="flexPick(this)">Con profesor</button>
       <button data-u="sin" onclick="flexPick(this)">Sin profesor</button>
-      ${PERM_ENABLED?`<button data-u="perm" onclick="flexPick(this)">Permanente</button>`:''}
-    </div>
-    <div id="permNote" style="display:none;margin-top:10px"><div class="perm-note"><b>Clase fija cada semana</b><span>Se repetirá todos los ${DOWL[dateAt(date,h).getDay()]} a esta hora. Debe aprobarlo ${permWho}. Al confirmar, envías la solicitud (aún no queda reservado).</span></div></div>`:'';
+    </div>`:'';
   let durChoice='';
   if(ctx==='full'){
     state.bookCtx={date,h};
