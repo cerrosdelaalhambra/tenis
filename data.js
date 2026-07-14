@@ -489,6 +489,8 @@ const Admin = {
   async resetClassPeriod(){ const {error}=await sb.rpc('reset_class_period'); if(error) throw mapError(error); },
   async setStatus(profileId, status){ const {error}=await sb.from('profiles').update({status}).eq('id',profileId); if(error) throw mapError(error); },
   async approveUser(profileId){ return Admin.setStatus(profileId,'active'); },
+  // El admin corrige el nombre de una cuenta (solo el nombre; la RLS de admin lo permite).
+  async setName(profileId, full_name){ const {error}=await sb.from('profiles').update({full_name:(full_name||'').trim()}).eq('id',profileId); if(error) throw mapError(error); },
   // Busca una casa por etiqueta (sin distinguir mayúsculas) o la crea. Devuelve su id.
   async findOrCreateHouse(label){
     const norm=normHouse(label); if(!norm) return null;
