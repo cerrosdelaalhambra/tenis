@@ -1847,7 +1847,6 @@ function calHeader(){
   if(state.role!=='admin'){                              // el admin no reserva → no necesita la leyenda de ★
     info += `<span class="cb-chip cb-star"><span class="bstar">★</span>No gasta horas</span>`;
   }
-  const week=`<button class="cb-btn${state.fullWeek?' on':''}" onclick="toggleFullWeek()">${state.fullWeek?CLK_ICON:CAL_ICON}<span>${state.fullWeek?'Desde ahora':'Toda la semana'}</span></button>`;
   const backIco='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>';
   const fwdIco='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
   const peek = canPeekPrev()
@@ -1859,7 +1858,7 @@ function calHeader(){
   const clockIco='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg>';
   const court=(state.role==='admin')
     ? `<button class="cb-btn" onclick="openCourtHours()">${clockIco}<span>Horario cancha</span></button>` : '';
-  return `<div class="cal-bar"><div class="cb-info">${info}</div><div class="cb-actions">${peek}${week}${court}${rain}</div></div>`;
+  return `<div class="cal-bar"><div class="cb-info">${info}</div><div class="cb-actions">${peek}${court}${rain}</div></div>`;
 }
 function toggleFullWeek(){state.fullWeek=!state.fullWeek;render();}
 function horasTexto(n){if(n<=0)return '';const f=Math.floor(n),half=(n-f)>=0.5;if(f===0)return 'media hora';const base=f===1?'una hora':f===2?'dos horas':f===3?'tres horas':f+' horas';return half?base+' y media':base;}
