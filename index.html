@@ -1554,12 +1554,11 @@ function halfState(date,h,half){
     // Si la plantilla tiene una clase asignada para esta hora (aunque no esté materializada como
     // reserva, p.ej. en días ya pasados), se muestra la clase (casa + nombre) igual que los días futuros.
     const _cm=h*60+half*30;
-    const _cls=CLASS_TEMPLATE.find(c=>c.dow===dow && c.startMin<=_cm && c.endMin>_cm);
-    if(_cls){
-      if(_cls.house) return {kind:'classinfo', res:{house:_cls.house, name:_cls.student_name}};   // clase con casa asignada
-      return {kind:'classinfo', res:{house:'', name:'Escuela de tenis', school:true}};            // sin casa = clase grupal (escuela)
-    }
-    // Hora del profesor SIN clase asignada: NO se bloquea; cae a la lógica general → queda LIBRE para reservar.
+    const _ct=CLASS_TEMPLATE.find(c=>c.dow===dow && c.house && c.startMin<=_cm && c.endMin>_cm);
+    if(_ct) return {kind:'classinfo', res:{house:_ct.house, name:_ct.student_name}};              // clase con casa asignada
+    const _sch=CLASS_TEMPLATE.find(c=>c.dow===dow && !c.house && /escuel/i.test(c.student_name||'') && c.startMin<=_cm && c.endMin>_cm);
+    if(_sch) return {kind:'classinfo', res:{house:'', name:'Escuela de tenis', school:true}};     // sin casa + nombre "escuela" = clase grupal
+    // Hora del profesor SIN clase asignada (o celda vacía): NO se bloquea; cae a la lógica general → queda LIBRE.
   }
   if(h<OPEN_START||h>=OPEN_END) return {kind:'na'};   // fuera del horario de operación (configurable)
   // Nota: los slots ya pasados YA NO devuelven 'past'; muestran su contenido real (libre/clase/etc.)
@@ -2862,18 +2861,29 @@ function viewUsers(){
   const idx=users.map((u,i)=>({u,i}));
   const isFx=x=>(x.u.role==='admin'||x.u.role==='prof'||x.u.role==='portero');
   const fixed=idx.filter(isFx), residents=idx.filter(x=>!isFx(x));
-  residents.sort((a,b)=>resHouseNum(a.u)-resHouseNum(b.u) || (a.u.name||'').localeCompare(b.u.name||''));   // orden por número de casa
+  const pending=residents.filter(x=>x.u.status==='pending');
+  const approved=residents.filter(x=>x.u.status!=='pending');
+  const byHouse=(a,b)=>resHouseNum(a.u)-resHouseNum(b.u) || (a.u.name||'').localeCompare(b.u.name||'');
+  approved.sort(byHouse); pending.sort(byHouse);
   const fixedRows=fixed.length?fixed.map(x=>userRow(x.u,x.i)).join(''):'<div class="empty" style="padding:26px">No hay cuentas fijas.</div>';
-  const resRows=residents.length?residents.map(x=>userRow(x.u,x.i)).join(''):'<div class="empty" style="padding:26px">Aún no hay residentes.</div>';
+  const pendRows=pending.length?pending.map(x=>userRow(x.u,x.i)).join(''):'<div class="empty" style="padding:22px">No hay solicitudes pendientes.</div>';
+  const apprRows=approved.length?approved.map(x=>userRow(x.u,x.i)).join(''):'<div class="empty" style="padding:26px">Aún no hay residentes aprobados.</div>';
   const cupoSeg=[1,2,3,4].map(n=>`<button class="${CUPO===n?'on':''}" onclick="setCupo(${n})">${n}</button>`).join('');
   const resetSeg=[18,19,20,21].map(n=>`<button class="${RESET_HOUR===n?'on':''}" onclick="setReset(${n})">${n-12} pm</button>`).join('');
-  const reglas=`<div class="panel" style="margin-bottom:16px"><div class="panel-h"><h3>Reglas de reserva</h3></div>
+  const copyIco=svgIco('<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>',14);
+  // 1) Solicitudes pendientes (primero) · con contador
+  const solicitudes=`<div class="panel" style="margin-bottom:16px"><div class="panel-h"><h3>Solicitudes</h3><span class="pill ${pending.length?'amber':'gray'}" style="margin-left:2px">${pending.length}</span><div class="spacer"></div>${pending.length?'<span style="font-size:12px;color:var(--muted)">por aprobar o rechazar</span>':''}</div>${pendRows}</div>`;
+  // 2) Residentes aprobados · con contador · Copiar (solo aprobados) + Nuevo
+  const residentes=`<div class="panel" style="margin-bottom:16px"><div class="panel-h"><h3>Residentes</h3><span class="pill green" style="margin-left:2px">${approved.length}</span><div class="spacer"></div><button class="btn-ghost" style="box-shadow:none" onclick="copyUsersList()">${copyIco} Copiar lista</button><button class="btn-mini" onclick="openNewUser()">+ Nuevo</button></div>${apprRows}</div>`;
+  // 3) Cuentas fijas
+  const cuentasFijas=`<div class="panel" style="margin-bottom:16px"><div class="panel-h"><h3>Cuentas fijas</h3><div class="spacer"></div><span style="font-size:12px;color:var(--muted)">No se eliminan</span></div>${fixedRows}</div>`;
+  // 4) Reglas de reserva (config)
+  const reglas=`<div class="panel"><div class="panel-h"><h3>Reglas de reserva</h3></div>
       <div class="set-row"><div class="set-t"><b>Horas de reserva por semana</b><p>Cuántas horas puede reservar cada casa por semana.</p></div><div class="seg cupo-seg">${cupoSeg}</div></div>
       <div class="set-row"><div class="set-t"><b>Reinicio semanal (domingo)</b><p>Hora del domingo en que se reinician las horas de todos.</p></div><div class="seg">${resetSeg}</div></div>
     </div>`;
-  return reglas+`<div class="panel" style="margin-bottom:16px"><div class="panel-h"><h3>Cuentas fijas</h3><div class="spacer"></div><span style="font-size:12px;color:var(--muted)">No se eliminan</span></div>${fixedRows}</div>
-    <div class="panel"><div class="panel-h"><h3>Residentes${residents.length?' · '+residents.length:''}</h3><div class="spacer"></div><button class="btn-ghost" style="box-shadow:none" onclick="copyUsersList()">${svgIco('<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>',14)} Copiar lista</button><button class="btn-mini" onclick="openNewUser()">+ Nuevo</button></div>${resRows}</div>
-    <p style="font-size:12.5px;color:var(--muted);margin:14px 4px">Con "Vincular casas" asocias varias casas a una cuenta (usuario maestro). Las cuentas con varias casas comparten las horas de forma transparente.</p>`;
+  return solicitudes + residentes + cuentasFijas + reglas +
+    `<p style="font-size:12.5px;color:var(--muted);margin:14px 4px">Con "Vincular casas" asocias varias casas a una cuenta (usuario maestro). Las cuentas con varias casas comparten las horas de forma transparente.</p>`;
 }
 // Copia una lista para WhatsApp: "- #Casa, Nombre y Apellido" (residentes activos, por número de casa).
 function copyUsersList(){

@@ -11,7 +11,7 @@
  *  Al publicar una versión nueva de la app, SUBE el número de CACHE (v2, v3…)
  *  para que los caches viejos se borren.
  * ========================================================================== */
-const CACHE = 'tenis-cache-v2';
+const CACHE = 'tenis-cache-v3';
 const SHELL = [
   './',
   './index.html',
