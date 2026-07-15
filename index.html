@@ -1556,6 +1556,9 @@ function halfState(date,h,half){
     const _cm=h*60+half*30;
     const _ct=CLASS_TEMPLATE.find(c=>c.dow===dow && c.house && c.startMin<=_cm && c.endMin>_cm);
     if(_ct) return {kind:'classinfo', res:{house:_ct.house, name:_ct.student_name}};
+    // Escuela de tenis (plantilla sin casa, nombre tipo "escuela"): clase grupal, ocupa la hora.
+    const _sch=CLASS_TEMPLATE.find(c=>c.dow===dow && !c.house && c.student_name && /escuel/i.test(c.student_name) && c.startMin<=_cm && c.endMin>_cm);
+    if(_sch) return {kind:'classinfo', res:{house:'', name:'Escuela de tenis', school:true}};
     return {kind:'prof'};                             // hora del profesor, sin clase asignada
   }
   if(h<OPEN_START||h>=OPEN_END) return {kind:'na'};   // fuera del horario de operación (configurable)
@@ -1906,7 +1909,7 @@ function halfCell(date,h,half,s){
   const k=s.kind;
   if(k==='mine'){const r=s.res;return `<div class="half h-mine" onclick="openMyRes(${r.id})" title="${rangeLabel(r.h,r.min,r.dur)}">${HOUSE_ICON}${houseNum(r.house)}${inRainWin(date,h,half)?RAINMARK:''}</div>`;}
   if(k==='reserved'){const r=s.res;return `<div class="half h-reserved" ${(isStaff()||profCanRelease(r.type))?`onclick="openAdminRes(${r.id})"`:''} title="${rangeLabel(r.h,r.min,r.dur)}${r.name?' · '+r.name:''}">${HOUSE_ICON}${houseNum(r.house)}${inRainWin(date,h,half)?RAINMARK:''}</div>`;}
-  if(k==='classinfo'){const r=s.res;return `<div class="half h-clase" title="Clase${r.name?' · '+r.name:''}">${HOUSE_ICON}${houseNum(r.house)}${r.name?' · '+r.name.split(' ')[0]:''}</div>`;}
+  if(k==='classinfo'){const r=s.res; if(r.school) return `<div class="half h-clase" title="Escuela de tenis">${svgIco(BALL_P,11)} Escuela</div>`; return `<div class="half h-clase" title="Clase${r.name?' · '+r.name:''}">${HOUSE_ICON}${houseNum(r.house)}${r.name?' · '+r.name.split(' ')[0]:''}</div>`;}
   if(k==='prof') return `<div class="half h-prof" title="Profesor"><span class="cdot cdot-black"></span>Profesor</div>`;
   if(k==='flex') return `<div class="half h-flex" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'flexh${half}')"`:''} title="Hora del profesor · reservable, con o sin profesor"><span><span class="cdot cdot-amber"></span>Profesor</span><span class="plus">+</span></div>`;
   if(k==='class'||k==='open') return `<div class="half h-bonus" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'h${half}')"`:''} title="No gasta horas${k==='class'?' · profesor disponible':''}"><span><span class="plus">+</span>Libre</span><span class="bstar">★</span></div>`;
@@ -1920,7 +1923,7 @@ function halfCell(date,h,half,s){
 function slotHTML(date,h){
   const sc=slotCat(date,h), cat=sc.cat, res=sc.res, mc=sc.mc;
   if(cat==='maint') return `<div class="slot s-maint" title="${mc?mc.reason:'Mantenimiento'}" onclick="toast(this.title)"><b>${svgIco(ICONS.tool,13,'#fff')}Mantenimiento</b></div>`;
-  if(cat==='classinfo') return `<div class="slot s-clase" title="Clase con el profesor${res.name?' · '+res.name:''}"><b>${HOUSE_ICON}${houseNum(res.house)}</b><small class="cs-name">${res.name||'Clase'}</small></div>`;
+  if(cat==='classinfo'){ if(res.school) return `<div class="slot s-clase" title="Escuela de tenis · clase grupal"><b>${svgIco(BALL_P,14)} Escuela</b><small class="cs-name">de tenis</small></div>`; return `<div class="slot s-clase" title="Clase con el profesor${res.name?' · '+res.name:''}"><b>${HOUSE_ICON}${houseNum(res.house)}</b><small class="cs-name">${res.name||'Clase'}</small></div>`; }
   if(cat==='profclass') return `<div class="slot s-prof" title="Profesor" ${state.role==='prof'?`onclick="openProfRes(${res.id})" style="cursor:pointer"`:''}><b><span class="cdot cdot-black"></span>Profesor</b></div>`;
   if(cat==='mine') return `<div class="slot s-mine" onclick="openMyRes(${res.id})"><b>${HOUSE_ICON}${houseNum(res.house)}</b><span class="mtime${slotRain(date,h)?' rn':''}">${rangeLabel(res.h,res.min,res.dur)}</span>${slotRain(date,h)?RAINMARK:''}</div>`;
   if(cat==='reserved') return `<div class="slot s-reserved" ${(isStaff()||profCanRelease(res.type))?`onclick="openAdminRes(${res.id})" style="cursor:pointer"`:''}><b>${HOUSE_ICON}${houseNum(res.house)}</b>${res.name?`<small>${res.name}</small>`:''}${slotRain(date,h)?RAINMARK:''}</div>`;
@@ -1982,7 +1985,7 @@ function mHalf(date,h,half,s){
   const k=s.kind;
   if(k==='mine'){const r=s.res;return `<div class="mslot mine" onclick="openMyRes(${r.id})"><div class="bar"></div>${tt}<div class="ml"><b>${HOUSE_ICON}${houseNum(r.house)}</b><span>30 min</span></div>${M_CHEV}</div>`;}
   if(k==='reserved'){const r=s.res;return `<div class="mslot reserved" ${(isStaff()||profCanRelease(r.type))?`onclick="openAdminRes(${r.id})"`:''}><div class="bar"></div>${tt}<div class="ml"><b>${HOUSE_ICON}${houseNum(r.house)}</b><span>${r.name||'Reservada'} · 30 min</span></div>${(isStaff()||profCanRelease(r.type))?M_CHEV:''}</div>`;}
-  if(k==='classinfo'){const r=s.res;return `<div class="mslot clasem"><div class="bar"></div>${tt}<div class="ml"><b>${HOUSE_ICON}${houseNum(r.house)}</b><span>Clase${r.name?' · '+r.name:''}</span></div></div>`;}
+  if(k==='classinfo'){const r=s.res; if(r.school) return `<div class="mslot clasem"><div class="bar"></div>${tt}<div class="ml"><b>Escuela de tenis</b><span>Clase grupal con el profesor</span></div></div>`; return `<div class="mslot clasem"><div class="bar"></div>${tt}<div class="ml"><b>${HOUSE_ICON}${houseNum(r.house)}</b><span>Clase${r.name?' · '+r.name:''}</span></div></div>`;}
   if(k==='prof') return `<div class="mslot prof"><div class="bar"></div>${tt}<div class="ml"><b>Profesor</b><span>30 min</span></div></div>`;
   if(k==='flex'){ if(!canBookFree(date,h)) return `<div class="mslot prof"><div class="bar"></div>${tt}<div class="ml"><b>Profesor</b><span>30 min</span></div></div>`; return `<div class="mslot flex" onclick="openBook('${date}',${h},'flexh${half}')"><div class="bar"></div>${tt}<div class="ml"><b>Profesor · reservar</b><span>Con o sin profesor · no gasta horas</span></div>${M_CHEV}</div>`; }
   if(k==='class'||k==='open'){ if(!canBookFree(date,h)) return ''; return `<div class="mslot bonus" onclick="openBook('${date}',${h},'h${half}')"><div class="bar"></div>${tt}<div class="ml"><b><span class="bstar">★</span> Libre</b><span>No gasta horas</span></div>${M_CHEV}</div>`; }
@@ -1999,7 +2002,7 @@ function mSlot(date,h,sc){
   if(cat==='profclass') return `<div class="mslot prof" ${state.role==='prof'?`onclick="openProfRes(${res.id})"`:''}><div class="bar"></div>${t}<div class="ml"><b>Profesor</b><span>${state.role==='prof'?'Tu clase · toca para cancelar':'Reservado para el profesor'}</span></div>${state.role==='prof'?chev:''}</div>`;
   if(cat==='mine') return `<div class="mslot mine" onclick="openMyRes(${res.id})"><div class="bar"></div>${t}<div class="ml"><b>${HOUSE_ICON}${houseNum(res.house)}</b></div>${chev}</div>`;
   if(cat==='reserved') return `<div class="mslot reserved" ${(isStaff()||profCanRelease(res.type))?`onclick="openAdminRes(${res.id})"`:''}><div class="bar"></div>${t}<div class="ml"><b>${HOUSE_ICON}${houseNum(res.house)}</b><span>${res.name||'Reservada'}</span></div>${(isStaff()||profCanRelease(res.type))?chev:''}</div>`;
-  if(cat==='classinfo') return `<div class="mslot clasem"><div class="bar"></div>${t}<div class="ml"><b>${HOUSE_ICON}${houseNum(res.house)}</b><span>Clase con el profesor${res.name?' · '+res.name:''}</span></div></div>`;
+  if(cat==='classinfo'){ if(res.school) return `<div class="mslot clasem"><div class="bar"></div>${t}<div class="ml"><b>Escuela de tenis</b><span>Clase grupal con el profesor</span></div></div>`; return `<div class="mslot clasem"><div class="bar"></div>${t}<div class="ml"><b>${HOUSE_ICON}${houseNum(res.house)}</b><span>Clase con el profesor${res.name?' · '+res.name:''}</span></div></div>`; }
   if(cat==='prof') return `<div class="mslot prof"><div class="bar"></div>${t}<div class="ml"><b>Profesor</b><span>Reservado para el profesor</span></div></div>`;
   if(cat==='flex') return `<div class="mslot flex" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'flexfull')"`:''}><div class="bar"></div>${t}<div class="ml"><b>Profesor · reservar</b><span>${canBookFree(date,h)?'Con o sin profesor · no gasta horas':'Hora del profesor'}</span></div>${canBookFree(date,h)?chev:''}</div>`;
   if(cat==='class') return `<div class="mslot bonus" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'classfull')"`:''}><div class="bar"></div>${t}<div class="ml"><b><span class="bstar">★</span> Libre</b><span>No gasta horas</span></div>${canBookFree(date,h)?chev:''}</div>`;
@@ -2028,6 +2031,13 @@ function viewMine(){
       ${fut?(cancelable?`<button class="btn-cancel" onclick="cancelRes(${r.id})">Cancelar</button>`:'<span class="pill gray">No cancelable</span>'):'<span class="pill gray">Pasada</span>'}
     </div>`;};
   let html=cupoCard();
+  // Mis clases semanales (de la plantilla) para la(s) casa(s) del residente.
+  const myKeys=new Set(hs.map(normHouseKey));
+  const dowOrd=x=>x===0?7:x;
+  const myClases=(CLASS_TEMPLATE||[]).filter(c=>c.house && myKeys.has(normHouseKey(c.house))).sort((a,b)=>dowOrd(a.dow)-dowOrd(b.dow)||a.startMin-b.startMin);
+  if(myClases.length){
+    html+=`<div class="panel" style="margin-bottom:16px"><div class="panel-h"><h3>Mis clases semanales</h3></div>${myClases.map(c=>`<div class="row"><div class="info"><b>${SCHED_DOW_NAMES[c.dow]} · ${schedMinLabel(c.startMin)}–${schedMinLabel(c.endMin)}</b><span>Clase con el profesor${hs.length>1?' · '+c.house:''}</span></div><span class="pill amber">Clase</span></div>`).join('')}</div>`;
+  }
   const myPerm=RECURRING.filter(r=>r.status==='active');
   if(myPerm.length){
     html+=`<div class="panel" style="margin-bottom:16px"><div class="panel-h"><h3>Mis horarios permanentes</h3></div>${myPerm.map(r=>`<div class="row"><div class="info"><b>${SCHED_DOW_NAMES[r.dow]} ${schedMinLabel(r.startMin)}–${schedMinLabel(r.endMin)}</b><span>Clase fija con el profesor · ${r.house}</span></div><button class="btn-cancel" onclick="doCancelRecurring(${r.id})">Cancelar</button></div>`).join('')}</div>`;
@@ -2718,8 +2728,17 @@ function classDays(){                       // días con clases (sin lunes ni do
   });
   return days;
 }
+// Clave de casa normalizada: "Casa 29A", "29 a" -> "29A".
+function normHouseKey(s){ return String(s||'').replace(/^\s*casa\s+/i,'').replace(/\s+/g,'').toUpperCase(); }
+// Nombre en formato título: "juan PEREZ" -> "Juan Perez".
+function titleName(s){ return String(s||'').trim().toLowerCase().split(/\s+/).filter(Boolean).map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' '); }
+// Primer nombre normalizado (sin tildes) para comparar si es la MISMA persona.
+function firstToken(s){ return String(s||'').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').split(/\s+/)[0]||''; }
+// Mapa: casa (registrada, con cuenta activa) -> nombre de la cuenta.
+function houseNameMap(){ const m={}; (users||[]).forEach(u=>{ if((u.role==='member'||u.role==='master') && u.active){ (u.houses||[]).forEach(hh=>{ const k=normHouseKey(hh); if(k && !m[k]) m[k]=u.name; }); } }); return m; }
 function exportTemplate(){
   if(typeof XLSX==='undefined'){ toast('No se pudo cargar el generador de Excel.','warn'); return; }
+  const accMap=houseNameMap();
   const days=classDays();
   const maxRows=Math.max(0,...days.map(d=>d.slots.length));
   if(!maxRows){ toast('No hay horas de clase en el horario del profesor.','warn'); return; }
@@ -2732,7 +2751,7 @@ function exportTemplate(){
     const row=[];
     days.forEach(d=>{ const m=d.slots[i];
       if(m==null){ row.push('','',''); }
-      else { const c=cur(d.dow,m); row.push(schedMinLabel(m)+'–'+schedMinLabel(m+60), (c&&c.house)||'', (c&&c.student_name)||''); }
+      else { const c=cur(d.dow,m); const hCasa=(c&&c.house)||''; const stored=(c&&c.student_name)||''; const acc=hCasa?accMap[normHouseKey(hCasa)]:null; const nm=(acc && firstToken(acc)===firstToken(stored))?acc:stored; row.push(schedMinLabel(m)+'–'+schedMinLabel(m+60), hCasa, nm); }
     });
     rows.push(row);
   }
@@ -2771,6 +2790,7 @@ async function importTemplate(file){
     const days=classDays();
     // por día: etiqueta de hora -> minutos (para identificar el bloque aunque muevan filas)
     days.forEach(d=>{ d.labelToMin={}; d.slots.forEach(m=>{ d.labelToMin[schedMinLabel(m)+'–'+schedMinLabel(m+60)]=m; }); });
+    const accMap=houseNameMap();
     const entries=[]; const seen={};
     for(let i=2;i<rows.length;i++){ const r=rows[i]; if(!r||!r.length) continue;   // fila 0 y 1 = encabezados
       days.forEach((d,di)=>{
@@ -2779,7 +2799,14 @@ async function importTemplate(file){
         const key=d.dow+'|'+m; if(seen[key]) return; seen[key]=1;      // una entrada por bloque
         const house=(r[di*3+1]!=null?String(r[di*3+1]):'').trim();
         const name =(r[di*3+2]!=null?String(r[di*3+2]):'').trim();
-        entries.push({dow:d.dow, start_min:m, end_min:m+60, house, student:name});
+        const nk=house?normHouseKey(house):'';
+        // "Casa 000" / "Disponible" / celda vacía → SIN clase (esa hora queda del profesor).
+        if(nk==='000' || /^disponible$/i.test(name) || (!house && !name)) return;
+        // Casa registrada y MISMO primer nombre → nombre de la cuenta (corrige ortografía).
+        // Otro miembro de la familia (primer nombre distinto) → se respeta su nombre, bien escrito.
+        const acc = nk ? accMap[nk] : null;
+        const student = (acc && firstToken(acc)===firstToken(name)) ? acc : titleName(name);
+        entries.push({dow:d.dow, start_min:m, end_min:m+60, house, student});
       });
     }
     if(!entries.length){ toast('No se reconocieron filas (revisa el formato de la plantilla).','warn'); return; }
