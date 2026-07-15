@@ -1554,12 +1554,12 @@ function halfState(date,h,half){
     // Si la plantilla tiene una clase asignada para esta hora (aunque no esté materializada como
     // reserva, p.ej. en días ya pasados), se muestra la clase (casa + nombre) igual que los días futuros.
     const _cm=h*60+half*30;
-    const _ct=CLASS_TEMPLATE.find(c=>c.dow===dow && c.house && c.startMin<=_cm && c.endMin>_cm);
-    if(_ct) return {kind:'classinfo', res:{house:_ct.house, name:_ct.student_name}};
-    // Escuela de tenis (plantilla sin casa, nombre tipo "escuela"): clase grupal, ocupa la hora.
-    const _sch=CLASS_TEMPLATE.find(c=>c.dow===dow && !c.house && c.student_name && /escuel/i.test(c.student_name) && c.startMin<=_cm && c.endMin>_cm);
-    if(_sch) return {kind:'classinfo', res:{house:'', name:'Escuela de tenis', school:true}};
-    return {kind:'prof'};                             // hora del profesor, sin clase asignada
+    const _cls=CLASS_TEMPLATE.find(c=>c.dow===dow && c.startMin<=_cm && c.endMin>_cm);
+    if(_cls){
+      if(_cls.house) return {kind:'classinfo', res:{house:_cls.house, name:_cls.student_name}};   // clase con casa asignada
+      return {kind:'classinfo', res:{house:'', name:'Escuela de tenis', school:true}};            // sin casa = clase grupal (escuela)
+    }
+    // Hora del profesor SIN clase asignada: NO se bloquea; cae a la lógica general → queda LIBRE para reservar.
   }
   if(h<OPEN_START||h>=OPEN_END) return {kind:'na'};   // fuera del horario de operación (configurable)
   // Nota: los slots ya pasados YA NO devuelven 'past'; muestran su contenido real (libre/clase/etc.)
@@ -2017,7 +2017,10 @@ function mSlot(date,h,sc){
 /* ---- MY RESERVATIONS ---- */
 function viewMine(){
   const hs=myHouses();
-  const mine=reservations.filter(r=>hs.includes(r.house));
+  // Una clase fija (de la plantilla) NO va en "Próximas reservas": va en "Mis clases semanales".
+  const isFixedClass=(r)=>{ if(r.type!=='class') return false; const dw=dateAt(r.date,r.h).getDay(); const sm=r.h*60+(r.min||0);
+    return (CLASS_TEMPLATE||[]).some(c=>normHouseKey(c.house)===normHouseKey(r.house) && c.dow===dw && c.startMin===sm); };
+  const mine=reservations.filter(r=>hs.includes(r.house) && !isFixedClass(r));
   const up=mine.filter(r=>dateAt(r.date,r.h)>=NOW).sort((a,b)=>dateAt(a.date,a.h)-dateAt(b.date,b.h));
   const ws=ymd(OPEN_WEEK_START);
   const past=mine.filter(r=>dateAt(r.date,r.h)<NOW && r.date>=ws && r.date<=OPEN_WEEK_END).sort((a,b)=>dateAt(b.date,b.h)-dateAt(a.date,a.h));
@@ -2031,19 +2034,29 @@ function viewMine(){
       ${fut?(cancelable?`<button class="btn-cancel" onclick="cancelRes(${r.id})">Cancelar</button>`:'<span class="pill gray">No cancelable</span>'):'<span class="pill gray">Pasada</span>'}
     </div>`;};
   let html=cupoCard();
-  // Mis clases semanales (de la plantilla) para la(s) casa(s) del residente.
+  // 1) Próximas reservas (solo reservas normales / práctica libre; las clases fijas van aparte).
+  html+=`<div class="panel"><div class="panel-h"><h3>Próximas reservas</h3></div>${up.length?up.map(card).join(''):emptyInline('No tienes reservas próximas')}</div>`;
+  html+=`<div class="panel past-panel" style="margin-top:16px"><div class="panel-h"><h3>Reservas anteriores de esta semana</h3></div>${past.length?past.map(card).join(''):emptyInline('No tienes reservas anteriores esta semana')}</div>`;
+  // 2) Mis clases semanales (después), con opción de cancelar la de esta semana.
   const myKeys=new Set(hs.map(normHouseKey));
   const dowOrd=x=>x===0?7:x;
   const myClases=(CLASS_TEMPLATE||[]).filter(c=>c.house && myKeys.has(normHouseKey(c.house))).sort((a,b)=>dowOrd(a.dow)-dowOrd(b.dow)||a.startMin-b.startMin);
   if(myClases.length){
-    html+=`<div class="panel" style="margin-bottom:16px"><div class="panel-h"><h3>Mis clases semanales</h3></div>${myClases.map(c=>`<div class="row"><div class="info"><b>${SCHED_DOW_NAMES[c.dow]} · ${schedMinLabel(c.startMin)}–${schedMinLabel(c.endMin)}</b><span>Clase con el profesor${hs.length>1?' · '+c.house:''}</span></div><span class="pill amber">Clase</span></div>`).join('')}</div>`;
+    const claseRow=(c)=>{
+      const off=c.dow===0?6:c.dow-1, date=ymd(addDays(OPEN_WEEK_START,off));
+      const ch=Math.floor(c.startMin/60), cmin=c.startMin%60, dd=dateAt(date,ch);
+      const res=reservations.find(r=>r.type==='class' && normHouseKey(r.house)===normHouseKey(c.house) && r.date===date && r.h===ch && (r.min||0)===cmin);
+      let act='<span class="pill amber">Clase</span>';
+      if(res && (dd-NOW)>3600000) act=`<button class="btn-cancel" onclick="cancelRes(${res.id})">Cancelar</button>`;
+      else if(res && dd.getTime()+3600000<=NOW.getTime()) act='<span class="pill gray">Ya pasó</span>';
+      return `<div class="row"><div class="info"><b>${SCHED_DOW_NAMES[c.dow]} · ${schedMinLabel(c.startMin)}–${schedMinLabel(c.endMin)}</b><span>Clase con el profesor${hs.length>1?' · '+c.house:''}</span></div>${act}</div>`;
+    };
+    html+=`<div class="panel" style="margin-top:16px"><div class="panel-h"><h3>Mis clases semanales</h3></div>${myClases.map(claseRow).join('')}</div>`;
   }
   const myPerm=RECURRING.filter(r=>r.status==='active');
   if(myPerm.length){
-    html+=`<div class="panel" style="margin-bottom:16px"><div class="panel-h"><h3>Mis horarios permanentes</h3></div>${myPerm.map(r=>`<div class="row"><div class="info"><b>${SCHED_DOW_NAMES[r.dow]} ${schedMinLabel(r.startMin)}–${schedMinLabel(r.endMin)}</b><span>Clase fija con el profesor · ${r.house}</span></div><button class="btn-cancel" onclick="doCancelRecurring(${r.id})">Cancelar</button></div>`).join('')}</div>`;
+    html+=`<div class="panel" style="margin-top:16px"><div class="panel-h"><h3>Mis horarios permanentes</h3></div>${myPerm.map(r=>`<div class="row"><div class="info"><b>${SCHED_DOW_NAMES[r.dow]} ${schedMinLabel(r.startMin)}–${schedMinLabel(r.endMin)}</b><span>Clase fija con el profesor · ${r.house}</span></div><button class="btn-cancel" onclick="doCancelRecurring(${r.id})">Cancelar</button></div>`).join('')}</div>`;
   }
-  html+=`<div class="panel"><div class="panel-h"><h3>Próximas reservas</h3></div>${up.length?up.map(card).join(''):emptyInline('No tienes reservas próximas')}</div>`;
-  html+=`<div class="panel past-panel" style="margin-top:16px"><div class="panel-h"><h3>Reservas anteriores de esta semana</h3></div>${past.length?past.map(card).join(''):emptyInline('No tienes reservas anteriores esta semana')}</div>`;
   return html;
 }
 
@@ -2800,12 +2813,12 @@ async function importTemplate(file){
         const house=(r[di*3+1]!=null?String(r[di*3+1]):'').trim();
         const name =(r[di*3+2]!=null?String(r[di*3+2]):'').trim();
         const nk=house?normHouseKey(house):'';
-        // "Casa 000" / "Disponible" / celda vacía → SIN clase (esa hora queda del profesor).
+        // "Casa 000" / "Disponible" / celda totalmente vacía → SIN clase (esa hora queda del profesor).
         if(nk==='000' || /^disponible$/i.test(name) || (!house && !name)) return;
-        // Casa registrada y MISMO primer nombre → nombre de la cuenta (corrige ortografía).
-        // Otro miembro de la familia (primer nombre distinto) → se respeta su nombre, bien escrito.
         const acc = nk ? accMap[nk] : null;
-        const student = (acc && firstToken(acc)===firstToken(name)) ? acc : titleName(name);
+        // Casa con cuenta: si el nombre va vacío O coincide el primer nombre → usa el nombre de la cuenta.
+        // Otro miembro de la familia (primer nombre distinto) → se respeta su nombre, bien escrito.
+        const student = (acc && (!name || firstToken(acc)===firstToken(name))) ? acc : titleName(name);
         entries.push({dow:d.dow, start_min:m, end_min:m+60, house, student});
       });
     }
