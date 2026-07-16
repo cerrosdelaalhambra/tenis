@@ -499,22 +499,45 @@
   .crow .cinfo b{font-size:14px;color:var(--ink);display:flex;align-items:center}
   .crow .cinfo span{display:block;font-size:12px;color:var(--muted)}
   .crow .chev{color:var(--muted);flex:none}
-  .cchip-strip{display:flex;gap:8px;overflow-x:auto;padding:2px 0 14px;-webkit-overflow-scrolling:touch}
-  .cchip{flex:0 0 auto;min-width:72px;display:flex;flex-direction:column;align-items:center;gap:0;padding:7px 12px;border-radius:12px;border:1.5px solid var(--line);background:#fff;cursor:pointer}
+  .cchip-strip{display:flex;gap:9px;overflow-x:auto;padding:2px 0 16px;-webkit-overflow-scrolling:touch}
+  .cchip{flex:0 0 auto;min-width:80px;display:flex;flex-direction:column;align-items:center;gap:1px;padding:10px 15px;border-radius:14px;border:1.5px solid var(--line);background:#fff;cursor:pointer}
   .cchip.on{background:var(--court);border-color:var(--court)}
-  .cchip .cc-dn{font-size:11px;font-weight:600;color:var(--muted)}
+  .cchip .cc-dn{font-size:12.5px;font-weight:600;color:var(--muted)}
   .cchip.on .cc-dn{color:rgba(255,255,255,.85)}
-  .cchip .cc-num{font-size:17px;font-weight:700;color:var(--ink)}
+  .cchip .cc-num{font-size:21px;font-weight:800;color:var(--ink)}
   .cchip.on .cc-num{color:#fff}
-  .cchead{font-size:13px;color:var(--muted);font-weight:600;margin:2px 2px 12px}
-  .ccard-list{display:flex;flex-direction:column;gap:9px}
-  .ccard{display:flex;align-items:center;gap:11px;border:1px solid var(--line);border-radius:12px;padding:11px 12px;background:#fff;cursor:pointer}
-  .ccard:hover{background:#fafcfb}
-  .ccard.ended{opacity:.55}
-  .ccard .cc-time{flex:none;background:var(--court-soft);color:var(--court);font-size:12px;font-weight:700;padding:6px 9px;border-radius:8px;white-space:nowrap}
-  .ccard .cc-who{flex:1;min-width:0;font-size:14px;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .ccard .cc-chev{width:18px;height:18px;color:var(--gray);flex:none}
-  .ccard .cc-endpill{font-size:11px;font-weight:700;color:var(--gray);background:#eef1f0;padding:4px 8px;border-radius:8px;flex:none}
+  .cchead{font-size:15.5px;color:var(--ink);font-weight:700;margin:2px 2px 14px}
+  .ccard-list{display:flex;flex-direction:column;gap:12px}
+  .ccard{display:flex;align-items:center;gap:14px;border:1.5px solid var(--line);border-radius:16px;padding:18px 16px;background:#fff;cursor:pointer}
+  .ccard:active{background:var(--court-soft)}
+  .ccard.ended{opacity:.5}
+  .ccard .cc-time{flex:none;background:var(--court-soft);color:var(--court);font-size:15px;font-weight:800;padding:11px 13px;border-radius:11px;white-space:nowrap}
+  .ccard .cc-who{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden}
+  .ccard .cc-who b{font-size:19px;font-weight:800;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ccard .cc-who small{font-size:14.5px;font-weight:600;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ccard .cc-chev{width:26px;height:26px;color:var(--court);flex:none}
+  .ccard .cc-endpill{font-size:13px;font-weight:700;color:var(--gray);background:#eef1f0;padding:7px 12px;border-radius:9px;flex:none}
+  /* Profesor · pantalla de acción (celular) */
+  .pa-wrap{padding:6px 2px 10px;max-width:460px;margin:0 auto}
+  .pa-head{text-align:center;margin:6px 0 22px}
+  .pa-time{font-size:28px;font-weight:800;color:var(--court-dark);letter-spacing:-.3px}
+  .pa-date{font-size:15.5px;color:var(--muted);margin-top:4px;text-transform:capitalize}
+  .pa-who{font-size:17px;color:var(--court);font-weight:700;margin-top:12px;background:var(--court-soft);display:inline-block;padding:9px 18px;border-radius:14px}
+  .pa-btn{display:flex;align-items:center;gap:14px;width:100%;padding:22px 20px;border-radius:20px;font-size:19px;font-weight:800;margin-bottom:14px;border:2px solid transparent}
+  .pa-btn .pa-ic{width:48px;height:48px;border-radius:15px;display:flex;align-items:center;justify-content:center;flex:none}
+  .pa-btn.yes{background:var(--court);color:#fff}
+  .pa-btn.yes .pa-ic{background:rgba(255,255,255,.18)}
+  .pa-btn.no{background:#fff;color:var(--court-dark);border-color:var(--court-dark)}
+  .pa-btn.no .pa-ic{background:var(--court-soft);color:var(--court-dark)}
+  .pa-btn.save{justify-content:center;font-size:20px}
+  .pa-back{width:100%;padding:18px;border-radius:16px;background:#eef1f0;color:var(--muted);font-size:17px;font-weight:700;margin-top:4px}
+  .pa-disp{text-align:center;font-size:30px;font-weight:800;color:var(--court-dark);background:#fff;border:2px dashed var(--court);border-radius:16px;padding:20px;margin-bottom:8px}
+  .pa-prev{text-align:center;font-size:15px;color:var(--muted);min-height:22px;margin-bottom:16px;line-height:1.4}
+  .pa-prev b{color:var(--court)}
+  .pa-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
+  .pa-key{padding:20px 0;border-radius:16px;background:#fff;border:1.5px solid var(--line);font-size:27px;font-weight:700;color:var(--ink)}
+  .pa-key:active{background:var(--court-soft);border-color:var(--court)}
+  .pa-key.del{color:var(--danger);font-size:23px}
   .half.h-bonus:hover{background:var(--court-soft)}
   .half.h-na{background:#fafbfb;border:1px solid #eef1f0;color:#c2c8c6;justify-content:center;font-size:9px}
   .half.h-maint{background:var(--clay);border:1.5px solid var(--clay);color:#fff;justify-content:center;align-items:center;cursor:pointer}
@@ -1443,6 +1466,7 @@ const ICONS={
 function go(view){ state.view=view; try{localStorage.setItem('tcv',view);}catch(e){}
   state.editProfile=false;   // el perfil siempre abre en modo lectura
   state.histQuery='';        // el historial abre sin filtro
+  state.profAction=null;     // el profesor sale del flujo de acción al cambiar de pestaña
   if(view==='avail'){ state.schedDraft=null; state.maintDraft=null; }   // los editores se reinician con lo guardado al entrar
   if(view==='notif'){
     visibleNotifs().forEach(n=>n.unread=false);
@@ -2092,6 +2116,7 @@ function classDayChips(){
   return `<div class="cchip-strip">${html}</div>`;
 }
 function viewClasses(){
+  if(state.profAction) return profActionScreen();          // pantalla completa de acción del profesor
   const chips=classDayChips();
   if(!chips) return emptyState('No tienes clases próximas esta semana.');
   const date=state.classDay, d=dateAt(date,0);
@@ -2100,66 +2125,69 @@ function viewClasses(){
   let rows;
   if(!list.length){ rows=`<div class="empty" style="padding:30px">No hay clases este día.</div>`; }
   else rows=list.map(c=>{
-    const who=(c.house||'Sin casa')+(c.student_name?' · '+c.student_name:'');
+    const casa=c.house||'Sin casa', nombre=c.student_name||'';
     const ended=classEndMs(c)<=NOW.getTime();
     return `<div class="ccard${ended?' ended':''}" onclick="openClassActions(${c.id})">
       <span class="cc-time">${rangeLabel(c.h,c.min,c.dur)}</span>
-      <span class="cc-who">${who}</span>
-      ${ended?'<span class="cc-endpill">Terminada</span>':'<svg class="cc-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>'}
+      <span class="cc-who"><b>${casa}</b>${nombre?`<small>${nombre}</small>`:''}</span>
+      ${ended?'<span class="cc-endpill">Terminada</span>':'<svg class="cc-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>'}
     </div>`;
   }).join('');
-  return `${chips}<div class="panel" style="padding:14px 14px 16px">${head}<div class="ccard-list">${rows}</div></div>`;
+  return `${chips}<div class="panel" style="padding:16px 14px 18px">${head}<div class="ccard-list">${rows}</div></div>`;
 }
 function openClassActions(id){
-  const c=PROF_CLASSES.find(x=>x.id===id); if(!c)return;
-  const d=dateAt(c.date,c.h);
-  const who=(c.house||'Sin casa')+(c.student_name?' · '+c.student_name:'');
-  const m=document.getElementById('modal');
-  m.innerHTML=`<div class="grab"></div>
-    <h3>${cap1(DOWL[d.getDay()])} ${d.getDate()} · ${rangeLabel(c.h,c.min,c.dur)}</h3>
-    <div class="msub">${who}</div>
-    <button class="btn-primary" style="width:100%;margin-bottom:9px;background:#eef4f2;color:var(--court-dark)" onclick="openChangeHouse(${id})">Cambiar casa</button>
-    <button class="btn-primary" style="width:100%;margin-bottom:9px" onclick="openReleaseSpace(${id})">Liberar espacio</button>
-    <button class="btn-soft" style="width:100%" onclick="closeModal()">Cerrar</button>`;
-  document.getElementById('modalBg').classList.add('show');
+  const c=PROF_CLASSES.find(x=>x.id===id); if(!c) return;
+  if(classEndMs(c)<=NOW.getTime()){ toast('Esta clase ya terminó.'); return; }
+  state.profAction={id, step:'choose', num:''}; render(); scrollTop(); fadeContent();
 }
-function openChangeHouse(id){
-  const c=PROF_CLASSES.find(x=>x.id===id); if(!c)return;
-  const fld='width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;font-size:15px;background:#fafcfb;color:var(--ink)';
-  // nombre del alumno por casa (desde las clases del profesor) para que el desplegable sea más fácil de leer
-  const nameByHouse={}; PROF_CLASSES.forEach(x=>{ if(x.house && x.student_name && !nameByHouse[x.house]) nameByHouse[x.house]=x.student_name; });
-  const houseOpts=[{v:'',label:'Sin casa'}].concat(houses.map(h=>({v:h, label: nameByHouse[h] ? h+' · '+nameByHouse[h] : h})));
-  const m=document.getElementById('modal');
-  m.innerHTML=`<div class="grab"></div><h3>Cambiar casa</h3>
-    <div class="msub">${rangeLabel(c.h,c.min,c.dur)}</div>
-    <div class="opt-label">Casa</div>
-    ${psel('chHouse', houseOpts, c.house||'', '')}
-    <div class="opt-label" style="margin-top:12px">Nombre del alumno</div>
-    <input id="chStudent" style="${fld}" value="${(c.student_name||'').replace(/"/g,'&quot;')}" placeholder="Nombre y apellido">
-    <div class="modal-actions"><button class="btn-soft" onclick="closeModal()">Cancelar</button>
-    <button class="btn-primary" onclick="confirmChangeHouse(${id})">Guardar</button></div>`;
-  document.getElementById('modalBg').classList.add('show');
+function profActionBack(){ state.profAction=null; render(); scrollTop(); fadeContent(); }
+function profActionStep(step){ if(!state.profAction) return; state.profAction.step=step; if(step==='house' && state.profAction.num==null) state.profAction.num=''; render(); scrollTop(); fadeContent(); }
+function profNumPrevText(num){ return num ? `Se guardará como <b>Casa ${num}</b>. Si esa casa está inscrita, saldrá su nombre.` : 'Toca los números de la casa que va a venir'; }
+function profNumKey(dgt){
+  const a=state.profAction; if(!a||a.step!=='house') return;
+  if(dgt==='del') a.num=(a.num||'').slice(0,-1);
+  else if((a.num||'').length<5) a.num=(a.num||'')+dgt;
+  const disp=document.getElementById('profNumDisp'); if(disp) disp.textContent=a.num?('Casa '+a.num):'Escribe el número';
+  const prev=document.getElementById('profNumPrev'); if(prev) prev.innerHTML=profNumPrevText(a.num);
 }
-async function confirmChangeHouse(id){
-  const house=document.getElementById('chHouse').value;
-  const student=document.getElementById('chStudent').value.trim();
-  closeModal();
-  try{ await DB.changeClassHouse(id, house, student); await loadData(); render(); toast('Casa actualizada'); }
+function profActionScreen(){
+  const a=state.profAction, c=PROF_CLASSES.find(x=>x.id===a.id);
+  if(!c){ state.profAction=null; return viewClasses(); }
+  const d=dateAt(c.date,c.h), casa=c.house||'Sin casa', nombre=c.student_name||'';
+  const head=`<div class="pa-head"><div class="pa-time">${rangeLabel(c.h,c.min,c.dur)}</div><div class="pa-date">${cap1(DOWL[d.getDay()])} ${d.getDate()} de ${MON[d.getMonth()]}</div><div class="pa-who">${casa}${nombre?' · '+nombre:''}</div></div>`;
+  if(a.step==='house'){
+    const num=a.num||'';
+    const keys=[1,2,3,4,5,6,7,8,9].map(n=>`<button class="pa-key" onclick="profNumKey('${n}')">${n}</button>`).join('')
+      +`<button class="pa-key" onclick="profNumKey('A')">A</button>`
+      +`<button class="pa-key" onclick="profNumKey('0')">0</button>`
+      +`<button class="pa-key" onclick="profNumKey('B')">B</button>`
+      +`<button class="pa-key del" onclick="profNumKey('del')" style="grid-column:span 3">⌫ Borrar</button>`;
+    return `<div class="pa-wrap">${head}
+      <div class="opt-label" style="text-align:center;font-size:15px;margin-bottom:8px">¿Qué casa va a venir?</div>
+      <div class="pa-disp" id="profNumDisp">${num?('Casa '+num):'Escribe el número'}</div>
+      <div class="pa-prev" id="profNumPrev">${profNumPrevText(num)}</div>
+      <div class="pa-pad">${keys}</div>
+      <button class="pa-btn yes save" onclick="confirmProfHouse()">Guardar</button>
+      <button class="pa-back" onclick="profActionStep('choose')">Volver</button>
+    </div>`;
+  }
+  return `<div class="pa-wrap">${head}
+    <button class="pa-btn yes" onclick="profActionStep('house')"><span class="pa-ic">${svgIco(ICONS.users,24,'#fff')}</span>Va a venir otra persona</button>
+    <button class="pa-btn no" onclick="confirmNoOne()"><span class="pa-ic">${svgIco('<path d="M18 6 6 18M6 6l12 12"/>',24)}</span>No va a venir nadie</button>
+    <button class="pa-back" onclick="profActionBack()">Volver</button>
+  </div>`;
+}
+async function confirmProfHouse(){
+  const a=state.profAction; if(!a||!(a.num||'').trim()){ toast('Escribe el número de la casa.','warn'); return; }
+  const id=a.id, house=canonHouse(a.num);
+  state.profAction=null;
+  try{ await DB.changeClassHouse(id, house, ''); await loadData(); render(); toast('Clase actualizada · '+house); }
   catch(e){ toast(e.message,'warn'); }
 }
-function openReleaseSpace(id){
-  const c=PROF_CLASSES.find(x=>x.id===id); if(!c)return;
-  const m=document.getElementById('modal');
-  m.innerHTML=`<div class="grab"></div><h3>Liberar espacio</h3>
-    <div class="msub">${rangeLabel(c.h,c.min,c.dur)}</div>
-    <p style="font-size:13px;color:var(--muted);margin:2px 0 14px">Se abrirá este horario para los residentes. Podrán reservarlo <b>con profesor</b> (no gasta horas) o <b>sin profesor</b> (gasta horas). Se les avisará.</p>
-    <div class="modal-actions"><button class="btn-soft" onclick="closeModal()">Cancelar</button>
-    <button class="btn-primary" onclick="confirmRelease(${id})">Liberar</button></div>`;
-  document.getElementById('modalBg').classList.add('show');
-}
-async function confirmRelease(id){
-  closeModal();
-  try{ await DB.releaseClass(id); await loadData(); render(); toast('Espacio liberado · se avisó a los residentes'); }
+async function confirmNoOne(){
+  const a=state.profAction; if(!a) return; const id=a.id;
+  state.profAction=null;
+  try{ await DB.releaseClass(id); await loadData(); render(); toast('Listo · esa hora quedó libre para los residentes'); }
   catch(e){ toast(e.message,'warn'); }
 }
 /* ---- PORTERO: ILUMINACIÓN ---- */
