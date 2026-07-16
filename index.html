@@ -517,6 +517,8 @@
   .ccard .cc-who small{font-size:14.5px;font-weight:600;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .ccard .cc-chev{width:26px;height:26px;color:var(--court);flex:none}
   .ccard .cc-endpill{font-size:13px;font-weight:700;color:var(--gray);background:#eef1f0;padding:7px 12px;border-radius:9px;flex:none}
+  .ccard.live{border-color:var(--court)}
+  .ccard .cc-endpill.live{color:var(--court);background:var(--court-soft)}
   /* Profesor · pantalla de acción (celular) — ocupa TODA la altura, sin scroll */
   .pa-fill{display:flex;flex-direction:column;min-height:calc(100dvh - 42px);max-width:480px;margin:0 auto}
   .pa-choose{flex:1;display:flex;flex-direction:column;justify-content:center;gap:16px;min-height:0}
@@ -763,8 +765,8 @@
     .mh-top .mh-acct{color:#fff;display:flex;align-items:center}
     .mh-top .mh-acct svg{width:24px;height:24px}
     /* Profesor: barra superior grande con Notificaciones + Salir */
-    .mh-top.mh-prof{gap:12px;margin-bottom:0;padding:2px 0}
-    .mh-big{flex:1;padding:18px 12px;border-radius:15px;font-size:18px;font-weight:800;background:rgba(255,255,255,.14);color:#fff;position:relative;text-align:center}
+    .mh-top.mh-prof{gap:12px;margin-bottom:0;padding:2px 0;justify-content:space-between}
+    .mh-big{flex:none;padding:15px 22px;border-radius:15px;font-size:18px;font-weight:800;background:rgba(255,255,255,.14);color:#fff;position:relative}
     .mh-big:active{background:rgba(255,255,255,.26)}
     .mh-big.salir{background:var(--ball);color:var(--court-dark)}
     .mh-big .mh-bdot{position:absolute;top:10px;right:16px;width:11px;height:11px;border-radius:50%;background:var(--danger)}
@@ -2143,18 +2145,23 @@ function viewClasses(){
   if(!list.length){ rows=`<div class="empty" style="padding:30px">No hay clases este día.</div>`; }
   else rows=list.map(c=>{
     const casa=c.house||'Sin casa', nombre=c.student_name||'';
+    const started=dateAt(c.date,c.h).getTime()<=NOW.getTime();
     const ended=classEndMs(c)<=NOW.getTime();
-    return `<div class="ccard${ended?' ended':''}" onclick="openClassActions(${c.id})">
+    const locked=started;   // en curso o terminada → no se puede editar
+    const tag = ended ? '<span class="cc-endpill">Terminada</span>'
+      : started ? '<span class="cc-endpill live">En curso</span>'
+      : '<svg class="cc-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>';
+    return `<div class="ccard${ended?' ended':''}${started&&!ended?' live':''}" ${locked?'':`onclick="openClassActions(${c.id})"`}>
       <span class="cc-time">${rangeLabel(c.h,c.min,c.dur)}</span>
       <span class="cc-who"><b>${casa}</b>${nombre?`<small>${nombre}</small>`:''}</span>
-      ${ended?'<span class="cc-endpill">Terminada</span>':'<svg class="cc-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>'}
+      ${tag}
     </div>`;
   }).join('');
   return `${chips}<div class="panel" style="padding:16px 14px 18px">${head}<div class="ccard-list">${rows}</div></div>`;
 }
 function openClassActions(id){
   const c=PROF_CLASSES.find(x=>x.id===id); if(!c) return;
-  if(classEndMs(c)<=NOW.getTime()){ toast('Esta clase ya terminó.'); return; }
+  if(dateAt(c.date,c.h).getTime()<=NOW.getTime()){ toast(classEndMs(c)<=NOW.getTime()?'Esta clase ya terminó.':'Esta clase está en curso.'); return; }
   state.profAction={id, step:'choose', num:''}; render(); scrollTop(); fadeContent();
 }
 function profActionBack(){ state.profAction=null; render(); scrollTop(); fadeContent(); }
