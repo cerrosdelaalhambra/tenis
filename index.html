@@ -833,6 +833,8 @@
       font-size:10.5px;font-weight:600;position:relative;padding:4px 0}
     .tabbar button svg{width:23px;height:23px}
     .tabbar button.active{color:var(--court)}
+    .tabbar button.tab-prof{color:var(--court);padding:10px 0}
+    .tabbar button.tab-prof span{font-size:18px;font-weight:800}
     .tabbar button .tb{position:absolute;top:0;right:50%;margin-right:-22px;background:var(--danger);color:#fff;
       font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 4px}
     .form-grid{gap:12px}
@@ -1499,10 +1501,11 @@ function render(){
 
   // tabbar (mobile) — sin "Notificaciones" (se accede por la campana de arriba)
   const tabs=items.filter(it=>it.id!=='notif').slice(0,5);
+  const profTab = state.role==='prof';   // el profesor: un solo botón grande "Mis clases", sin ícono
   document.getElementById('tabbar').innerHTML=tabs.map(it=>`
-    <button class="${state.view===it.id?'active':''}" onclick="go('${it.id}')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${ICONS[it.icon]}</svg>
-      <span>${it.id==='mine'?'Reservas':it.label.split(' ')[0]}</span>
+    <button class="${state.view===it.id?'active':''}${profTab?' tab-prof':''}" onclick="go('${it.id}')">
+      ${profTab?'':`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${ICONS[it.icon]}</svg>`}
+      <span>${profTab?it.label:(it.id==='mine'?'Reservas':it.label.split(' ')[0])}</span>
       ${it.badge?`<span class="tb">${it.badge}</span>`:''}
     </button>`).join('');
 
