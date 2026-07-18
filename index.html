@@ -830,7 +830,10 @@
 
     /* bottom nav */
     .tabbar{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--line);
-      display:flex;padding:7px 6px 10px;z-index:25;box-shadow:0 -2px 18px rgba(20,40,35,.06)}
+      display:flex;padding:7px 6px 10px;z-index:25;box-shadow:0 -2px 18px rgba(20,40,35,.06);
+      /* Fija la barra a su propia capa de GPU: evita el bug de Safari (iPhone) donde
+         al hacer scroll la barra no se repinta y queda "flotando" a media pantalla. */
+      transform:translateZ(0);-webkit-transform:translateZ(0);will-change:transform;backface-visibility:hidden}
     .tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);
       font-size:10.5px;font-weight:600;position:relative;padding:4px 0}
     .tabbar button svg{width:23px;height:23px}
@@ -1007,8 +1010,10 @@ let OPEN_START=5, OPEN_END=23;   // horario de operación (configurable en Ajust
 let HALF_HOURS=false;            // ¿se permite reservar media hora? (por defecto NO: reservas de 1 hora)
 // ── TEMPORAL (etapa de pruebas) ─────────────────────────────────────────────
 // Mientras se maneja la planilla en portería, las reservas por la app están CERRADAS
-// para los residentes. Cuando se quieran abrir, pon esto en true (o borra el bloqueo).
-const RESERVAS_ABIERTAS = false;
+// para los residentes. Se ABREN SOLAS el domingo 19 de julio de 2026 a las 8:00 PM
+// (hora de Bogotá = 2026-07-20T01:00:00Z), justo cuando cambia la semana.
+// Después de esa hora el aviso ya no aparece. Para forzar la apertura antes, pon true.
+const RESERVAS_ABIERTAS = Date.now() >= Date.parse('2026-07-20T01:00:00Z');
 let HOURS=[];
 function rebuildHours(){ HOURS.length=0; for(let h=OPEN_START;h<OPEN_END;h++) HOURS.push(h); }
 rebuildHours();
