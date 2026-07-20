@@ -974,7 +974,7 @@ if('serviceWorker' in navigator){
 </script>
 <script>
 /* ======================= DATA ======================= */
-const NOW = new Date(); // hora real (datos reales vía data.js)
+let NOW = new Date(); // hora real. Se re-sincroniza al volver a la app (syncClock) para no quedar congelada.
 const DOW = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
 const DOWL = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const MON = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
@@ -989,7 +989,10 @@ let RESET_HOUR=20;   // hora del domingo en que se reinician los cupos (configur
 function rhLong(){const h=RESET_HOUR,ap=h<12?'a.m.':'p.m.',hh=(h%12)||12;return hh+':00 '+ap;}   // "8:00 p.m."
 function rhShort(){return hlabel(RESET_HOUR);}                                                    // "8pm"
 function _resetBefore(now){let sun=new Date(now);sun.setDate(now.getDate()-now.getDay());sun.setHours(RESET_HOUR,0,0,0);if(now<sun)sun.setDate(sun.getDate()-7);return sun;}
-function _computeOWS(){let r=_resetBefore(NOW);let m=new Date(r);m.setDate(r.getDate()+1);m.setHours(0,0,0,0);return m;}
+// Usa la hora EN VIVO (no la congelada NOW): así la semana abierta avanza sola al cruzar el corte
+// del domingo, aunque la app lleve horas abierta o se reanude desde segundo plano (PWA) sin recargar.
+function _liveNowOr(){ return (typeof liveNow==='function') ? liveNow() : NOW; }
+function _computeOWS(){let r=_resetBefore(_liveNowOr());let m=new Date(r);m.setDate(r.getDate()+1);m.setHours(0,0,0,0);return m;}
 let OPEN_WEEK_START=_computeOWS();
 let OPEN_WEEK_END=ymd(addDays(OPEN_WEEK_START,6));
 let AVAIL_MAX=ymd(addDays(OPEN_WEEK_START,13)); // fin de la próxima semana (admin/profe abren disponibilidad solo esta y la próxima)
@@ -1304,7 +1307,11 @@ async function autoBoot(){
   }catch(e){ showLogin(); }
 }
 /* ===== recargar datos (para ver reservas nuevas) sin re-loguear ===== */
+// Re-sincroniza el reloj (al volver a la app, al enfocar, o cada minuto): si la app llevaba horas
+// abierta o se reanudó desde segundo plano, NOW dejaba de avanzar y la semana no cambiaba en el corte.
+function syncClock(){ NOW=new Date(); APP_START=Date.now(); recomputeOpenWeek(); }
 async function refreshData(){
+  syncClock();
   if(!state.profile) return;
   if(!document.getElementById('app').classList.contains('show')) return;
   if(document.getElementById('modalBg').classList.contains('show')) return;  // no interrumpir un modal abierto
@@ -1582,17 +1589,19 @@ function findReleasedHalf(date,h,half){return released.find(r=>r.date===date&&r.
 function maintAt(date,h){return closures.find(c=>{ if(date<c.start||date>c.end)return false; return c.allDay?true:(h>=c.fromH&&h<c.toH); })}
 // ocupa la media-hora "half" (0 = :00–:30, 1 = :30–:00) — ignora profclass (hora completa, aparte)
 function resAtHalf(date,h,half){
+  const slot=h*60+half*30;                       // bloque de 30 min consultado (min desde medianoche)
   return reservations.find(r=>{
-    if(r.type==='profclass'||r.date!==date||r.h!==h) return false;
-    const a=(r.min||0)/30, b=((r.min||0)+r.dur)/30;
-    return half>=a && half<b;
+    if(r.type==='profclass'||r.date!==date) return false;
+    const start=r.h*60+(r.min||0), end=start+r.dur;
+    return slot>=start && slot<end;              // cubre reservas de VARIAS horas (ej. 5–7 marca 5 y 6)
   });
 }
 function halfState(date,h,half){
   const dow=dateAt(date,h).getDay();
   const mc=maintAt(date,h); if(mc) return {kind:'maint',mc};
   if(isMaintHalf(dow,h,half)) return {kind:'maint'};   // mantenimiento recurrente (semanal)
-  const pc=reservations.find(r=>r.date===date&&r.h===h&&r.type==='profclass'); if(pc) return {kind:'profclass',res:pc};
+  const _slotpc=h*60+half*30;                    // profclass también puede durar >1h → buscar por rango
+  const pc=reservations.find(r=>r.type==='profclass'&&r.date===date&&(r.h*60+(r.min||0))<=_slotpc&&(r.h*60+(r.min||0)+r.dur)>_slotpc); if(pc) return {kind:'profclass',res:pc};
   const r=resAtHalf(date,h,half);
   if(r){
     if(r.type==='class') return {kind:'classinfo',res:r};   // clase del profesor: casa + nombre (visible para todos)
@@ -1652,7 +1661,7 @@ function rangeLabel(h,min,dur){
 function halfTimeLabel(h,half){let hh=h%12;if(hh===0)hh=12;return hh+(half?':30':'')+(h<12?'am':'pm');}
 
 /* ---- DESKTOP WEEK + MOBILE DAY ---- */
-const APP_START=Date.now();
+let APP_START=Date.now();
 const HOUSE_ICON='<svg class="hicon" viewBox="0 0 24 24"><path d="M12 2.5 21.5 10.5 19 10.5 19 21 14 21 14 14.5 10 14.5 10 21 5 21 5 10.5 2.5 10.5Z"/></svg>';
 function houseNum(h){return String(h).replace(/^Casa\s*/i,'');} // el ícono de casa reemplaza la palabra "Casa" → solo el número
 function liveNow(){return new Date(NOW.getTime()+(Date.now()-APP_START));} // avanza en tiempo real desde el "ahora" de la demo
