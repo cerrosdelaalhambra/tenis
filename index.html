@@ -975,6 +975,7 @@ if('serviceWorker' in navigator){
 <script>
 /* ======================= DATA ======================= */
 let NOW = new Date(); // hora real. Se re-sincroniza al volver a la app (syncClock) para no quedar congelada.
+const APP_VERSION = '2026-07-19b'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
 const DOW = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
 const DOWL = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const MON = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
@@ -1324,7 +1325,8 @@ function openAccount(){
     <div class="msub">${(state.user&&state.user.houses&&state.user.houses.join(', '))||(state.user&&state.user.house)||''}</div>
     ${isMember()?`<button class="btn-soft" style="width:100%;margin-top:10px;color:#c1121f" onclick="openDeleteSelf()">Eliminar mi cuenta</button>`:''}
     <button class="btn-soft" style="width:100%;margin-top:10px" onclick="openChangePassword()">Cambiar contraseña</button>
-    <button class="btn-soft" style="width:100%;margin-top:10px" onclick="logout()">Cerrar sesión</button>`;
+    <button class="btn-soft" style="width:100%;margin-top:10px" onclick="logout()">Cerrar sesión</button>
+    <div style="text-align:center;font-size:11px;color:var(--muted);margin-top:14px">Versión ${APP_VERSION}</div>`;
   document.getElementById('modalBg').classList.add('show');
 }
 function openChangePassword(){
