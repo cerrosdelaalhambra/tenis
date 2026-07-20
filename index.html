@@ -870,6 +870,7 @@
     <button class="btn-primary" onclick="doLogin()">Ingresar</button>
     <a class="forgot" onclick="doForgot()">¿Olvidaste tu clave?</a>
     <div style="text-align:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);font-size:13.5px;color:var(--muted)">¿Primera vez? <a class="forgot" style="display:inline" onclick="showSignup(true)">Crear cuenta nueva</a></div>
+    <div id="loginVersion" style="text-align:center;margin-top:12px;font-size:11px;color:var(--muted)"></div>
   </div>
   <div class="login-card hidden" id="signupCard">
     <div class="brand"><div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#c6e84b" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M5 5c4 3 4 11 0 14M19 5c-4 3-4 11 0 14"/></svg></div>
@@ -1206,7 +1207,7 @@ async function boot(){
   setTimeout(()=>app.classList.remove('enter'), 700);
 }
 function hideSplash(){ const s=document.getElementById('splash'); if(s) s.style.display='none'; }
-function showLogin(){ document.getElementById('login').style.display='flex'; hideSplash(); }
+function showLogin(){ document.getElementById('login').style.display='flex'; const lv=document.getElementById('loginVersion'); if(lv) lv.textContent='Versión '+APP_VERSION; hideSplash(); }
 // cierra la sesión (p.ej. la auto-creada al registrarse) y vuelve al login limpio
 async function backToLogin(){ try{ localStorage.removeItem('tcv'); await DB.Auth.signOut(); }catch(e){} location.reload(); }
 /* ===== recuperar contraseña: llega por el enlace del correo → poner nueva clave ===== */
@@ -1325,8 +1326,7 @@ function openAccount(){
     <div class="msub">${(state.user&&state.user.houses&&state.user.houses.join(', '))||(state.user&&state.user.house)||''}</div>
     ${isMember()?`<button class="btn-soft" style="width:100%;margin-top:10px;color:#c1121f" onclick="openDeleteSelf()">Eliminar mi cuenta</button>`:''}
     <button class="btn-soft" style="width:100%;margin-top:10px" onclick="openChangePassword()">Cambiar contraseña</button>
-    <button class="btn-soft" style="width:100%;margin-top:10px" onclick="logout()">Cerrar sesión</button>
-    <div style="text-align:center;font-size:11px;color:var(--muted);margin-top:14px">Versión ${APP_VERSION}</div>`;
+    <button class="btn-soft" style="width:100%;margin-top:10px" onclick="logout()">Cerrar sesión</button>`;
   document.getElementById('modalBg').classList.add('show');
 }
 function openChangePassword(){
