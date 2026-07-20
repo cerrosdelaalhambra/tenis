@@ -1386,7 +1386,8 @@ function viewProfile(){
       <button class="pf-action" onclick="openChangePassword()"><span>Cambiar contraseña</span><span class="pf-achev">›</span></button>
       <button class="pf-action" onclick="logout()"><span>Cerrar sesión</span><span class="pf-achev">›</span></button>
       ${del}
-    </div>`;
+    </div>
+    <div style="text-align:center;font-size:11px;color:var(--muted);margin-top:14px">Versión ${APP_VERSION}</div>`;
 }
 function startEditProfile(){ state.editProfile=true; render(); }
 function cancelEditProfile(){ state.editProfile=false; render(); }
