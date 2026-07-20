@@ -870,7 +870,7 @@
     <button class="btn-primary" onclick="doLogin()">Ingresar</button>
     <a class="forgot" onclick="doForgot()">¿Olvidaste tu clave?</a>
     <div style="text-align:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);font-size:13.5px;color:var(--muted)">¿Primera vez? <a class="forgot" style="display:inline" onclick="showSignup(true)">Crear cuenta nueva</a></div>
-    <div id="loginVersion" style="text-align:center;margin-top:12px;font-size:11px;color:var(--muted)">Versión 2026-07-19b</div>
+    <div id="loginVersion" style="text-align:center;margin-top:12px;font-size:11px;color:var(--muted)">Versión 2026-07-19c</div>
   </div>
   <div class="login-card hidden" id="signupCard">
     <div class="brand"><div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#c6e84b" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M5 5c4 3 4 11 0 14M19 5c-4 3-4 11 0 14"/></svg></div>
@@ -976,7 +976,8 @@ if('serviceWorker' in navigator){
 <script>
 /* ======================= DATA ======================= */
 let NOW = new Date(); // hora real. Se re-sincroniza al volver a la app (syncClock) para no quedar congelada.
-const APP_VERSION = '2026-07-19b'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
+let APP_START = Date.now(); // base de liveNow(); DEBE existir antes del primer _computeOWS() (si no, TDZ y la app se cuelga en el splash)
+const APP_VERSION = '2026-07-19c'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
 const DOW = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
 const DOWL = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const MON = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
@@ -1664,7 +1665,6 @@ function rangeLabel(h,min,dur){
 function halfTimeLabel(h,half){let hh=h%12;if(hh===0)hh=12;return hh+(half?':30':'')+(h<12?'am':'pm');}
 
 /* ---- DESKTOP WEEK + MOBILE DAY ---- */
-let APP_START=Date.now();
 const HOUSE_ICON='<svg class="hicon" viewBox="0 0 24 24"><path d="M12 2.5 21.5 10.5 19 10.5 19 21 14 21 14 14.5 10 14.5 10 21 5 21 5 10.5 2.5 10.5Z"/></svg>';
 function houseNum(h){return String(h).replace(/^Casa\s*/i,'');} // el ícono de casa reemplaza la palabra "Casa" → solo el número
 function liveNow(){return new Date(NOW.getTime()+(Date.now()-APP_START));} // avanza en tiempo real desde el "ahora" de la demo
