@@ -771,7 +771,7 @@
     .mh-big.salir{background:var(--ball);color:var(--court-dark)}
     .mh-big .mh-bdot{position:absolute;top:10px;right:16px;width:11px;height:11px;border-radius:50%;background:var(--danger)}
     /* ---- barra superior de portería ---- */
-    .mh-top.mh-porter{gap:12px;margin-bottom:0;padding:2px 0;justify-content:space-between}
+    .mh-top.mh-porter{gap:12px;margin-bottom:0;padding:2px 0;justify-content:flex-end}
     .mh-menu{display:flex;align-items:center;gap:9px;padding:12px 18px;border-radius:15px;background:rgba(255,255,255,.14);color:#fff;font-size:18px;font-weight:800}
     .mh-menu svg{width:24px;height:24px;flex:none}
     .mh-menu:active{background:rgba(255,255,255,.26)}
@@ -880,7 +880,7 @@
     <button class="btn-primary" onclick="doLogin()">Ingresar</button>
     <a class="forgot" onclick="doForgot()">¿Olvidaste tu clave?</a>
     <div style="text-align:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);font-size:13.5px;color:var(--muted)">¿Primera vez? <a class="forgot" style="display:inline" onclick="showSignup(true)">Crear cuenta nueva</a></div>
-    <div id="loginVersion" style="text-align:center;margin-top:12px;font-size:11px;color:var(--muted)">Versión 2026-07-21a</div>
+    <div id="loginVersion" style="text-align:center;margin-top:12px;font-size:11px;color:var(--muted)">Versión 2026-07-21c</div>
   </div>
   <div class="login-card hidden" id="signupCard">
     <div class="brand"><div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#c6e84b" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M5 5c4 3 4 11 0 14M19 5c-4 3-4 11 0 14"/></svg></div>
@@ -939,10 +939,6 @@
       <button class="mh-big salir" onclick="logout()">Salir</button>
     </div>
     <div class="mh-top mh-porter" id="mhTopPorter" style="display:none">
-      <button class="mh-menu" onclick="openPorterMenu()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#c6e84b" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M5 5c4 3 4 11 0 14M19 5c-4 3-4 11 0 14"/></svg>
-        <span>Menú</span>
-      </button>
       <div class="mh-porter-right">
         <button class="mh-ic" id="mhPortNotif" onclick="porteriaActivarPush()" aria-label="Activar notificaciones" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg></button>
         <button class="mh-ic" onclick="openChangePassword()" aria-label="Cambiar contraseña"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></button>
@@ -998,7 +994,7 @@ if('serviceWorker' in navigator){
 /* ======================= DATA ======================= */
 let NOW = new Date(); // hora real. Se re-sincroniza al volver a la app (syncClock) para no quedar congelada.
 let APP_START = Date.now(); // base de liveNow(); DEBE existir antes del primer _computeOWS() (si no, TDZ y la app se cuelga en el splash)
-const APP_VERSION = '2026-07-21a'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
+const APP_VERSION = '2026-07-21c'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
 const DOW = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
 const DOWL = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const MON = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
@@ -2261,15 +2257,15 @@ function viewPorteria(){
 function porteriaRainBar(){
   if(rainActive()){
     const e=new Date(state.rainUntil), hasta=`${(e.getHours()%12||12)}:${String(e.getMinutes()).padStart(2,'0')} ${e.getHours()<12?'a.m.':'p.m.'}`;
-    return `<div onclick="openRainAffected()" style="display:flex;align-items:center;gap:12px;background:#33508a;border-radius:12px;padding:14px;cursor:pointer">
-      ${svgIco(RAIN_P,24,'#fff')}
-      <div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:700;color:#fff">Lluvia activa · hasta las ${hasta}</div><div style="font-size:12.5px;color:#cfe0f5">Toca para ver afectados o desactivar</div></div>
-      <span style="color:#fff;font-size:22px;flex:none">›</span></div>`;
+    return `<div onclick="openRainAffected()" style="display:flex;align-items:center;gap:14px;background:#33508a;border-radius:14px;padding:20px 18px;cursor:pointer">
+      <span style="width:52px;height:52px;border-radius:13px;background:rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;flex:none">${svgIco(RAIN_P,30,'#fff')}</span>
+      <div style="flex:1;min-width:0"><div style="font-size:18px;font-weight:700;color:#fff">Lluvia activa · hasta las ${hasta}</div><div style="font-size:13.5px;color:#cfe0f5;line-height:1.4">Toca para ver afectados o desactivar</div></div>
+      <span style="color:#fff;font-size:26px;flex:none">›</span></div>`;
   }
-  return `<div style="display:flex;align-items:center;gap:12px;background:#eef3fb;border-radius:12px;padding:12px 14px">
-    ${svgIco(RAIN_P,24,'#33508a')}
-    <div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:700;color:#042c53">Modo lluvia</div><div style="font-size:12.5px;color:#185fa5;line-height:1.35">Actívalo solo si está lloviendo y la cancha quedó encharcada</div></div>
-    <button onclick="openRainModal()" style="flex:none;background:#33508a;color:#fff;border:none;font-size:14px;font-weight:700;padding:10px 16px;border-radius:10px;cursor:pointer">Activar</button></div>`;
+  return `<div style="display:flex;align-items:center;gap:14px;background:#eef3fb;border-radius:14px;padding:20px 18px">
+    <span style="width:52px;height:52px;border-radius:13px;background:#dbe6f7;display:flex;align-items:center;justify-content:center;flex:none">${svgIco(RAIN_P,30,'#33508a')}</span>
+    <div style="flex:1;min-width:0"><div style="font-size:18px;font-weight:700;color:#042c53">Modo lluvia</div><div style="font-size:13.5px;color:#185fa5;line-height:1.4">Actívalo solo si está lloviendo y la cancha quedó encharcada</div></div>
+    <button onclick="openRainModal()" style="flex:none;background:#33508a;color:#fff;border:none;font-size:15.5px;font-weight:700;padding:13px 20px;border-radius:12px;cursor:pointer">Activar</button></div>`;
 }
 // Menú de portería: Inicio, Notificaciones (con contador), Reglamento.
 function openPorterMenu(){
@@ -3798,7 +3794,19 @@ function toast(msg,type){const t=document.getElementById('toast');
 setInterval(tickClock,1000);
 /* recargar datos cada minuto y al volver a la app (para ver reservas nuevas) */
 setInterval(refreshData, 60000);
-document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) refreshData(); });
+/* Auto-actualización al volver a la app (PWA): si estuvo un rato en segundo plano,
+   recarga sola para traer la última VERSIÓN y datos frescos, sin tener que cerrar sesión.
+   Ausencia corta (< 1 min) -> solo refresca datos, sin recargar (sin parpadeo). */
+let _hiddenAt=null; const _STALE_MS=60000;
+document.addEventListener('visibilitychange', ()=>{
+  if(document.hidden){ _hiddenAt=Date.now(); return; }
+  const away=_hiddenAt?(Date.now()-_hiddenAt):0; _hiddenAt=null;
+  if(away>_STALE_MS && !window.__recovery){
+    try{ if(navigator.serviceWorker) navigator.serviceWorker.getRegistration().then(r=>{ if(r) r.update(); }).catch(()=>{}); }catch(e){}
+    location.reload(); return;
+  }
+  refreshData();
+});
 window.addEventListener('focus', refreshData);
 /* al cargar la página: si hay sesión, entrar directo (no re-login al refrescar) */
 if(window.DB) autoBoot(); else showLogin();
