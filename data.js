@@ -95,7 +95,7 @@ function relTime(iso){
 
 /* ===== Errores del servidor → mensajes amables ===== */
 const ERR_MSG = {
-  SIN_CUPO:'Esa casa ya no tiene horas esta semana. Puedes reservar horarios que libera el profesor, o ir con el profesor en su horario: eso no consume horas.',
+  SIN_CUPO:'Esa casa ya no tiene horas en este tramo de la semana. Las horas de un tramo no se pasan a otro. Puedes reservar horarios que libera el profesor: eso no consume horas.',
   YA_RESERVADO:'Ese horario ya está reservado.',
   HORARIO_DEL_PROFESOR:'Ese horario es del profesor.',
   FUERA_DE_HORARIO:'Ese horario está fuera del horario de la cancha.',
@@ -266,6 +266,14 @@ async function getConfig(){
     resetHour: m.reset_hour!=null ? Number(m.reset_hour) : 20  // hora del domingo en que se reinician los cupos
   };
 }
+// Bloques de cupo (tramos de días con sus horas). Resiliente: si la tabla aún no existe, devuelve [].
+async function getQuotaBlocks(){
+  try{
+    const {data,error}=await sb.from('quota_blocks').select('id,ord,dows,hours').order('ord');
+    if(error) return [];
+    return (data||[]).map(b=>({id:b.id, ord:b.ord, dows:b.dows||[], hours:Number(b.hours)}));
+  }catch(e){ return []; }
+}
 // Horario del profesor (editable). Si la tabla aún no existe, devuelve [] y la app usa el horario fijo de respaldo.
 async function getProfSchedule(){
   const {data}=await sb.from('prof_schedule').select('dow,start_min,end_min').order('dow').order('start_min');
@@ -377,7 +385,7 @@ async function fetchAll(profile){
   const staff  = profile.role==='admin' || profile.role==='portero';
   const isProf = profile.role==='prof';
   // TODO en un solo lote paralelo (antes había hasta 3 fases secuenciales)
-  const [myHouses, reservations, releases, closures, holidays, houses, cfg, notifs, profSchedule, recurring, activity, users, profClasses, absences, maintSchedule, classTemplate] = await Promise.all([
+  const [myHouses, reservations, releases, closures, holidays, houses, cfg, notifs, profSchedule, recurring, activity, users, profClasses, absences, maintSchedule, classTemplate, quotaBlocks] = await Promise.all([
     member ? getMyHouses(profile.id) : Promise.resolve([]),
     getCalendar(profile.role), getReleases(), getClosures(), getHolidays(),
     getHouses(), getConfig(), getNotifications(profile.role, profile.id, profile.notif_seen_at, profile.notif_cleared_at),
@@ -386,12 +394,14 @@ async function fetchAll(profile){
     staff ? getUsers()    : Promise.resolve([]),
     isProf ? getProfClasses() : Promise.resolve([]),
     getAbsences(), getMaintSchedule(),
-    getClassTemplate()   // para todos: sirve para el Excel (admin) y para mostrar clases de días ya pasados
+    getClassTemplate(),  // para todos: sirve para el Excel (admin) y para mostrar clases de días ya pasados
+    getQuotaBlocks()     // tramos de cupo (vacío si aún no se corre el SQL -> se comporta como hoy)
   ]);
   return { profile, myHouses, reservations, releases, closures, holidays, houses,
     cupo:cfg.cupo, profFlexible:cfg.profFlexible, permEnabled:cfg.permEnabled, permRoute:'both',
     openStart:cfg.openStart, openEnd:cfg.openEnd, halfHours:cfg.halfHours, resetHour:cfg.resetHour,
-    notifs, profSchedule, recurring, activity, users, profClasses, absences, maintSchedule, classTemplate };
+    notifs, profSchedule, recurring, activity, users, profClasses, absences, maintSchedule, classTemplate,
+    blocks: quotaBlocks };
 }
 function isMemberRole(role){ return role==='member' || role==='master'; }
 
@@ -459,6 +469,8 @@ async function materializeClasses(){ const {data,error}=await sb.rpc('materializ
 /* ===== Acciones de gestión (hitos siguientes; aquí las simples) ===== */
 const Admin = {
   async setCupo(hours){ const {error}=await sb.from('app_config').update({value:String(hours)}).eq('key','weekly_cupo_hours'); if(error) throw mapError(error); },
+  // Guarda los tramos de cupo. blocks = [{dows:[1,2,3],hours:2}, ...]
+  async setQuotaBlocks(blocks){ const {error}=await sb.rpc('set_quota_blocks',{p_blocks:blocks}); if(error) throw mapError(error); },
   // Horario de operación: hora de inicio (4/5/6) y de cierre (22 o 23)
   async setOpenHour(which, val){ const key=(which==='start')?'open_start':'open_end'; const {error}=await sb.from('app_config').update({value:String(val)}).eq('key',key); if(error) throw mapError(error); },
   async setResetHour(val){ const {error}=await sb.from('app_config').update({value:String(val)}).eq('key','reset_hour'); if(error) throw mapError(error); },

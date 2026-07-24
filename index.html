@@ -295,6 +295,15 @@
   .cc-house .cc-hn{flex:1;font-weight:600;font-size:13.5px;color:var(--ink)}
   .cc-house .cc-hh{font-weight:700;font-size:13px;color:var(--court)}
   .cc-house .cc-hh.none{color:var(--muted)}
+  .cc-blks{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+  .cc-blk{border:1px solid var(--line);border-radius:12px;padding:11px 13px;background:#fafcfb}
+  .cc-blk-h{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .cc-blk-h b{font-size:14px;color:var(--ink)}
+  .cc-blk-h .cc-hh{font-weight:700;font-size:13px;color:var(--court)}
+  .cc-blk-h .cc-hh.none{color:var(--muted)}
+  .cc-blk-h span{font-size:12px;color:var(--muted);font-weight:600}
+  .cc-blk-sub{font-size:11.5px;color:var(--muted);margin-top:2px}
+  .cc-blk .cc-house{margin-top:8px;background:#fff}
   .cc-rules{display:flex;flex-direction:column;gap:12px;margin-top:16px;border-top:1px solid var(--line);padding-top:15px}
   .cc-rule{display:flex;gap:11px;align-items:flex-start}
   .cc-rule .cc-ric{width:28px;height:28px;border-radius:8px;background:var(--court-soft);color:var(--court);display:flex;align-items:center;justify-content:center;flex:none;font-size:15px;font-weight:700}
@@ -680,6 +689,22 @@
   .rule-night{margin:9px 0 2px;background:#eef1fb;border-left:3px solid #5b6ee0;border-radius:8px;padding:9px 11px;font-size:12.5px;color:#33408a;font-weight:600;line-height:1.45}
   .cupo-note{margin-top:11px;background:#fff7e6;border-left:3px solid var(--amber);border-radius:8px;padding:10px 12px;font-size:12.5px;color:#6b4e0a;font-weight:700}
   .cupo-note p{margin-top:4px;line-height:1.5;color:#8a6a2a;font-weight:500}
+  /* editor de tramos de cupo (admin) */
+  .bl-hint{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:12px}
+  .bl-days{display:flex;align-items:center;gap:3px;flex-wrap:wrap;margin-bottom:14px}
+  .bl-day{min-width:36px;text-align:center;font-size:12.5px;font-weight:700;color:var(--court);background:var(--court-soft);border-radius:9px;padding:9px 4px}
+  .bl-cut{width:28px;height:30px;border-radius:8px;border:1.5px dashed var(--line);background:#fff;color:var(--muted);font-weight:800;font-size:15px;line-height:1;cursor:pointer}
+  .bl-cut.on{border-style:solid;border-color:var(--court);background:var(--court);color:#fff}
+  .bl-cut:disabled{opacity:.3;cursor:default}
+  .bl-blocks{display:flex;flex-direction:column;gap:9px}
+  .bl-block{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--line);border-radius:12px;padding:11px 13px}
+  .bl-block-h b{font-size:14.5px;color:var(--ink)}
+  .bl-block-h span{display:block;font-size:11px;color:var(--muted);margin-top:1px}
+  .bl-stepper{display:flex;align-items:center;gap:12px}
+  .bl-stepper button{width:34px;height:34px;border-radius:9px;border:1.5px solid var(--court);background:#fff;color:var(--court);font-size:19px;font-weight:800;line-height:1;cursor:pointer}
+  .bl-stepper span{min-width:46px;text-align:center;font-size:14.5px;font-weight:700;color:var(--court)}
+  .bl-total{margin-top:13px;font-size:13.5px;color:var(--muted)}
+  .bl-total b{color:var(--court)}
   .bonus-box{display:flex;gap:12px;align-items:center;background:#eef6df;border:1px solid #d4e7a8;border-radius:13px;padding:13px 15px;margin:14px 0}
   .bonus-box .bonus-star{font-size:26px;line-height:1;color:var(--amber)}
   .bonus-box b{font-size:14px;color:#3f5e12;display:block}
@@ -880,7 +905,7 @@
     <button class="btn-primary" onclick="doLogin()">Ingresar</button>
     <a class="forgot" onclick="doForgot()">¿Olvidaste tu clave?</a>
     <div style="text-align:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);font-size:13.5px;color:var(--muted)">¿Primera vez? <a class="forgot" style="display:inline" onclick="showSignup(true)">Crear cuenta nueva</a></div>
-    <div id="loginVersion" style="text-align:center;margin-top:12px;font-size:11px;color:var(--muted)">Versión 2026-07-21c</div>
+    <div id="loginVersion" style="text-align:center;margin-top:12px;font-size:11px;color:var(--muted)">Versión 2026-07-21e</div>
   </div>
   <div class="login-card hidden" id="signupCard">
     <div class="brand"><div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#c6e84b" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M5 5c4 3 4 11 0 14M19 5c-4 3-4 11 0 14"/></svg></div>
@@ -981,7 +1006,7 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<script src="data.js?v=20260711g"></script>
+<script src="data.js?v=20260721e"></script>
 <script>
 /* PWA: registra el service worker (ruta relativa para que funcione bajo /tenis/) */
 if('serviceWorker' in navigator){
@@ -994,7 +1019,7 @@ if('serviceWorker' in navigator){
 /* ======================= DATA ======================= */
 let NOW = new Date(); // hora real. Se re-sincroniza al volver a la app (syncClock) para no quedar congelada.
 let APP_START = Date.now(); // base de liveNow(); DEBE existir antes del primer _computeOWS() (si no, TDZ y la app se cuelga en el splash)
-const APP_VERSION = '2026-07-21c'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
+const APP_VERSION = '2026-07-21e'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
 const DOW = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
 const DOWL = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const MON = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
@@ -1116,7 +1141,8 @@ function D(off){return ymd(addDays(NOW,off))}
 let reservations = [];   // se llena desde la base
 let resId = 100;
 let notifId = 100;
-let CUPO = 2; // horas semanales por casa (configurable por el admin: 1–4)
+let CUPO = 2; // horas semanales por casa (fallback si no hay bloques configurados)
+let QUOTA_BLOCKS = []; // tramos de cupo: [{dows:[1,2,3],hours:2},...]. Vacío = un solo tramo de toda la semana (=CUPO).
 const CUPO_INFO = 'Las horas se reinician cada domingo.<br>Los espacios que libera el profesor no consumen horas.<br>Siempre puedes usar la cancha cuando esté libre, sin reservar y sin gastar horas. Eso sí, si llega alguien que la reservó por la app, tendrás que cederla.';
 
 let released = [];   // huecos liberados por el profesor, desde la base
@@ -1170,8 +1196,8 @@ let state = {
 };
 function defaultMasterHouse(){
   const hs=myHouses();
-  if(state.lastHouse && hs.includes(state.lastHouse) && houseUsed(state.lastHouse)<CUPO) return state.lastHouse; // recordar última si aún tiene cupo
-  return hs.find(h=>houseUsed(h)<CUPO) || hs[0]; // si no, la siguiente con cupo
+  if(state.lastHouse && hs.includes(state.lastHouse) && houseTotalRemaining(state.lastHouse)>0) return state.lastHouse; // recordar última si aún tiene horas
+  return hs.find(h=>houseTotalRemaining(h)>0) || hs[0]; // si no, la siguiente con horas
 }
 
 const ROLE_LABEL={member:'Miembro',master:'Miembro',admin:'Administrador',prof:'Profesor',portero:'Portería'};
@@ -1277,7 +1303,7 @@ async function loadData(){
   RECURRING=b.recurring||[]; PERM_ENABLED=true; PERM_ROUTE=b.permRoute||'both';   // permanentes siempre activos
   houses=(b.houses||[]).map(h=>h.label); houseIdByLabel={}; houseLabelById={};
   (b.houses||[]).forEach(h=>{ houseIdByLabel[h.label]=h.id; houseLabelById[h.id]=h.label; });
-  CUPO=b.cupo||2;
+  CUPO=b.cupo||2; QUOTA_BLOCKS=b.blocks||[];
   OPEN_START=b.openStart||5; OPEN_END=b.openEnd||23; rebuildHours(); HALF_HOURS=true;   // media hora SIEMPRE activa (modo flexible por defecto)
   RESET_HOUR=(b.resetHour!=null?b.resetHour:20); recomputeOpenWeek(); applyWeekView();
   const myLabels=(b.myHouses||[]).map(h=>h.label);
@@ -1510,6 +1536,7 @@ function go(view){ state.view=view; try{localStorage.setItem('tcv',view);}catch(
   state.editProfile=false;   // el perfil siempre abre en modo lectura
   state.histQuery='';        // el historial abre sin filtro
   state.profAction=null;     // el profesor sale del flujo de acción al cambiar de pestaña
+  state.blocksDraft=null;    // el editor de tramos se reinicia con lo guardado al entrar
   if(view==='avail'){ state.schedDraft=null; state.maintDraft=null; }   // los editores se reinician con lo guardado al entrar
   if(view==='notif'){
     visibleNotifs().forEach(n=>n.unread=false);
@@ -1806,10 +1833,13 @@ function regClases(){
   </div>`;
 }
 function regReservas(){
-  const cupoTxt = CUPO+(CUPO===1?' hora':' horas');
+  const blks=blocksList();
+  const horasTxt = multiBlocks()
+    ? `Las horas de reserva están repartidas en tramos de la semana: ${blks.map(b=>`<b class="hl">${blockLabel(b)}: ${fmtH(b.hours)}</b>`).join(', ')}. Las horas de un tramo no se pasan a otro. La administración puede ajustarlo.`
+    : `Cada usuario tiene <b class="hl">${fmtH(blks[0].hours)} de reserva por semana</b>. La administración puede ajustar las horas.`;
   return `<div class="panel reg-panel">
     ${regItem(ICONS.ball,'Qué se puede reservar',`<p>Solo se pueden reservar los horarios <b class="hl">libres</b>: los que no son del profesor (clases) ni de mantenimiento. Esos horarios no están disponibles para reserva.</p>`)}
-    ${regItem(ICONS.check,'Horas por semana',`<p>Cada usuario tiene <b class="hl">${cupoTxt} de reserva por semana</b>. La administración puede ajustar las horas.</p>`)}
+    ${regItem(ICONS.check,'Horas por semana',`<p>${horasTxt}</p>`)}
     ${regItem(ICONS.clock,'Reservas de 2 horas seguidas',`<p>El sistema no permite que una misma casa reserve <b class="hl">más de dos horas seguidas</b> (ej.: 7:00 a 10:00).</p>`)}
     ${regItem(ICONS.phone,'Solo por la aplicación',`<p>Todas las reservas se hacen por la aplicación. La portería ya no toma reservas.</p>`)}
     ${regItem(ICONS.cal,'Cuándo se reservan',`<p>Las reservas de la semana se habilitan cada <b class="hl">domingo a las ${rhLong()}</b>. Antes de esa hora de corte no puedes reservar horas de la semana siguiente.</p>`)}
@@ -1843,15 +1873,30 @@ function regMaintList(){
 }
 function cupoCard(){
   const hs=myHouses();
+  const blks=blocksList();
   let body;
-  if(hs.length>1){
-    const total=hs.reduce((s,h)=>s+Math.max(0,CUPO-houseUsed(h)),0);
-    body=`<div class="cc-big">${cupoTxt(total)}</div>
-      <div class="cc-sub">Repartidas entre tus ${hs.length} casas · máx. ${fmtH(CUPO)} por casa</div>
-      <div class="cc-houses">${hs.map(h=>{const left=Math.max(0,CUPO-houseUsed(h));return `<div class="cc-house"><span class="cc-hic">${HOUSE_ICON}</span><span class="cc-hn">${h}</span><span class="cc-hh${left<=0?' none':''}">${left>0?fmtH(left)+' disp.':'Sin horas'}</span></div>`;}).join('')}</div>`;
+  if(multiBlocks()){
+    const seg=blks.map(b=>{
+      const lbl=blockLabel(b);
+      if(hs.length>1){
+        const rows=hs.map(h=>{const left=blockRemaining(h,b);return `<div class="cc-house"><span class="cc-hic">${HOUSE_ICON}</span><span class="cc-hn">${h}</span><span class="cc-hh${left<=0?' none':''}">${left>0?fmtH(left)+' disp.':'Sin horas'}</span></div>`;}).join('');
+        return `<div class="cc-blk"><div class="cc-blk-h"><b>${lbl}</b><span>${fmtH(b.hours)} por casa</span></div>${rows}</div>`;
+      }
+      const left=blockRemaining(hs[0],b);
+      return `<div class="cc-blk"><div class="cc-blk-h"><b>${lbl}</b><span class="cc-hh${left<=0?' none':''}">${left>0?'Te '+(left<=1?'queda ':'quedan ')+fmtH(left):'Sin horas'}</span></div><div class="cc-blk-sub">${fmtH(b.hours)} por semana</div></div>`;
+    }).join('');
+    body=`<div class="cc-big">Horas por tramo</div><div class="cc-sub">Las horas de un tramo no se pasan al otro.</div><div class="cc-blks">${seg}</div>`;
   }else{
-    const left=Math.max(0,CUPO-houseUsed(hs[0]));
-    body=`<div class="cc-big">${cupoTxt(left)}</div><div class="cc-sub">${hs[0]} · máximo ${fmtH(CUPO)} por semana</div>`;
+    const b=blks[0];
+    if(hs.length>1){
+      const total=hs.reduce((s,h)=>s+blockRemaining(h,b),0);
+      body=`<div class="cc-big">${cupoTxt(total)}</div>
+        <div class="cc-sub">Repartidas entre tus ${hs.length} casas · máx. ${fmtH(b.hours)} por casa</div>
+        <div class="cc-houses">${hs.map(h=>{const left=blockRemaining(h,b);return `<div class="cc-house"><span class="cc-hic">${HOUSE_ICON}</span><span class="cc-hn">${h}</span><span class="cc-hh${left<=0?' none':''}">${left>0?fmtH(left)+' disp.':'Sin horas'}</span></div>`;}).join('')}</div>`;
+    }else{
+      const left=blockRemaining(hs[0],b);
+      body=`<div class="cc-big">${cupoTxt(left)}</div><div class="cc-sub">${hs[0]} · máximo ${fmtH(b.hours)} por semana</div>`;
+    }
   }
   return `<div class="cupo-card">${body}${cupoRules()}</div>`;
 }
@@ -1931,7 +1976,7 @@ function calHeader(){
   let info='';
   if(isMember()){
     const hs=myHouses();
-    const left = hs.length>1 ? hs.reduce((s,h)=>s+Math.max(0,CUPO-houseUsed(h)),0) : Math.max(0,CUPO-houseUsed(hs[0]));
+    const left = hs.reduce((s,h)=>s+houseTotalRemaining(h),0);
     info += `<button class="cb-chip cb-cupo" onclick="go('mine')"><span class="cb-k">Horas</span><span class="cb-v">${cupoTxt(left)}</span><span class="cb-go">›</span></button>`;
   }
   if(state.role!=='admin'){                              // el admin no reserva → no necesita la leyenda de ★
@@ -1959,6 +2004,65 @@ function houseUsed(house){
   const ws=ymd(OPEN_WEEK_START), we=OPEN_WEEK_END;
   return reservations.filter(r=>r.house===house&&r.type==='normal'&&r.date>=ws&&r.date<=we)
     .reduce((s,r)=>s+r.dur/60,0);
+}
+/* ===== Bloques (tramos) de cupo ===== */
+const WEEK_ORDER=[1,2,3,4,5,6,0];                        // lunes..domingo (dow JS/PG: 0=dom..6=sáb)
+// (para las etiquetas de día se reutiliza DOW_ABBR, el arreglo dow->abreviatura ya definido más abajo)
+function blocksList(){ return (QUOTA_BLOCKS&&QUOTA_BLOCKS.length)?QUOTA_BLOCKS:[{dows:[1,2,3,4,5,6,0],hours:CUPO}]; } // sin bloques => uno de toda la semana
+function multiBlocks(){ return blocksList().length>1; }
+function blockForDate(date){ const dw=dateAt(date,0).getDay(); const l=blocksList(); return l.find(b=>b.dows.includes(dw)) || l[0]; }
+function blockLabel(b){ const idxs=b.dows.map(d=>WEEK_ORDER.indexOf(d)).filter(i=>i>=0).sort((x,y)=>x-y); if(!idxs.length) return ''; const a=WEEK_ORDER[idxs[0]], z=WEEK_ORDER[idxs[idxs.length-1]]; return idxs.length===1?DOW_ABBR[a]:DOW_ABBR[a]+'–'+DOW_ABBR[z]; }
+function houseUsedInBlock(house,b){ const ws=ymd(OPEN_WEEK_START), we=OPEN_WEEK_END;
+  return reservations.filter(r=>r.house===house&&r.type==='normal'&&r.date>=ws&&r.date<=we&&b.dows.includes(dateAt(r.date,0).getDay()))
+    .reduce((s,r)=>s+r.dur/60,0); }
+function blockRemaining(house,b){ return Math.max(0, b.hours - houseUsedInBlock(house,b)); }
+function houseTotalRemaining(house){ return blocksList().reduce((s,b)=>s+blockRemaining(house,b),0); }
+/* ===== Admin: editor de tramos (repartidor de semana) ===== */
+function initBlocksDraft(){
+  const ordered=blocksList().map(b=>({idxs:b.dows.map(d=>WEEK_ORDER.indexOf(d)).filter(i=>i>=0).sort((a,c)=>a-c), hours:b.hours}))
+    .filter(o=>o.idxs.length).sort((a,c)=>a.idxs[0]-c.idxs[0]);
+  const cuts=[]; for(let k=1;k<ordered.length;k++) cuts.push(ordered[k].idxs[0]);
+  state.blocksDraft={ cuts, hours: ordered.map(o=>o.hours) };
+}
+function blocksSegments(cuts){ const bounds=[0,...cuts,7], segs=[]; for(let k=0;k<bounds.length-1;k++){ const seg=[]; for(let i=bounds[k];i<bounds[k+1];i++) seg.push(WEEK_ORDER[i]); segs.push(seg); } return segs; }
+function blocksEditorHTML(){
+  if(!state.blocksDraft) initBlocksDraft();
+  const cuts=state.blocksDraft.cuts, hours=state.blocksDraft.hours, segs=blocksSegments(cuts);
+  let daysRow='';
+  for(let i=0;i<7;i++){
+    daysRow+=`<div class="bl-day">${DOW_ABBR[WEEK_ORDER[i]]}</div>`;
+    if(i<6){ const isCut=cuts.includes(i+1), canAdd=cuts.length<2;
+      daysRow+=`<button class="bl-cut${isCut?' on':''}" onclick="blocksToggleCut(${i+1})" ${(!isCut&&!canAdd)?'disabled':''} title="${isCut?'Quitar división':'Dividir aquí'}">${isCut?'│':'+'}</button>`; }
+  }
+  const blocks=segs.map((seg,bi)=>{
+    const lbl=seg.length===1?DOW_ABBR[seg[0]]:DOW_ABBR[seg[0]]+'–'+DOW_ABBR[seg[seg.length-1]];
+    const hrs=hours[bi]!=null?hours[bi]:2;
+    return `<div class="bl-block"><div class="bl-block-h"><b>${lbl}</b><span>Tramo ${bi+1}</span></div>
+      <div class="bl-stepper"><button onclick="blocksHours(${bi},-1)" aria-label="menos">–</button><span>${hrs} h</span><button onclick="blocksHours(${bi},1)" aria-label="más">+</button></div></div>`;
+  }).join('');
+  const total=hours.slice(0,segs.length).reduce((s,x)=>s+(x||0),0);
+  return `<div class="bl-hint">Toca <b>+</b> entre dos días para dividir la semana (hasta 3 tramos). Las horas de un tramo no se pasan a otro.</div>
+    <div class="bl-days">${daysRow}</div>
+    <div class="bl-blocks">${blocks}</div>
+    <div class="bl-total">Total: <b>${total} h</b> por semana</div>
+    <button class="btn-primary" style="width:100%;margin-top:12px" onclick="saveBlocks()">Guardar horas</button>`;
+}
+function blocksToggleCut(pos){
+  const c=state.blocksDraft.cuts, i=c.indexOf(pos);
+  if(i>=0) c.splice(i,1);
+  else { if(c.length>=2) return; c.push(pos); c.sort((a,b)=>a-b); }
+  const nSeg=c.length+1, h=state.blocksDraft.hours;
+  while(h.length<nSeg) h.push(2);
+  state.blocksDraft.hours=h.slice(0,nSeg);
+  blocksRerender();
+}
+function blocksHours(bi,delta){ const h=state.blocksDraft.hours; h[bi]=Math.max(0,(h[bi]||0)+delta); blocksRerender(); }
+function blocksRerender(){ const el=document.getElementById('blocksEditor'); if(el) el.innerHTML=blocksEditorHTML(); }
+async function saveBlocks(){
+  const segs=blocksSegments(state.blocksDraft.cuts), hours=state.blocksDraft.hours;
+  const payload=segs.map((seg,bi)=>({dows:seg, hours:Math.max(0,hours[bi]||0)}));
+  try{ await DB.Admin.setQuotaBlocks(payload); state.blocksDraft=null; await loadData(); render(); toast('Horas por tramo guardadas'); }
+  catch(e){ toast(e.message,'warn'); }
 }
 function monthTag(){const a=state.weekStart,b=addDays(a,6);return a.getMonth()===b.getMonth()?MON[a.getMonth()].toUpperCase():(MON[a.getMonth()]+'/'+MON[b.getMonth()]).toUpperCase();}
 // Título del mes: si la semana cae en dos meses, "Julio / Agosto".
@@ -2648,7 +2752,8 @@ function schedEditorHTML(){
   const step=HALF_HOURS?30:60, first=HALF_HOURS?240:300;
   const opts=[]; for(let m=first;m<=1380;m+=step) opts.push({v:m,label:schedMinLabel(m)});
   const order=[1,2,3,4,5,6];   // lunes a sábado (sin domingo: el profesor no asiste)
-  const onDays=order.filter(d=>(state.schedDraft[d]||[]).length>0);
+  // Igual que en mantenimiento: mantener visible el día vacío-con-cambios para poder "Guardar" al quitar el último.
+  const onDays=order.filter(d=>(state.schedDraft[d]||[]).length>0 || !rangesEqual(state.schedDraft[d]||[], state.schedSaved[d]||[]));
   const cards=onDays.map(d=>{
     const rgs=state.schedDraft[d];
     const nCl=rgs.reduce((s,r)=>s+Math.max(0,Math.round((r.endMin-r.startMin)/60)),0);
@@ -2665,8 +2770,8 @@ function schedEditorHTML(){
     const dirty=!rangesEqual(state.schedDraft[d], state.schedSaved[d]);
     const foot=`<div class="sched-foot"><button class="sched-add" onclick="schedAdd(${d})">+ Agregar</button>${dirty?`<button class="sched-savebtn" onclick="saveProfDay(${d})">Guardar</button>`:''}</div>`;
     return `<div class="sched-day">
-      <div class="sched-dh"><b>${SCHED_DOW_NAMES[d]}</b><span class="sched-count">${nCl} ${nCl===1?'clase':'clases'}</span></div>
-      <div class="sched-body">${rows}${foot}</div>
+      <div class="sched-dh"><b>${SCHED_DOW_NAMES[d]}</b><span class="sched-count">${rgs.length?`${nCl} ${nCl===1?'clase':'clases'}`:'—'}</span></div>
+      <div class="sched-body">${rows||'<div style="font-size:12.5px;color:var(--muted);padding:2px 2px 6px;line-height:1.4">Sin clases. Guarda para quitarlas de este día.</div>'}${foot}</div>
     </div>`;
   }).join('');
   return onDays.length? `<div class="sched-grid">${cards}</div>` : `<div class="sched-off" style="padding:16px 0">No hay días con clases. Agrégalos con el botón “Días con clases”.</div>`;
@@ -2718,7 +2823,9 @@ function maintEditorHTML(){
   const step=HALF_HOURS?30:60, first=HALF_HOURS?240:300;
   const opts=[]; for(let m=first;m<=1380;m+=step) opts.push({v:m,label:schedMinLabel(m)});
   const order=[1,2,3,4,5,6];
-  const onDays=order.filter(d=>(state.maintDraft[d]||[]).length>0);
+  // Se muestra un día si tiene elementos O si quedó vacío pero con cambios sin guardar
+  // (para poder darle "Guardar" cuando quitas el último; si no, la tarjeta desaparecía y no se podía guardar).
+  const onDays=order.filter(d=>(state.maintDraft[d]||[]).length>0 || !rangesEqual(state.maintDraft[d]||[], state.maintSaved[d]||[]));
   const cards=onDays.map(d=>{
     const rgs=state.maintDraft[d];
     const mins=rgs.reduce((s,r)=>s+Math.max(0,r.endMin-r.startMin),0);
@@ -2731,8 +2838,8 @@ function maintEditorHTML(){
     const dirty=!rangesEqual(state.maintDraft[d], state.maintSaved[d]);
     const foot=`<div class="sched-foot"><button class="sched-add" onclick="maintAdd(${d})">+ Agregar</button>${dirty?`<button class="sched-savebtn" onclick="saveMaintDay(${d})">Guardar</button>`:''}</div>`;
     return `<div class="sched-day">
-      <div class="sched-dh"><b>${SCHED_DOW_NAMES[d]}</b><span class="sched-count">${fmtHoras(mins)}</span></div>
-      <div class="sched-body">${rows}${foot}</div>
+      <div class="sched-dh"><b>${SCHED_DOW_NAMES[d]}</b><span class="sched-count">${rgs.length?fmtHoras(mins):'—'}</span></div>
+      <div class="sched-body">${rows||'<div style="font-size:12.5px;color:var(--muted);padding:2px 2px 6px;line-height:1.4">Sin mantenimiento. Guarda para quitarlo de este día.</div>'}${foot}</div>
     </div>`;
   }).join('');
   return onDays.length? `<div class="sched-grid">${cards}</div>` : `<div class="sched-off" style="padding:16px 0">No hay días con mantenimiento. Agrégalos con el botón “Días con mantenimiento”.</div>`;
@@ -3012,7 +3119,6 @@ function viewUsers(){
   const fixedRows=fixed.length?fixed.map(x=>userRow(x.u,x.i)).join(''):'<div class="empty" style="padding:26px">No hay cuentas fijas.</div>';
   const pendRows=pending.length?pending.map(x=>userRow(x.u,x.i)).join(''):'<div class="empty" style="padding:22px">No hay solicitudes pendientes.</div>';
   const apprRows=approved.length?approved.map(x=>userRow(x.u,x.i)).join(''):'<div class="empty" style="padding:26px">Aún no hay residentes aprobados.</div>';
-  const cupoSeg=[1,2,3,4].map(n=>`<button class="${CUPO===n?'on':''}" onclick="setCupo(${n})">${n}</button>`).join('');
   const resetSeg=[18,19,20,21].map(n=>`<button class="${RESET_HOUR===n?'on':''}" onclick="setReset(${n})">${n-12} pm</button>`).join('');
   const copyIco=svgIco('<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>',14);
   // 1) Solicitudes pendientes (primero) · con contador
@@ -3023,7 +3129,7 @@ function viewUsers(){
   const cuentasFijas=`<div class="panel" style="margin-bottom:16px"><div class="panel-h"><h3>Cuentas fijas</h3><div class="spacer"></div><span style="font-size:12px;color:var(--muted)">No se eliminan</span></div>${fixedRows}</div>`;
   // 4) Reglas de reserva (config)
   const reglas=`<div class="panel"><div class="panel-h"><h3>Reglas de reserva</h3></div>
-      <div class="set-row"><div class="set-t"><b>Horas de reserva por semana</b><p>Cuántas horas puede reservar cada casa por semana.</p></div><div class="seg cupo-seg">${cupoSeg}</div></div>
+      <div class="set-row" style="flex-direction:column;align-items:stretch;gap:0"><div class="set-t"><b>Horas de reserva por semana</b><p>Divide la semana en hasta 3 tramos consecutivos, cada uno con sus horas.</p></div><div id="blocksEditor" style="margin-top:14px">${blocksEditorHTML()}</div></div>
       <div class="set-row"><div class="set-t"><b>Reinicio semanal (domingo)</b><p>Hora del domingo en que se reinician las horas de todos.</p></div><div class="seg">${resetSeg}</div></div>
     </div>`;
   return solicitudes + residentes + cuentasFijas + reglas +
@@ -3423,7 +3529,7 @@ function freeRunMin(date,h,half){
 function durLabel(m){ if(m<60) return m+' min'; const H=Math.floor(m/60), r=m%60; return H+(r>=30?'½':'')+' h'; }
 // Opciones de duración según lo libre que esté la cancha y las horas que le quedan a la casa.
 function durSegHTML(date,h,house){
-  const left=Math.max(0,CUPO-houseUsed(house));
+  const left=blockRemaining(house, blockForDate(date));   // tope = horas restantes del TRAMO de ese día
   const cap=Math.min(freeRunMin(date,h,0), Math.round(left*60));   // tope = min(libre seguido, horas de la casa)
   const step=HALF_HOURS?30:60;
   const durs=[];
@@ -3502,12 +3608,13 @@ function openBook(date,h,ctx){
   const hasSelect = isPortero || (isMember() && myHs.length>1);
   const selHouses = isPortero ? houses : myHs;
   const bookHouse = hasSelect ? (isPortero ? selHouses[0] : defaultMasterHouse()) : state.user.house;
-  const left = Math.max(0,CUPO-houseUsed(bookHouse));
+  const left = blockRemaining(bookHouse, blockForDate(date));
+  const perTxt = multiBlocks() ? (' en '+blockLabel(blockForDate(date))) : ' esta semana';
   const typeLabel = isFlex?'Hora del profesor':isClass?'Profesor disponible':isOpen?'Práctica libre':'Reserva';
   const msubRange = (isHalf||isFlexHalf)?rangeLabel(h, (ctx==='h1'||ctx==='flexh1')?30:0, 30):rangeLabel(h,0,60);
   let houseSelect = hasSelect ? `
     <div class="opt-label">${isPortero?'¿A nombre de qué casa?':'¿A nombre de cuál de tus casas?'}</div>
-    ${psel('bkHouse', selHouses.map(hh=>{const lh=Math.max(0,CUPO-houseUsed(hh));return {v:hh,label:`${hh} · ${lh>0?fmtH(lh)+' disponible'+(lh>1?'s':''):'sin horas'}`};}), bookHouse, 'updateBookHouse')}`:'';
+    ${psel('bkHouse', selHouses.map(hh=>{const lh=blockRemaining(hh, blockForDate(date));return {v:hh,label:`${hh} · ${lh>0?fmtH(lh)+' disponible'+(lh>1?'s':''):'sin horas'}`};}), bookHouse, 'updateBookHouse')}`:'';
   let classChoice = isClass ? `
     <div class="opt-label">¿Qué deseas?</div>
     <div class="seg" id="useType">
@@ -3528,7 +3635,7 @@ function openBook(date,h,ctx){
   } else if(isHalf && !bonus){
     durChoice=`<div class="quota-mini" style="background:#eef4f6;color:var(--court)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg> Reserva de <b style="margin:0 4px">30 minutos</b> · ${msubRange}.</div>`;
   }
-  const quedaPhrase = hasSelect ? `${bookHouse} · ${cupoFrase(left)} esta semana` : `${cupoFraseMember(left)} esta semana`;
+  const quedaPhrase = hasSelect ? `${bookHouse} · ${cupoFrase(left)}${perTxt}` : `${cupoFraseMember(left)}${perTxt}`;
   let quotaBox = isFlex
     ? `<div id="flexCupoNote">${flexCupoNote('con')}</div>`
     : (bonus
@@ -3561,8 +3668,10 @@ function flexPick(el){
 }
 function updateBookHouse(){
   const house=document.getElementById('bkHouse').value;
-  const left=Math.max(0,CUPO-houseUsed(house));
-  const p=document.getElementById('bkPhrase'); if(p)p.textContent=`${house} · ${cupoFrase(left)} esta semana`;
+  const blk=state.bookCtx?blockForDate(state.bookCtx.date):blocksList()[0];
+  const left=blockRemaining(house, blk);
+  const perTxt = multiBlocks() ? (' en '+blockLabel(blk)) : ' esta semana';
+  const p=document.getElementById('bkPhrase'); if(p)p.textContent=`${house} · ${cupoFrase(left)}${perTxt}`;
   const box=document.getElementById('durBox'); if(box && state.bookCtx) box.innerHTML=durSegHTML(state.bookCtx.date, state.bookCtx.h, house);   // recalcula duración según la casa elegida
 }
 async function confirmBook(date,h,ctx){
