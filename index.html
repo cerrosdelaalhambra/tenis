@@ -304,12 +304,11 @@
   .cc-blk-h span{font-size:12px;color:var(--muted);font-weight:600}
   .cc-blk-sub{font-size:11.5px;color:var(--muted);margin-top:2px}
   .cc-blk .cc-house{margin-top:8px;background:#fff}
-  .cc-rules{display:flex;flex-direction:column;gap:14px;margin-top:4px}
-  .cc-rule{display:flex;gap:12px;align-items:flex-start}
-  .cc-rule .cc-ric{width:32px;height:32px;border-radius:9px;background:var(--court-soft);color:var(--court);display:flex;align-items:center;justify-content:center;flex:none;font-size:16px;font-weight:700}
+  .cc-rules{display:flex;flex-direction:column;gap:15px;margin-top:4px}
+  .cc-rule{display:flex;gap:13px;align-items:center}
+  .cc-rule .cc-ric{width:36px;height:36px;border-radius:10px;background:var(--court-soft);color:var(--court);display:flex;align-items:center;justify-content:center;flex:none;font-size:18px;font-weight:700}
   .cc-rule .cc-ric.star{color:#f2b705;background:#fdf6e3}
-  .cc-rule b{font-size:14.5px;color:var(--ink);display:block;margin-bottom:2px}
-  .cc-rule>div span{font-size:13.5px;color:var(--muted);line-height:1.55}
+  .cc-rtext{font-size:15px;color:var(--ink);line-height:1.45}
   /* pestaña Horas: tramos en cajitas */
   .hb-list{display:flex;flex-direction:column;gap:12px;margin-bottom:20px}
   .hb-card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:14px 16px}
@@ -635,6 +634,13 @@
   .mr-row.tap{cursor:pointer}
   .mr-day{font-size:15px;font-weight:700;color:var(--ink)}
   .mr-hour{font-size:15px;font-weight:800;color:var(--court);white-space:nowrap}
+  .mr-actions{display:flex;align-items:center;gap:10px;padding:0 18px 14px}
+  .mr-cancel{background:#fff;border:1.5px solid #f0d4ce;color:var(--danger);font-size:13px;font-weight:700;padding:9px 16px;border-radius:10px;cursor:pointer}
+  .mr-nocancel{font-size:12px;color:var(--muted)}
+  .mr-seek{margin-left:auto;background:var(--teal);color:#fff;border:none;font-size:13.5px;font-weight:800;padding:10px 16px;border-radius:11px;cursor:pointer}
+  .mr-seek.searching{background:var(--court-soft);color:var(--court)}
+  .mr-matched{margin-left:auto;display:inline-flex;align-items:center;gap:6px;background:var(--teal);color:#fff;font-size:13px;font-weight:800;padding:9px 14px;border-radius:11px;text-decoration:none}
+  .mr-matched svg{width:18px;height:18px}
   .row-seek{display:flex;align-items:center;justify-content:center;gap:8px;margin:0 18px 14px;padding:11px;border-radius:11px;border:1.5px solid var(--court);background:#fff;color:var(--court);font-size:14px;font-weight:700;cursor:pointer}
   .row-seek:active{background:var(--court-soft)}
   .row-match{display:flex;align-items:center;gap:9px;margin:0 18px 14px;background:var(--court-soft);border-radius:11px;padding:10px 12px;font-size:13px;color:var(--court-dark)}
@@ -797,12 +803,17 @@
   .fb-range{font-size:28px;font-weight:800;color:var(--court);text-align:center;margin:20px 0 4px}
   .fb-range.pop{animation:bkpop .28s cubic-bezier(.2,.8,.2,1)}
   @keyframes bkpop{0%{transform:scale(.86);opacity:.35}100%{transform:scale(1);opacity:1}}
-  .fb-mid{flex:1;display:flex;flex-direction:column;justify-content:center;gap:22px;margin:8px 0}
-  .fb-seek{display:flex;align-items:center;justify-content:space-between;gap:14px;background:var(--court-soft);border-radius:14px;padding:16px 18px;font-size:16px;font-weight:700;color:var(--court)}
-  .fb-reglas{text-align:center}
-  .fb-reglas b{display:block;font-size:12.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:9px}
-  .fb-reglas p{font-size:14.5px;color:var(--ink);line-height:1.55;margin:4px 0}
+  .fb-mid{flex:1;display:flex;flex-direction:column;justify-content:center;margin:8px 0}
+  .fb-seek{background:var(--teal);border-radius:18px;padding:24px 18px;text-align:center;color:#fff;box-shadow:0 8px 22px rgba(14,116,144,.25)}
+  .fb-seek-q{font-size:19px;font-weight:800;margin-bottom:16px;line-height:1.25}
+  .fb-seek-btn{background:rgba(255,255,255,.14);color:#fff;border:1.6px solid rgba(255,255,255,.55);border-radius:13px;padding:12px 26px;font-size:15.5px;font-weight:800;cursor:pointer;transition:.15s}
+  .fb-seek-btn .on-lbl{display:none}
+  .fb-seek-btn.on{background:#fff;color:var(--teal);border-color:#fff}
+  .fb-seek-btn.on .off-lbl{display:none}
+  .fb-seek-btn.on .on-lbl{display:inline}
   .fb-confirm{width:100%;padding:16px;font-size:16px;flex:none}
+  .fb-save{width:100%;padding:15px;font-size:15.5px;flex:none;margin-bottom:10px}
+  .fb-nocancel{text-align:center;color:var(--muted);font-size:13.5px;padding:12px;flex:none}
   .grab{width:38px;height:4px;border-radius:3px;background:var(--line);margin:8px auto 14px}
   .modal h3{font-size:18px;margin-bottom:3px}
   .modal .msub{font-size:13px;color:var(--muted);margin-bottom:18px}
@@ -972,7 +983,7 @@
     <button class="btn-primary" onclick="doLogin()">Ingresar</button>
     <a class="forgot" onclick="doForgot()">¿Olvidaste tu clave?</a>
     <div style="text-align:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);font-size:13.5px;color:var(--muted)">¿Primera vez? <a class="forgot" style="display:inline" onclick="showSignup(true)">Crear cuenta nueva</a></div>
-    <div id="loginVersion" style="text-align:center;margin-top:12px;font-size:11px;color:var(--muted)">Versión 2026-07-22f</div>
+    <div id="loginVersion" style="text-align:center;margin-top:12px;font-size:11px;color:var(--muted)">Versión 2026-07-22g</div>
   </div>
   <div class="login-card hidden" id="signupCard">
     <div class="brand"><div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#c6e84b" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M5 5c4 3 4 11 0 14M19 5c-4 3-4 11 0 14"/></svg></div>
@@ -1073,7 +1084,7 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<script src="data.js?v=20260722a"></script>
+<script src="data.js?v=20260722g"></script>
 <script>
 /* PWA: registra el service worker (ruta relativa para que funcione bajo /tenis/) */
 if('serviceWorker' in navigator){
@@ -1086,7 +1097,7 @@ if('serviceWorker' in navigator){
 /* ======================= DATA ======================= */
 let NOW = new Date(); // hora real. Se re-sincroniza al volver a la app (syncClock) para no quedar congelada.
 let APP_START = Date.now(); // base de liveNow(); DEBE existir antes del primer _computeOWS() (si no, TDZ y la app se cuelga en el splash)
-const APP_VERSION = '2026-07-22f'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
+const APP_VERSION = '2026-07-22g'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
 const DOW = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
 const DOWL = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const MON = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
@@ -1826,11 +1837,12 @@ const RAIN_ICON=svgIco(RAIN_P,16), CAL_ICON=svgIco(CAL_P,15), CLK_ICON=svgIco(CL
 const REFRESH_P='<path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 4v4.5h-4.5"/>';
 const BALL_P='<circle cx="12" cy="12" r="9"/><path d="M5 5c4 3 4 11 0 14M19 5c-4 3-4 11 0 14"/>';
 function cupoRules(){
-  return `<div class="cc-rules">
-    <div class="cc-rule"><span class="cc-ric">${svgIco(REFRESH_P,15)}</span><div><b>Reinicio de horas</b><span>Las horas disponibles se reinician todos los domingos a las ${rhLong()}</span></div></div>
-    <div class="cc-rule"><span class="cc-ric star">★</span><div><b>Clases con el profesor</b><span>Las clases con el profesor no consumen horas.</span></div></div>
-    <div class="cc-rule"><span class="cc-ric">${svgIco(BALL_P,15)}</span><div><b>Cancha libre</b><span>Si la cancha está libre porque nadie ha reservado, pero no te quedan horas, puedes jugar; pero si llega alguien con reserva debes ceder la cancha.</span></div></div>
-  </div>`;
+  const row=(icHTML,txt,star)=>`<div class="cc-rule"><span class="cc-ric${star?' star':''}">${icHTML}</span><span class="cc-rtext">${txt}</span></div>`;
+  let out = row(svgIco(REFRESH_P,17), `Tus horas se reinician todos los domingos a las ${rhLong()}.`)
+    + row('★', 'Las clases con el profesor no consumen horas.', true)
+    + row(svgIco(BALL_P,17), 'Si la cancha está libre y ya no te quedan horas, puedes jugar; pero si llega alguien con reserva, debes cederla.');
+  if(multiBlocks()) out += row(svgIco(CLK_P,17), 'Las horas de cada tramo son solo para esos días. Lo que no uses en un tramo no pasa al otro.');
+  return `<div class="cc-rules">${out}</div>`;
 }
 /* ======================= REGLAMENTO (admin, residentes y profesor) ======================= */
 function setRegTab(t){ state.regTab=t; render(); scrollTop(); }
@@ -1948,6 +1960,10 @@ function regReservas(){
     ${regItem(ICONS.cal,'Cuándo se reservan',`<p>Las reservas de la semana se habilitan cada <b class="hl">domingo a las ${rhLong()}</b>. Antes de esa hora de corte no puedes reservar horas de la semana siguiente.</p>`)}
     ${regItem(ICONS.clock,'Cancelaciones',`<p>Puedes cancelar hasta <b class="hl">20 minutos antes</b> de tu reserva. Al cancelar, se envía una notificación a <b class="hl">todos los residentes</b> informando el horario en que la cancha quedó libre y quién fue el que canceló.</p>`)}
     ${regItem(ICONS.bell,'Sanciones administrativas',`<p>Si no asistes a tu reserva, la administración puede aplicar medidas o sanciones. Esto lo maneja la <b class="hl">administración</b>, no la aplicación.</p>`)}
+    ${regItem(ICONS.check,'Debes estar presente',`<p>La persona que reserva <b class="hl">debe estar</b> en la cancha durante su turno.</p>`)}
+    ${regItem(ICONS.clock,'Sal a tiempo',`<p>Termina y sal <b class="hl">puntual</b> para no interrumpir el turno del siguiente.</p>`)}
+    ${regItem(ICONS.bell,'Silencio en la noche',`<p>En la noche y la madrugada hay <b class="hl">vecinos durmiendo</b>. Juega en silencio y evita gritos, ruido fuerte y música o parlantes a alto volumen.</p>`)}
+    ${regItem(ICONS.tool,'Cuida la cancha',`<p>No uses la cancha si está <b class="hl">encharcada</b> (por seguridad y para cuidarla). No te subas a la malla ni a los arbustos a buscar pelotas, y cuida el equipamiento, las sillas y la mesa.</p>`)}
     ${regItem(ICONS.tool,'Mantenimiento',`<p>No se puede reservar en horas de mantenimiento. Estos son los horarios de mantenimiento actuales:</p>${regMaintList()}`)}
   </div>`;
 }
@@ -1990,8 +2006,7 @@ function viewHoras(){   // pestaña "Horas": un renglón por tramo, con la expli
       <div class="hb-body"><span class="hb-days">${days}</span><span class="hb-badge${left<=0?' none':''}">${fmtH(left)} disponible${left===1?'':'s'}</span></div>
     </div>`;
   }).join('');
-  const note = multi ? `<div class="hb-note">${svgIco('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>',18,'var(--court)')}<span>Las horas de cada tramo sirven <b>solo para esos días</b>. Lo que no uses en un tramo <b>no pasa</b> al otro.</span></div>` : '';
-  return `<div class="hb-list">${cards}</div>${note}${cupoRules()}`;
+  return `<div class="hb-list">${cards}</div>${cupoRules()}`;
 }
 function cupoCard(){
   const hs=myHouses();
@@ -2353,22 +2368,30 @@ function viewMine(){
     const ap=x=>x<12?'a.m.':'p.m.', hh=x=>x%12||12, fmt=(H,M)=>hh(H)+':'+String(M).padStart(2,'0');
     return ap(r.h)===ap(eH) ? `${fmt(r.h,r.min||0)} a ${fmt(eH,eM)} ${ap(eH)}` : `${fmt(r.h,r.min||0)} ${ap(r.h)} a ${fmt(eH,eM)} ${ap(eH)}`; };
   const card=(r)=>{
-    const d=dateAt(r.date,r.h);const fut=d>=NOW;
+    const d=dateAt(r.date,r.h);const fut=d>=NOW;const cancelable=(d-NOW)>(r.type==='class'?1:0.5)*3600000;
     const dateLine=`${cap1(DIAS_FULL[d.getDay()])} ${d.getDate()} de ${MESES[d.getMonth()]}`;
-    let matchFoot='';
-    if(fut && r.type==='normal'){                       // "Buscar con quién jugar" en la lista
-      const m=matchFor(r.id);
-      if(m && m.status==='matched'){
-        matchFoot=`<div class="row-match ok">${svgIco(BALL_P,14,'var(--court)')}<span>Vas a jugar con <b>${m.otherName||'—'}</b>${m.otherHouse?' ('+m.otherHouse+')':''}</span>${m.otherPhone?`<a class="rm-wa" href="${waMatchLink(m.otherName,m.otherPhone,DOW[d.getDay()]+' '+d.getDate())}" target="_blank" rel="noopener" aria-label="WhatsApp">${WA_ICON}</a>`:''}</div>`;
-      } else if(m && m.status==='open'){
-        matchFoot=`<div class="row-match"><span class="rm-dot"></span><span>Buscando contrincante…</span><button class="rm-cancel" onclick="cancelSeekMatch(${m.id})">Cancelar</button></div>`;
-      } else {
-        matchFoot=`<button class="row-seek" onclick="seekMatch(${r.id})">${svgIco(BALL_P,14)} Buscar con quién jugar</button>`;
+    let actions='';
+    if(fut){
+      const cancelBtn = cancelable ? `<button class="mr-cancel" onclick="cancelRes(${r.id})">Cancelar</button>` : `<span class="mr-nocancel">No cancelable</span>`;
+      let right='';
+      if(r.type==='normal'){
+        const m=matchFor(r.id);
+        if(m && m.status==='matched'){
+          const first=(m.otherName||'—').split(' ')[0];
+          right = m.otherPhone
+            ? `<a class="mr-matched" href="${waMatchLink(m.otherName,m.otherPhone,DOW[d.getDay()]+' '+d.getDate())}" target="_blank" rel="noopener">Vs. ${first} ${WA_ICON}</a>`
+            : `<span class="mr-matched">Vs. ${first}</span>`;
+        } else if(m && m.status==='open'){
+          right = `<button class="mr-seek searching" onclick="cancelSeekMatch(${m.id})">Buscando… ✕</button>`;
+        } else {
+          right = `<button class="mr-seek" onclick="seekMatch(${r.id})">Buscar con quién jugar</button>`;
+        }
       }
+      actions = `<div class="mr-actions">${cancelBtn}${right}</div>`;
     }
     return `<div class="mr-item"><div class="mr-row${fut?' tap':''}"${fut?` onclick="openMyRes(${r.id})"`:''}>
       <span class="mr-day">${dateLine}</span><span class="mr-hour">${resRangeTxt(r)}</span>
-    </div>${matchFoot}</div>`;};
+    </div>${actions}</div>`;};
   let html='';
   // 1) Próximas
   html+=`<div class="mr-title">Próximas</div><div class="panel">${up.length?up.map(card).join(''):emptyInline('No tienes reservas próximas')}</div>`;
@@ -3705,21 +3728,48 @@ function fullDurs(date,h,house){
   if(!durs.length) durs.push(HALF_HOURS?30:60);
   return durs.slice(0,4);   // hasta 4 opciones (2×2)
 }
-function bookRangeTxt(h,dur){
-  const s=h*60, e=s+dur;
+function bookRangeTxt(startMin,dur){
+  const s=startMin, e=s+dur;
   const ap=t=>Math.floor(t/60)<12?'a.m.':'p.m.', hh=t=>{const H=Math.floor(t/60)%12;return H||12;}, mm=t=>':'+String(t%60).padStart(2,'0'), f=t=>hh(t)+mm(t);   // siempre con :00
   return ap(s)===ap(e) ? f(s)+' – '+f(e)+' '+ap(e) : f(s)+' '+ap(s)+' – '+f(e)+' '+ap(e);
 }
 function setBkRange(txt){ const rg=document.getElementById('bkRange'); if(!rg) return; rg.textContent=txt; rg.classList.remove('pop'); void rg.offsetWidth; rg.classList.add('pop'); }
 function durPickFull(el){
   document.querySelectorAll('#durSeg .fb-dur').forEach(b=>b.classList.remove('on')); el.classList.add('on');
-  const c=state.bookCtx; if(c) setBkRange(bookRangeTxt(c.h, +el.dataset.d));
+  const c=state.bookCtx; if(c) setBkRange(bookRangeTxt(c.h*60, +el.dataset.d));
 }
 function renderFullGrid(house){   // recalcula duraciones al cambiar de casa (máster/portería)
   const c=state.bookCtx; if(!c) return;
   const durs=fullDurs(c.date,c.h,house), def=durs.includes(60)?60:durs[0];
   const grid=document.getElementById('durSeg'); if(grid) grid.innerHTML=durs.map(dd=>`<button class="fb-dur${dd===def?' on':''}" data-d="${dd}" onclick="durPickFull(this)">${durLabel(dd)}</button>`).join('');
-  setBkRange(bookRangeTxt(c.h,def));
+  setBkRange(bookRangeTxt(c.h*60,def));
+}
+// ---- Editar duración de una reserva existente (pantalla "Mi reserva") ----
+function editDurs(r){
+  const endMin=r.h*60+(r.min||0)+r.dur, endH=Math.floor(endMin/60), endHalf=(endMin%60)>=30?1:0;
+  const freeAfter=freeRunMin(r.date,endH,endHalf);                              // minutos libres tras el fin actual
+  const cupoCap=Math.round((blockRemaining(r.house,blockForDate(r.date))+r.dur/60)*60);   // tope de cupo (esta reserva ya cuenta)
+  const maxDur=Math.min(r.dur+freeAfter, cupoCap);
+  const step=HALF_HOURS?30:60, start=HALF_HOURS?30:60; let durs=[];
+  for(let dd=start; dd<=maxDur; dd+=step) durs.push(dd);
+  if(!durs.includes(r.dur)) durs.push(r.dur);
+  durs.sort((a,b)=>a-b);
+  if(durs.length>4){ let ci=durs.indexOf(r.dur), sIdx=Math.max(0,ci-1); if(sIdx+4>durs.length) sIdx=durs.length-4; durs=durs.slice(sIdx,sIdx+4); }
+  return durs;
+}
+function durPickEdit(el){
+  document.querySelectorAll('#durSeg .fb-dur').forEach(b=>b.classList.remove('on')); el.classList.add('on');
+  const er=state.editRes; if(!er) return;
+  setBkRange(bookRangeTxt(er.h*60+er.min, +el.dataset.d));
+  const sv=document.getElementById('erSave'); if(sv) sv.style.display=(+el.dataset.d!==er.curDur)?'block':'none';
+}
+async function saveEditRes(){
+  const er=state.editRes; if(!er) return;
+  const on=document.querySelector('#durSeg .fb-dur.on'); const dur=on?+on.dataset.d:er.curDur;
+  if(dur===er.curDur){ closeModal(); return; }
+  closeModal();
+  try{ await DB.updateReservation(er.id, er.date, er.h, er.min, dur); await loadData(); render(); toast('Duración actualizada ✓'); }
+  catch(e){ await loadData(); render(); toast(e.message,'warn'); }
 }
 
 /* ======================= MODAL / ACTIONS ======================= */
@@ -3828,10 +3878,12 @@ function openBook(date,h,ctx){
       <div class="fb-head"><div class="fb-day">${dayTitle}</div></div>
       ${houseSelect?`<div class="fb-house">${houseSelect}</div>`:''}
       <div class="fb-grid" id="durSeg">${durBtns}</div>
-      <div class="fb-range" id="bkRange">${bookRangeTxt(h,def)}</div>
+      <div class="fb-range" id="bkRange">${bookRangeTxt(h*60,def)}</div>
       <div class="fb-mid">
-        ${isMember()?`<label class="fb-seek"><span>¿Buscas con quién jugar?</span><button type="button" class="sw" id="bkSeek" onclick="this.classList.toggle('on')"><span class="sw-k"></span></button></label>`:''}
-        <div class="fb-reglas"><b>Reglas importantes</b><p>Sal a tiempo para no interrumpir el turno siguiente.</p><p>Puedes cancelar tu reserva hasta 20 minutos antes.</p></div>
+        ${isMember()?`<div class="fb-seek">
+          <div class="fb-seek-q">¿Buscas con quién jugar?</div>
+          <button type="button" class="fb-seek-btn" id="bkSeek" onclick="this.classList.toggle('on')"><span class="off-lbl">Buscar contrincante</span><span class="on-lbl">✓ Buscando</span></button>
+        </div>`:''}
       </div>
       <button class="btn-primary fb-confirm" id="bkConfirm" onclick="confirmBook('${date}',${h},'full')">Confirmar reserva</button>`;
     document.getElementById('modalBg').classList.add('show');
@@ -3933,26 +3985,37 @@ function openMyRes(id){
   const isClass=(r.type==='class');
   const cancelable = isClass ? (d-NOW)>3600000 : (d-NOW)>1200000;   // clase: 1 h antes; normal: hasta 20 min antes
   const fut = d.getTime() > NOW.getTime();
-  const whenTxt = `${DOWL[d.getDay()]} ${d.getDate()} de ${MON[d.getMonth()]} · ${rangeLabel(r.h,r.min,r.dur)}`;
-  let matchSection='';
-  if(r.type==='normal' && fut){                       // "Buscar con quién jugar" solo en reservas normales futuras
+  const canEdit = r.type==='normal' && fut;                          // solo reservas normales futuras cambian duración
+  state.editRes = canEdit ? {id:r.id, date:r.date, h:r.h, min:r.min||0, curDur:r.dur, house:r.house} : null;
+  const dayTitle=`${cap1(['domingo','lunes','martes','miércoles','jueves','viernes','sábado'][d.getDay()])} ${d.getDate()} de ${MESES[d.getMonth()]}`;
+  const startMin=r.h*60+(r.min||0);
+  const whenTxt = `${DOWL[d.getDay()]} ${d.getDate()} de ${MON[d.getMonth()]}`;
+  let gridHTML='';
+  if(canEdit){
+    const durs=editDurs(r);
+    gridHTML=`<div class="fb-grid" id="durSeg">${durs.map(dd=>`<button class="fb-dur${dd===r.dur?' on':''}" data-d="${dd}" onclick="durPickEdit(this)">${durLabel(dd)}</button>`).join('')}</div>`;
+  }
+  let matchHTML='';
+  if(r.type==='normal' && fut){
     const m=matchFor(r.id);
     if(m && m.status==='matched'){
-      matchSection=`<div class="match-box ok"><b>${svgIco(BALL_P,15,'var(--court)')} Vas a jugar con ${m.otherName||'—'}${m.otherHouse?' ('+m.otherHouse+')':''}</b>${m.otherPhone?`<a class="btn-wa" style="margin-top:10px" href="${waMatchLink(m.otherName,m.otherPhone,whenTxt)}" target="_blank" rel="noopener">${WA_ICON} Escribir por WhatsApp</a>`:`<span>Esa cuenta no tiene teléfono para WhatsApp.</span>`}</div>`;
+      matchHTML=`<div class="fb-seek"><div class="fb-seek-q">Vas a jugar con ${m.otherName||'—'}${m.otherHouse?' ('+m.otherHouse+')':''}</div>${m.otherPhone?`<a class="fb-seek-btn on" href="${waMatchLink(m.otherName,m.otherPhone,whenTxt)}" target="_blank" rel="noopener">${WA_ICON} WhatsApp</a>`:''}</div>`;
     } else if(m && m.status==='open'){
-      matchSection=`<div class="match-box"><b>Buscando contrincante…</b><span>Ya les avisamos a los residentes. Cuando alguien acepte, te avisamos y verás con quién juegas.</span><button class="btn-soft" style="width:100%;margin-top:10px" onclick="cancelSeekMatch(${m.id})">Cancelar búsqueda</button></div>`;
+      matchHTML=`<div class="fb-seek"><div class="fb-seek-q">Buscando contrincante…</div><button class="fb-seek-btn on" onclick="cancelSeekMatch(${m.id})">Cancelar búsqueda</button></div>`;
     } else {
-      matchSection=`<button class="btn-match" onclick="seekMatch(${r.id})">${svgIco(BALL_P,16)} Buscar con quién jugar</button>`;
+      matchHTML=`<div class="fb-seek"><div class="fb-seek-q">¿Buscas con quién jugar?</div><button class="fb-seek-btn" onclick="seekMatch(${r.id})">Buscar contrincante</button></div>`;
     }
   }
-  const modal=document.getElementById('modal');
-  modal.innerHTML=`<div class="grab"></div>
-    <h3>Mi reserva</h3>
-    <div class="msub">${DOWL[d.getDay()]} ${d.getDate()} de ${MON[d.getMonth()]} · ${rangeLabel(r.h,r.min,r.dur)}</div>
-    <div class="quota-mini"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> A nombre de <b style="margin:0 4px">${r.house}</b>${myHouses().length>1?'(una de tus casas)':''}</div>
-    ${matchSection}
-    ${cancelable?`<div class="modal-actions"><button class="btn-soft" onclick="closeModal()">Cerrar</button><button class="btn-primary" style="background:var(--danger)" onclick="cancelRes(${r.id})">Cancelar reserva</button></div>`
-    :`<p style="font-size:13px;color:var(--muted);text-align:center;padding:6px 0 4px">${isClass?'Ya no se puede cancelar (faltan menos de 1 hora).':((d-NOW)>0?'Ya no se puede cancelar (faltan menos de 20 minutos).':'La reserva ya empezó; no se puede cancelar.')}</p><button class="btn-soft" style="width:100%" onclick="closeModal()">Cerrar</button>`}`;
+  const modalEl=document.getElementById('modal'); modalEl.classList.add('fb');
+  modalEl.innerHTML=`
+    <button class="fb-x" onclick="closeModal()" aria-label="Cerrar">${svgIco('<path d="M18 6 6 18M6 6l12 12"/>',20)}</button>
+    <div class="fb-head"><div class="fb-day">${dayTitle}</div></div>
+    ${gridHTML}
+    <div class="fb-range" id="bkRange">${bookRangeTxt(startMin, r.dur)}</div>
+    <div class="fb-mid">${matchHTML}</div>
+    ${canEdit?`<button class="btn-primary fb-save" id="erSave" style="display:none" onclick="saveEditRes()">Guardar cambio de duración</button>`:''}
+    ${cancelable?`<button class="btn-primary fb-confirm" style="background:var(--danger)" onclick="cancelRes(${r.id})">Cancelar reserva</button>`
+      :`<div class="fb-nocancel">${isClass?'Ya no se puede cancelar (menos de 1 hora).':((d-NOW)>0?'Ya no se puede cancelar (menos de 20 minutos).':'La reserva ya empezó.')}</div>`}`;
   document.getElementById('modalBg').classList.add('show');
 }
 async function cancelRes(id){

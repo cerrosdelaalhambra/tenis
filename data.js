@@ -119,6 +119,8 @@ const ERR_MSG = {
   YA_PASO:'Esa reserva ya pasó.',
   NO_ES_TUYA:'Esa reserva no es tuya.',
   ES_TUYA:'No puedes aceptar tu propia búsqueda.',
+  SOLO_NORMAL:'Solo se puede cambiar la duración de una reserva normal.',
+  RANGO_INVALIDO:'La duración no es válida.',
   YA_PEDIDO:'Ya enviaste la solicitud de cancelación; espera la respuesta de administración.',
   SOLO_NORMAL:'Solo se puede solicitar la cancelación de una reserva normal.',
   CLASE_YA_TIENE_CASA:'Ese horario de clase ya tiene una casa asignada; no se puede solicitar.',
@@ -437,6 +439,14 @@ async function book({houseId, date, h, min, dur, type}){
   if(error) throw mapError(error);
   return data;
 }
+// Cambiar la duración de una reserva (mantiene el inicio, cambia el fin)
+async function updateReservation(id, date, h, min, dur){
+  const startISO = toISO(date, h, min||0);
+  const endISO   = new Date(new Date(startISO).getTime() + dur*60000).toISOString();
+  const {data,error}=await sb.rpc('update_reservation', {p_id:id, p_end:endISO});
+  if(error) throw mapError(error);
+  return data;
+}
 async function cancel(id){
   const {error}=await sb.rpc('cancel_reservation',{p_id:id});
   if(error) throw mapError(error);
@@ -646,7 +656,7 @@ async function clearNotifs(profileId){
 /* ===== API pública del módulo ===== */
 window.DB = {
   Auth, Admin, Rain,
-  fetchAll, book, cancel, requestCancel, decideCancel, markNotif, markAllRead, clearNotifs,
+  fetchAll, book, updateReservation, cancel, requestCancel, decideCancel, markNotif, markAllRead, clearNotifs,
   requestMatch, acceptMatch, rejectMatch, cancelMatch,
   getProfClasses, changeClassHouse, releaseClass, markAbsence, unmarkAbsence, setClassTemplate,
   requestRecurring, decideRecurring, cancelRecurring, materializeRecurring, materializeClasses,
