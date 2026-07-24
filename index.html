@@ -990,7 +990,7 @@
     <button class="btn-primary" onclick="doLogin()">Ingresar</button>
     <a class="forgot" onclick="doForgot()">¿Olvidaste tu clave?</a>
     <div style="text-align:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);font-size:13.5px;color:var(--muted)">¿Primera vez? <a class="forgot" style="display:inline" onclick="showSignup(true)">Crear cuenta nueva</a></div>
-    <div id="loginVersion" style="text-align:center;margin-top:12px;font-size:11px;color:var(--muted)">Versión 2026-07-22h</div>
+    <div id="loginVersion" style="text-align:center;margin-top:12px;font-size:11px;color:var(--muted)">Versión 2026-07-22j</div>
   </div>
   <div class="login-card hidden" id="signupCard">
     <div class="brand"><div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#c6e84b" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M5 5c4 3 4 11 0 14M19 5c-4 3-4 11 0 14"/></svg></div>
@@ -1104,7 +1104,7 @@ if('serviceWorker' in navigator){
 /* ======================= DATA ======================= */
 let NOW = new Date(); // hora real. Se re-sincroniza al volver a la app (syncClock) para no quedar congelada.
 let APP_START = Date.now(); // base de liveNow(); DEBE existir antes del primer _computeOWS() (si no, TDZ y la app se cuelga en el splash)
-const APP_VERSION = '2026-07-22h'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
+const APP_VERSION = '2026-07-22j'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
 const DOW = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
 const DOWL = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const MON = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
@@ -1238,6 +1238,11 @@ function waMatchLink(name, phone, when){
 }
 async function seekMatch(resId){
   try{ await DB.requestMatch(resId); await loadData(); render(); toast('Buscando contrincante… les avisamos a los residentes.'); }
+  catch(e){ toast(e.message,'warn'); }
+}
+// Desde la pantalla "Mi reserva": busca y reabre la reserva mostrando el estado "Buscando".
+async function seekMatchFromRes(resId){
+  try{ await DB.requestMatch(resId); await loadData(); render(); openMyRes(resId); toast('Buscando contrincante… les avisamos a los residentes.'); }
   catch(e){ toast(e.message,'warn'); }
 }
 async function cancelSeekMatch(matchId){
@@ -2324,7 +2329,7 @@ const M_CHEV='<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentC
 function msRow(cls,t,r,click,chev){ return `<div class="mslot ${cls}"${click?' '+click:''}><span class="ms-t">${t}</span><span class="ms-r">${r}</span>${chev?M_CHEV:''}</div>`; }
 function mHalf(date,h,half,s){
   const T=amRangeHalf(h,half), k=s.kind;
-  if(k==='mine'){const r=s.res;return msRow('mine',T,`${HOUSE_ICON}${houseNum(r.house)}`,`onclick="openMyRes(${r.id})"`,true);}
+  if(k==='mine'){const r=s.res;return msRow('mine',T,`${HOUSE_ICON}${houseNum(r.house)}${r.name?' · '+r.name:''}`,`onclick="openMyRes(${r.id})"`,true);}
   if(k==='reserved'){const r=s.res;const st=isStaff()||profCanRelease(r.type);return msRow('reserved',T,`${HOUSE_ICON}${houseNum(r.house)}${r.name?' · '+r.name:''}`,st?`onclick="openAdminRes(${r.id})"`:'',st);}
   if(k==='classinfo'){const r=s.res;return r.school?msRow('clasem',T,'Escuela de tenis','',false):msRow('clasem',T,`${HOUSE_ICON}${houseNum(r.house)}${r.name?' · '+r.name:''} (clase)`,'',false);}
   if(k==='availclass') return msRow('availclass',T,'Clase disponible','',false);
@@ -2345,7 +2350,7 @@ function mSlot(date,h,sc){
     return msRow('free',T,'Disponible',canBook?`onclick="openBook('${date}',${h},'full')"`:'',canBook);
   }
   if(cat==='profclass') return msRow('prof',T,'Profesor',state.role==='prof'?`onclick="openProfRes(${res.id})"`:'',state.role==='prof');
-  if(cat==='mine') return msRow('mine',T,`${HOUSE_ICON}${houseNum(res.house)}`,`onclick="openMyRes(${res.id})"`,true);
+  if(cat==='mine') return msRow('mine',T,`${HOUSE_ICON}${houseNum(res.house)}${res.name?' · '+res.name:''}`,`onclick="openMyRes(${res.id})"`,true);
   if(cat==='reserved'){const st=isStaff()||profCanRelease(res.type);return msRow('reserved',T,`${HOUSE_ICON}${houseNum(res.house)}${res.name?' · '+res.name:''}`,st?`onclick="openAdminRes(${res.id})"`:'',st);}
   if(cat==='classinfo') return res.school?msRow('clasem',T,'Escuela de tenis','',false):msRow('clasem',T,`${HOUSE_ICON}${houseNum(res.house)}${res.name?' · '+res.name:''} (clase)`,'',false);
   if(cat==='availclass') return msRow('availclass',T,'Clase disponible','',false);
@@ -2389,7 +2394,7 @@ function viewMine(){
             ? `<a class="mr-matched" href="${waMatchLink(m.otherName,m.otherPhone,DOW[d.getDay()]+' '+d.getDate())}" target="_blank" rel="noopener">Vs. ${first} ${WA_ICON}</a>`
             : `<span class="mr-matched">Vs. ${first}</span>`;
         } else if(m && m.status==='open'){
-          right = `<button class="mr-seek searching" onclick="cancelSeekMatch(${m.id})">Buscando… ✕</button>`;
+          right = `<button class="mr-seek searching" onclick="cancelSeekMatch(${m.id})">Buscando con quién jugar</button>`;
         } else {
           right = `<button class="mr-seek" onclick="seekMatch(${r.id})">Buscar con quién jugar</button>`;
         }
@@ -4008,9 +4013,9 @@ function openMyRes(id){
     if(m && m.status==='matched'){
       matchHTML=`<div class="fb-seek"><div class="fb-seek-q">Vas a jugar con ${m.otherName||'—'}${m.otherHouse?' ('+m.otherHouse+')':''}</div>${m.otherPhone?`<a class="fb-seek-btn on" href="${waMatchLink(m.otherName,m.otherPhone,whenTxt)}" target="_blank" rel="noopener">${WA_ICON} WhatsApp</a>`:''}</div>`;
     } else if(m && m.status==='open'){
-      matchHTML=`<div class="fb-seek"><div class="fb-seek-q">Buscando contrincante…</div><button class="fb-seek-btn on" onclick="cancelSeekMatch(${m.id})">Cancelar búsqueda</button></div>`;
+      matchHTML=`<div class="fb-seek"><div class="fb-seek-q">Buscando con quién jugar…</div><button class="fb-seek-btn on" onclick="cancelSeekMatch(${m.id})">Cancelar</button></div>`;
     } else {
-      matchHTML=`<div class="fb-seek"><div class="fb-seek-q">¿Buscas con quién jugar?</div><button class="fb-seek-btn" onclick="seekMatch(${r.id})">Buscar contrincante</button></div>`;
+      matchHTML=`<div class="fb-seek"><div class="fb-seek-q">¿Buscas con quién jugar?</div><div class="fb-toggle" onclick="this.classList.toggle('on'); if(this.classList.contains('on')) seekMatchFromRes(${r.id})"><span class="lbl ft-no">No</span><span class="lbl ft-si">Sí</span><span class="ft-knob"></span></div></div>`;
     }
   }
   const modalEl=document.getElementById('modal'); modalEl.classList.add('fb');
