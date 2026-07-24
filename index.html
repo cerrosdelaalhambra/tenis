@@ -797,9 +797,11 @@
   .fb-range{font-size:28px;font-weight:800;color:var(--court);text-align:center;margin:20px 0 4px}
   .fb-range.pop{animation:bkpop .28s cubic-bezier(.2,.8,.2,1)}
   @keyframes bkpop{0%{transform:scale(.86);opacity:.35}100%{transform:scale(1);opacity:1}}
-  .fb-rules{flex:1;display:flex;flex-direction:column;justify-content:center;margin:6px 0}
-  .fb-rules .rules{font-size:clamp(14px,2.15vh,20px);line-height:1.5}
-  .fb-rules .rules b{font-size:clamp(15px,2.45vh,22px)}
+  .fb-mid{flex:1;display:flex;flex-direction:column;justify-content:center;gap:22px;margin:8px 0}
+  .fb-seek{display:flex;align-items:center;justify-content:space-between;gap:14px;background:var(--court-soft);border-radius:14px;padding:16px 18px;font-size:16px;font-weight:700;color:var(--court)}
+  .fb-reglas{text-align:center}
+  .fb-reglas b{display:block;font-size:12.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:9px}
+  .fb-reglas p{font-size:14.5px;color:var(--ink);line-height:1.55;margin:4px 0}
   .fb-confirm{width:100%;padding:16px;font-size:16px;flex:none}
   .grab{width:38px;height:4px;border-radius:3px;background:var(--line);margin:8px auto 14px}
   .modal h3{font-size:18px;margin-bottom:3px}
@@ -970,7 +972,7 @@
     <button class="btn-primary" onclick="doLogin()">Ingresar</button>
     <a class="forgot" onclick="doForgot()">¿Olvidaste tu clave?</a>
     <div style="text-align:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);font-size:13.5px;color:var(--muted)">¿Primera vez? <a class="forgot" style="display:inline" onclick="showSignup(true)">Crear cuenta nueva</a></div>
-    <div id="loginVersion" style="text-align:center;margin-top:12px;font-size:11px;color:var(--muted)">Versión 2026-07-22e</div>
+    <div id="loginVersion" style="text-align:center;margin-top:12px;font-size:11px;color:var(--muted)">Versión 2026-07-22f</div>
   </div>
   <div class="login-card hidden" id="signupCard">
     <div class="brand"><div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#c6e84b" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M5 5c4 3 4 11 0 14M19 5c-4 3-4 11 0 14"/></svg></div>
@@ -1084,7 +1086,7 @@ if('serviceWorker' in navigator){
 /* ======================= DATA ======================= */
 let NOW = new Date(); // hora real. Se re-sincroniza al volver a la app (syncClock) para no quedar congelada.
 let APP_START = Date.now(); // base de liveNow(); DEBE existir antes del primer _computeOWS() (si no, TDZ y la app se cuelga en el splash)
-const APP_VERSION = '2026-07-22e'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
+const APP_VERSION = '2026-07-22f'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
 const DOW = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
 const DOWL = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const MON = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
@@ -3827,7 +3829,10 @@ function openBook(date,h,ctx){
       ${houseSelect?`<div class="fb-house">${houseSelect}</div>`:''}
       <div class="fb-grid" id="durSeg">${durBtns}</div>
       <div class="fb-range" id="bkRange">${bookRangeTxt(h,def)}</div>
-      <div class="fb-rules">${rulesBox}</div>
+      <div class="fb-mid">
+        ${isMember()?`<label class="fb-seek"><span>¿Buscas con quién jugar?</span><button type="button" class="sw" id="bkSeek" onclick="this.classList.toggle('on')"><span class="sw-k"></span></button></label>`:''}
+        <div class="fb-reglas"><b>Reglas importantes</b><p>Sal a tiempo para no interrumpir el turno siguiente.</p><p>Puedes cancelar tu reserva hasta 20 minutos antes.</p></div>
+      </div>
       <button class="btn-primary fb-confirm" id="bkConfirm" onclick="confirmBook('${date}',${h},'full')">Confirmar reserva</button>`;
     document.getElementById('modalBg').classList.add('show');
     return;
@@ -3906,11 +3911,13 @@ async function confirmBook(date,h,ctx){
   const houseId=houseIdByLabel[house];
   if(!houseId){ toast('No se encontró esa casa.','warn'); return; }
   if(isMember()&&myHouses().length>1) state.lastHouse=house; // recordar última casa elegida
+  const sw=document.getElementById('bkSeek'); const seek = (ctx==='full') && !!(sw && sw.classList.contains('on'));   // ¿pidió contrincante? (leer antes de cerrar)
   closeModal();
   try{
-    await DB.book({houseId, date, h, min, dur, type});   // el servidor valida cupo, horario, choque
+    const newRes = await DB.book({houseId, date, h, min, dur, type});   // el servidor valida cupo, horario, choque
+    if(seek && newRes && newRes.id){ try{ await DB.requestMatch(newRes.id); }catch(_){} }   // arranca la búsqueda de contrincante
     await loadData(); render();
-    toast(state.role==='portero'?('Reserva creada a nombre de '+house):('Reserva confirmada'+(dur!==60?' · '+durLabel(dur):'')));
+    toast(state.role==='portero'?('Reserva creada a nombre de '+house):('Reserva confirmada'+(seek?' · buscando contrincante':(dur!==60?' · '+durLabel(dur):''))));
   }catch(e){ await loadData(); render(); toast(e.message,'warn'); }
 }
 function mergeHour(date,h){
