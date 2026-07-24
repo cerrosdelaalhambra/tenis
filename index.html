@@ -873,50 +873,45 @@
     .grid2{gap:14px}
     .modal-bg{align-items:flex-end}
 
-    /* mobile day list */
-    .mday{display:flex;flex-direction:column;gap:9px}
-    .mslot{display:flex;align-items:center;gap:13px;background:var(--card);border:1px solid var(--line);
-      border-radius:14px;padding:13px 15px;box-shadow:var(--shadow)}
-    .mslot .mt{flex:none;width:54px;text-align:center}
-    .mslot .mt .h{font-size:15px;font-weight:700;color:var(--court)}
-    .mslot .mt .h2{font-size:11px;color:var(--muted)}
-    .mslot .ml{flex:1;min-width:0}
-    .mslot .ml b{font-size:14px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .mslot .ml span{font-size:12px;color:var(--muted)}
-    .mslot .bar{width:4px;align-self:stretch;border-radius:3px;flex:none}
-    /* Disponible: blanco con letras verde claro */
+    /* mobile day list — un solo renglón por espacio */
+    .mday{display:flex;flex-direction:column;gap:8px}
+    .mslot{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);
+      border-radius:13px;padding:15px 16px;box-shadow:var(--shadow)}
+    .ms-t{font-size:15.5px;font-weight:800;flex:none;white-space:nowrap}
+    .ms-r{flex:1;min-width:0;text-align:right;font-size:14.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+      display:flex;align-items:center;justify-content:flex-end;gap:5px}
+    .ms-r .hicon{width:15px;height:15px;flex:none}
+    .mslot .chev{flex:none;width:18px;height:18px}
+    .mslot .bstar{margin-right:1px}
+    /* Disponible: blanco, letras verde claro */
     .mslot.free{cursor:pointer;background:#fff}
-    .mslot.free .bar{background:var(--lime)}
-    .mslot.free .ml b,.mslot.free .ml span,.mslot.free .chev{color:var(--lime)}
+    .mslot.free .ms-t,.mslot.free .ms-r,.mslot.free .chev{color:var(--lime)}
     .mslot.free.nofit{cursor:default}
-    .mslot.free.nofit .bar{background:var(--line)}
-    .mslot.free.nofit .ml b,.mslot.free.nofit .ml span{color:var(--muted)}
-    /* Mi reserva: fondo azul, letras blancas */
-    .mslot.mine{background:var(--teal);border-color:var(--teal)}
-    .mslot.mine .ml b,.mslot.mine .ml span,.mslot.mine .mt .h,.mslot.mine .mt .h2,.mslot.mine .chev{color:#fff}
-    .mslot.mine .bar{background:rgba(255,255,255,.7)} .mslot.mine .hicon{fill:#fff}
-    /* Reservada (de otro) y clase del profesor: fondo verde oscuro, letras blancas */
+    .mslot.free.nofit .ms-t,.mslot.free.nofit .ms-r{color:var(--muted)}
+    /* Mi reserva: azul, letras blancas */
+    .mslot.mine{background:var(--teal);border-color:var(--teal);cursor:pointer}
+    .mslot.mine .ms-t,.mslot.mine .ms-r,.mslot.mine .chev{color:#fff}
+    .mslot.mine .hicon{fill:#fff}
+    /* Reservada y clase del profesor: verde oscuro, letras blancas */
     .mslot.reserved,.mslot.clasem,.mslot.prof{background:var(--court);border-color:var(--court)}
-    .mslot.reserved .ml b,.mslot.reserved .ml span,.mslot.reserved .mt .h,.mslot.reserved .mt .h2,.mslot.reserved .chev,
-    .mslot.clasem .ml b,.mslot.clasem .ml span,.mslot.clasem .mt .h,.mslot.clasem .mt .h2,
-    .mslot.prof .ml b,.mslot.prof .ml span,.mslot.prof .mt .h,.mslot.prof .mt .h2{color:#fff}
-    .mslot.reserved .bar,.mslot.clasem .bar,.mslot.prof .bar{background:rgba(255,255,255,.55)}
+    .mslot.reserved .ms-t,.mslot.reserved .ms-r,.mslot.reserved .chev,
+    .mslot.clasem .ms-t,.mslot.clasem .ms-r,
+    .mslot.prof .ms-t,.mslot.prof .ms-r,.mslot.prof .chev{color:#fff}
     .mslot.reserved .hicon,.mslot.clasem .hicon{fill:#fff}
-    .mslot.bonus .bar{background:var(--ball-dark)} .mslot.bonus{cursor:pointer}
-    .mslot.flex .bar{background:#e0a92e} .mslot.flex{cursor:pointer;background:#fff7e6}
-    .mslot.rain .bar{background:#5b7fc0} .mslot.rain{background:#eef3fb}
+    /* Libre (no gasta horas), profesor-reservable, clase disponible, lluvia, mantenimiento */
+    .mslot.bonus{cursor:pointer} .mslot.bonus .ms-t,.mslot.bonus .ms-r,.mslot.bonus .chev{color:var(--court)}
+    .mslot.flex{cursor:pointer;background:#fff7e6;border-color:#f0d99a} .mslot.flex .ms-t,.mslot.flex .ms-r,.mslot.flex .chev{color:#a9781a}
+    .mslot.availclass{background:#fff;border:1.5px dashed var(--court-dark)} .mslot.availclass .ms-t,.mslot.availclass .ms-r{color:var(--court-dark)}
+    .mslot.rain{background:#eef3fb} .mslot.rain .ms-t,.mslot.rain .ms-r{color:#3a5a8a}
     .mslot.maint{background:var(--clay);border-color:var(--clay)}
-    .mslot.maint .bar{background:rgba(255,255,255,.6)}
-    .mslot.maint .ml b{color:#fff} .mslot.maint .ml span{color:rgba(255,255,255,.85)}
-    .mslot.maint .mt .h{color:#fff} .mslot.maint .mt .h2{color:rgba(255,255,255,.8)}
-    .mslot.maint .ml b svg{vertical-align:-2px;margin-right:4px}
-    .mslot.locked .bar{background:#e7eae9} .mslot.locked{opacity:.6}
-    .mslot.past{opacity:.45}
+    .mslot.maint .ms-t,.mslot.maint .ms-r{color:#fff}
+    .mslot.maint .ms-t svg{vertical-align:-2px;margin-right:3px}
+    .mslot.locked{opacity:.6} .mslot.locked .ms-t,.mslot.locked .ms-r{color:var(--muted)}
+    .mslot.past{opacity:.5} .mslot.past .ms-t,.mslot.past .ms-r{color:var(--muted)}
     .mslot.m-faded{opacity:.45;pointer-events:none}
     .m-now{display:flex;align-items:center;gap:9px;margin:2px 2px;color:var(--now);font-size:12px;font-weight:700}
     .m-now::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--now);flex:none}
     .m-now::after{content:'';flex:1;height:2px;background:var(--now);border-radius:2px;opacity:.55}
-    .mslot .chev{color:var(--ball-dark);flex:none}
 
     /* bottom nav */
     .tabbar{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--line);
@@ -960,7 +955,7 @@
     <button class="btn-primary" onclick="doLogin()">Ingresar</button>
     <a class="forgot" onclick="doForgot()">¿Olvidaste tu clave?</a>
     <div style="text-align:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);font-size:13.5px;color:var(--muted)">¿Primera vez? <a class="forgot" style="display:inline" onclick="showSignup(true)">Crear cuenta nueva</a></div>
-    <div id="loginVersion" style="text-align:center;margin-top:12px;font-size:11px;color:var(--muted)">Versión 2026-07-22b</div>
+    <div id="loginVersion" style="text-align:center;margin-top:12px;font-size:11px;color:var(--muted)">Versión 2026-07-22c</div>
   </div>
   <div class="login-card hidden" id="signupCard">
     <div class="brand"><div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#c6e84b" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M5 5c4 3 4 11 0 14M19 5c-4 3-4 11 0 14"/></svg></div>
@@ -1074,7 +1069,7 @@ if('serviceWorker' in navigator){
 /* ======================= DATA ======================= */
 let NOW = new Date(); // hora real. Se re-sincroniza al volver a la app (syncClock) para no quedar congelada.
 let APP_START = Date.now(); // base de liveNow(); DEBE existir antes del primer _computeOWS() (si no, TDZ y la app se cuelga en el splash)
-const APP_VERSION = '2026-07-22b'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
+const APP_VERSION = '2026-07-22c'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
 const DOW = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
 const DOWL = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const MON = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
@@ -2096,11 +2091,13 @@ function houseUsedInBlock(house,b){ const ws=ymd(OPEN_WEEK_START), we=OPEN_WEEK_
     .reduce((s,r)=>s+r.dur/60,0); }
 function blockRemaining(house,b){ return Math.max(0, b.hours - houseUsedInBlock(house,b)); }
 function houseTotalRemaining(house){ return blocksList().reduce((s,b)=>s+blockRemaining(house,b),0); }
-// Rango horario claro para el calendario: "5 a.m. – 6 a.m."
+// Rango horario claro para el calendario: "5 a 6 a.m." (una sola vez el a.m./p.m. si coincide)
 function amHour(h){ const ap=h<12?'a.m.':'p.m.'; const hh=h%12||12; return hh+' '+ap; }
-function amRange(h){ return amHour(h)+' – '+amHour(h+1); }
-function amHalfLbl(h){ const ap=h<12?'a.m.':'p.m.'; const hh=h%12||12; return hh+':30 '+ap; }
-function amRangeHalf(h,half){ return half? amHalfLbl(h)+' – '+amHour(h+1) : amHour(h)+' – '+amHalfLbl(h); }
+function amRange(h){ const s=h,e=h+1,ap=x=>x<12?'a.m.':'p.m.',hh=x=>x%12||12;
+  return ap(s)===ap(e)? `${hh(s)} a ${hh(e)} ${ap(e)}` : `${hh(s)} ${ap(s)} a ${hh(e)} ${ap(e)}`; }
+function amRangeHalf(h,half){ const sMin=h*60+half*30,eMin=sMin+30;
+  const ap=t=>Math.floor(t/60)<12?'a.m.':'p.m.',hh=t=>{const H=Math.floor(t/60)%12;return H||12;},mm=t=>t%60?':'+String(t%60).padStart(2,'0'):'',f=t=>hh(t)+mm(t);
+  return ap(sMin)===ap(eMin)? `${f(sMin)} a ${f(eMin)} ${ap(eMin)}` : `${f(sMin)} ${ap(sMin)} a ${f(eMin)} ${ap(eMin)}`; }
 // ¿La casa (o alguna de las del máster) tiene horas en el tramo de ese día?
 function hasHoursForDate(date){ if(!isMember()) return true; const blk=blockForDate(date); return myHouses().some(h=>blockRemaining(h,blk)>0); }
 /* ===== Admin: editor de tramos (repartidor de semana) ===== */
@@ -2258,47 +2255,44 @@ function mobileDay(){
   if(!rows) rows=`<div class="empty" style="padding:36px">${state.onlyAvailable?'No hay espacios disponibles este día.':'Sin horarios este día.'}</div>`;
   return `<div class="m-only"><div class="mday">${rows}</div></div>`;
 }
-const M_CHEV='<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>';
+const M_CHEV='<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>';
+// Un solo renglón: rango a la izquierda, contenido a la derecha.
+function msRow(cls,t,r,click,chev){ return `<div class="mslot ${cls}"${click?' '+click:''}><span class="ms-t">${t}</span><span class="ms-r">${r}</span>${chev?M_CHEV:''}</div>`; }
 function mHalf(date,h,half,s){
-  const tt=`<div class="mt"><div class="h">${halfTimeLabel(h,half)}</div><div class="h2">30m</div></div>`;
-  const k=s.kind;
-  if(k==='mine'){const r=s.res;return `<div class="mslot mine" onclick="openMyRes(${r.id})"><div class="bar"></div>${tt}<div class="ml"><b>${HOUSE_ICON}${houseNum(r.house)}</b><span>30 min</span></div>${M_CHEV}</div>`;}
-  if(k==='reserved'){const r=s.res;return `<div class="mslot reserved" ${(isStaff()||profCanRelease(r.type))?`onclick="openAdminRes(${r.id})"`:''}><div class="bar"></div>${tt}<div class="ml"><b>${HOUSE_ICON}${houseNum(r.house)}</b><span>${r.name||'Reservada'} · 30 min</span></div>${(isStaff()||profCanRelease(r.type))?M_CHEV:''}</div>`;}
-  if(k==='classinfo'){const r=s.res; if(r.school) return `<div class="mslot clasem"><div class="bar"></div>${tt}<div class="ml"><b>Escuela de tenis</b><span>Clase grupal con el profesor</span></div></div>`; return `<div class="mslot clasem"><div class="bar"></div>${tt}<div class="ml"><b>${HOUSE_ICON}${houseNum(r.house)}</b><span>Clase${r.name?' · '+r.name:''}</span></div></div>`;}
-  if(k==='availclass') return `<div class="mslot availclass"><div class="bar"></div>${tt}<div class="ml"><b>Clase disponible</b><span>El profesor no tiene alumno a esta hora</span></div></div>`;
-  if(k==='prof') return `<div class="mslot prof"><div class="bar"></div>${tt}<div class="ml"><b>Profesor</b><span>30 min</span></div></div>`;
-  if(k==='flex'){ if(!canBookFree(date,h)) return `<div class="mslot prof"><div class="bar"></div>${tt}<div class="ml"><b>Profesor</b><span>30 min</span></div></div>`; return `<div class="mslot flex" onclick="openBook('${date}',${h},'flexh${half}')"><div class="bar"></div>${tt}<div class="ml"><b>Profesor · reservar</b><span>Con o sin profesor · no gasta horas</span></div>${M_CHEV}</div>`; }
-  if(k==='class'||k==='open'){ if(!canBookFree(date,h)) return ''; return `<div class="mslot bonus" onclick="openBook('${date}',${h},'h${half}')"><div class="bar"></div>${tt}<div class="ml"><b><span class="bstar">★</span> Libre</b><span>No gasta horas</span></div>${M_CHEV}</div>`; }
-  if(k==='maint') return `<div class="mslot maint"><div class="bar"></div>${tt}<div class="ml"><b>${svgIco(ICONS.tool,14,'#fff')}Mantenimiento</b><span>${s.mc?s.mc.reason:'Cancha en mantenimiento'}</span></div></div>`;
+  const T=amRangeHalf(h,half), k=s.kind;
+  if(k==='mine'){const r=s.res;return msRow('mine',T,`${HOUSE_ICON}${houseNum(r.house)}`,`onclick="openMyRes(${r.id})"`,true);}
+  if(k==='reserved'){const r=s.res;const st=isStaff()||profCanRelease(r.type);return msRow('reserved',T,`${HOUSE_ICON}${houseNum(r.house)}${r.name?' · '+r.name:''}`,st?`onclick="openAdminRes(${r.id})"`:'',st);}
+  if(k==='classinfo'){const r=s.res;return r.school?msRow('clasem',T,'Escuela de tenis','',false):msRow('clasem',T,`${HOUSE_ICON}${houseNum(r.house)}${r.name?' · '+r.name:''} (clase)`,'',false);}
+  if(k==='availclass') return msRow('availclass',T,'Clase disponible','',false);
+  if(k==='prof') return msRow('prof',T,'Profesor','',false);
+  if(k==='flex'){ if(!canBookFree(date,h)) return msRow('prof',T,'Profesor','',false); return msRow('flex',T,'Profesor · reservar',`onclick="openBook('${date}',${h},'flexh${half}')"`,true); }
+  if(k==='class'||k==='open'){ if(!canBookFree(date,h)) return ''; return msRow('bonus',T,'<span class="bstar">★</span> Libre',`onclick="openBook('${date}',${h},'h${half}')"`,true); }
+  if(k==='maint') return msRow('maint',`${svgIco(ICONS.tool,14,'#fff')} Mantenimiento`,T,'',false);
   if(k!=='free') return '';
   if(!canBookFree(date,h)) return '';
-  if(isMember() && !hasHoursForDate(date))
-    return `<div class="mslot free nofit"><div class="bar"></div><div class="ml"><b>${amRangeHalf(h,half)}</b><span>No tienes más horas en este tramo</span></div></div>`;
-  return `<div class="mslot free" onclick="openBook('${date}',${h},'h${half}')"><div class="bar"></div><div class="ml"><b>${amRangeHalf(h,half)}</b><span>Disponible</span></div>${M_CHEV}</div>`;
+  if(isMember() && !hasHoursForDate(date)) return msRow('free nofit',T,'Sin horas en este tramo','',false);
+  return msRow('free',T,'Disponible',`onclick="openBook('${date}',${h},'h${half}')"`,true);
 }
 function mSlot(date,h,sc){
-  const cat=sc.cat,res=sc.res,mc=sc.mc;
-  const chev=M_CHEV;
-  const t=`<div class="mt"><div class="h">${hlabel(h)}</div><div class="h2">${halfTimeLabel(h+1,0)}</div></div>`;
+  const cat=sc.cat,res=sc.res,mc=sc.mc, T=amRange(h);
   if(cat==='free'){
     const canBook=canBookFree(date,h);
-    if(canBook && isMember() && !hasHoursForDate(date))   // sin horas en este tramo -> no deja tocar
-      return `<div class="mslot free nofit"><div class="bar"></div><div class="ml"><b>${amRange(h)}</b><span>No tienes más horas en este tramo</span></div></div>`;
-    return `<div class="mslot free" ${canBook?`onclick="openBook('${date}',${h},'full')"`:''}><div class="bar"></div><div class="ml"><b>${amRange(h)}</b><span>Disponible${canBook?' · toca para reservar':''}</span></div>${canBook?chev:''}</div>`;
+    if(canBook && isMember() && !hasHoursForDate(date)) return msRow('free nofit',T,'Sin horas en este tramo','',false);   // sin cupo: no deja tocar
+    return msRow('free',T,'Disponible',canBook?`onclick="openBook('${date}',${h},'full')"`:'',canBook);
   }
-  if(cat==='profclass') return `<div class="mslot prof" ${state.role==='prof'?`onclick="openProfRes(${res.id})"`:''}><div class="bar"></div>${t}<div class="ml"><b>Profesor</b><span>${state.role==='prof'?'Tu clase · toca para cancelar':'Reservado para el profesor'}</span></div>${state.role==='prof'?chev:''}</div>`;
-  if(cat==='mine') return `<div class="mslot mine" onclick="openMyRes(${res.id})"><div class="bar"></div>${t}<div class="ml"><b>${HOUSE_ICON}${houseNum(res.house)}</b></div>${chev}</div>`;
-  if(cat==='reserved') return `<div class="mslot reserved" ${(isStaff()||profCanRelease(res.type))?`onclick="openAdminRes(${res.id})"`:''}><div class="bar"></div>${t}<div class="ml"><b>${HOUSE_ICON}${houseNum(res.house)}</b><span>${res.name||'Reservada'}</span></div>${(isStaff()||profCanRelease(res.type))?chev:''}</div>`;
-  if(cat==='classinfo'){ if(res.school) return `<div class="mslot clasem"><div class="bar"></div>${t}<div class="ml"><b>Escuela de tenis</b><span>Clase grupal con el profesor</span></div></div>`; return `<div class="mslot clasem"><div class="bar"></div>${t}<div class="ml"><b>${HOUSE_ICON}${houseNum(res.house)}</b><span>Clase con el profesor${res.name?' · '+res.name:''}</span></div></div>`; }
-  if(cat==='availclass') return `<div class="mslot availclass"><div class="bar"></div>${t}<div class="ml"><b>Clase disponible</b><span>Espacio del profesor sin alumno asignado</span></div></div>`;
-  if(cat==='prof') return `<div class="mslot prof"><div class="bar"></div>${t}<div class="ml"><b>Profesor</b><span>Reservado para el profesor</span></div></div>`;
-  if(cat==='flex') return `<div class="mslot flex" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'flexfull')"`:''}><div class="bar"></div>${t}<div class="ml"><b>Profesor · reservar</b><span>${canBookFree(date,h)?'Con o sin profesor · no gasta horas':'Hora del profesor'}</span></div>${canBookFree(date,h)?chev:''}</div>`;
-  if(cat==='class') return `<div class="mslot bonus" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'classfull')"`:''}><div class="bar"></div>${t}<div class="ml"><b><span class="bstar">★</span> Libre</b><span>No gasta horas</span></div>${canBookFree(date,h)?chev:''}</div>`;
-  if(cat==='open') return `<div class="mslot bonus" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'openfull')"`:''}><div class="bar"></div>${t}<div class="ml"><b><span class="bstar">★</span> Libre</b><span>No gasta horas</span></div>${canBookFree(date,h)?chev:''}</div>`;
-  if(cat==='maint') return `<div class="mslot maint"><div class="bar"></div>${t}<div class="ml"><b>${svgIco(ICONS.tool,14,'#fff')}Mantenimiento</b><span>${mc?mc.reason:'Cancha en mantenimiento'}</span></div></div>`;
-  if(cat==='rain') return `<div class="mslot rain"><div class="bar"></div>${t}<div class="ml"><b>${svgIco(RAIN_P,15,'#5b7fc0')} Cerrada por lluvia</b><span>No disponible ahora</span></div></div>`;
-  if(cat==='locked') return `<div class="mslot locked"><div class="bar"></div>${t}<div class="ml"><b>Aún no habilitado</b><span>Abre el domingo ${rhShort()}</span></div></div>`;
-  if(cat==='past') return `<div class="mslot past"><div class="bar"></div>${t}<div class="ml"><b>—</b><span>Hora pasada</span></div></div>`;
+  if(cat==='profclass') return msRow('prof',T,'Profesor',state.role==='prof'?`onclick="openProfRes(${res.id})"`:'',state.role==='prof');
+  if(cat==='mine') return msRow('mine',T,`${HOUSE_ICON}${houseNum(res.house)}`,`onclick="openMyRes(${res.id})"`,true);
+  if(cat==='reserved'){const st=isStaff()||profCanRelease(res.type);return msRow('reserved',T,`${HOUSE_ICON}${houseNum(res.house)}${res.name?' · '+res.name:''}`,st?`onclick="openAdminRes(${res.id})"`:'',st);}
+  if(cat==='classinfo') return res.school?msRow('clasem',T,'Escuela de tenis','',false):msRow('clasem',T,`${HOUSE_ICON}${houseNum(res.house)}${res.name?' · '+res.name:''} (clase)`,'',false);
+  if(cat==='availclass') return msRow('availclass',T,'Clase disponible','',false);
+  if(cat==='prof') return msRow('prof',T,'Profesor','',false);
+  if(cat==='flex') return msRow('flex',T,'Profesor · reservar',canBookFree(date,h)?`onclick="openBook('${date}',${h},'flexfull')"`:'',canBookFree(date,h));
+  if(cat==='class') return msRow('bonus',T,'<span class="bstar">★</span> Libre',canBookFree(date,h)?`onclick="openBook('${date}',${h},'classfull')"`:'',canBookFree(date,h));
+  if(cat==='open') return msRow('bonus',T,'<span class="bstar">★</span> Libre',canBookFree(date,h)?`onclick="openBook('${date}',${h},'openfull')"`:'',canBookFree(date,h));
+  if(cat==='maint') return msRow('maint',`${svgIco(ICONS.tool,14,'#fff')} Mantenimiento`,T,'',false);
+  if(cat==='rain') return msRow('rain',T,'Cerrada por lluvia','',false);
+  if(cat==='locked') return msRow('locked',T,`Abre el domingo ${rhShort()}`,'',false);
+  if(cat==='past') return msRow('past',T,'—','',false);
   return '';
 }
 
@@ -4076,7 +4070,7 @@ setInterval(refreshData, 60000);
 /* Auto-actualización al volver a la app (PWA): si estuvo un rato en segundo plano,
    recarga sola para traer la última VERSIÓN y datos frescos, sin tener que cerrar sesión.
    Ausencia corta (< 1 min) -> solo refresca datos, sin recargar (sin parpadeo). */
-let _hiddenAt=null; const _STALE_MS=60000;
+let _hiddenAt=null; const _STALE_MS=30000;   // tras 30s en segundo plano, al volver recarga para tomar la última versión
 document.addEventListener('visibilitychange', ()=>{
   if(document.hidden){ _hiddenAt=Date.now(); return; }
   const away=_hiddenAt?(Date.now()-_hiddenAt):0; _hiddenAt=null;
