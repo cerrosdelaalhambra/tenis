@@ -864,7 +864,7 @@
   /* ---------- RESPONSIVE: MOBILE NATIVE ---------- */
   @media(max-width:820px){
     .sidebar{display:none}
-    .main{margin-left:0;padding-bottom:74px}
+    .main{margin-left:0;padding-bottom:74px;min-height:0}
     .topbar{display:none}
     /* Usuarios: en móvil los botones de cada fila bajan a una segunda línea (evita el corte horizontal) */
     .row.urow{flex-wrap:wrap;align-items:center}
@@ -1011,7 +1011,7 @@
     <button class="btn-primary" onclick="doLogin()">Ingresar</button>
     <a class="forgot" onclick="doForgot()">¿Olvidaste tu clave?</a>
     <div style="text-align:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);font-size:13.5px;color:var(--muted)">¿Primera vez? <a class="forgot" style="display:inline" onclick="showSignup(true)">Crear cuenta nueva</a></div>
-    <div id="loginVersion" style="text-align:center;margin-top:12px;font-size:11px;color:var(--muted)">Versión 2026-07-22p</div>
+    <div id="loginVersion" style="text-align:center;margin-top:12px;font-size:11px;color:var(--muted)">Versión 2026-07-22q</div>
   </div>
   <div class="login-card hidden" id="signupCard">
     <div class="brand"><div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#c6e84b" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M5 5c4 3 4 11 0 14M19 5c-4 3-4 11 0 14"/></svg></div>
@@ -1121,7 +1121,7 @@ if('serviceWorker' in navigator){
 /* ======================= DATA ======================= */
 let NOW = new Date(); // hora real. Se re-sincroniza al volver a la app (syncClock) para no quedar congelada.
 let APP_START = Date.now(); // base de liveNow(); DEBE existir antes del primer _computeOWS() (si no, TDZ y la app se cuelga en el splash)
-const APP_VERSION = '2026-07-22p'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
+const APP_VERSION = '2026-07-22q'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
 const DOW = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
 const DOWL = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const MON = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
@@ -1688,6 +1688,9 @@ function go(view){ const _old=state.view; state.view=view; try{localStorage.setI
   const _c=document.getElementById('content');
   const _oldHTML = (_old!==view && _c) ? _c.innerHTML : '';   // captura la vista anterior ANTES de re-pintar
   render(); scrollTop();
+  // Refuerzo anti-scroll: todas las vistas (menos el calendario, que baja a la hora actual)
+  // abren SIEMPRE arriba, aunque la animación o el anclaje del navegador intenten moverlas.
+  if(view!=='calendar'){ requestAnimationFrame(scrollTop); setTimeout(scrollTop,50); }
   if(_oldHTML && _c && _c.animate){
     const oi=viewIndex(_old), ni=viewIndex(view);
     slideContent(_c, _oldHTML, ni>=oi ? 1 : -1);              // desliza en la dirección del orden del menú
