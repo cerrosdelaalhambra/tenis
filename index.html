@@ -304,12 +304,23 @@
   .cc-blk-h span{font-size:12px;color:var(--muted);font-weight:600}
   .cc-blk-sub{font-size:11.5px;color:var(--muted);margin-top:2px}
   .cc-blk .cc-house{margin-top:8px;background:#fff}
-  .cc-rules{display:flex;flex-direction:column;gap:12px;margin-top:16px;border-top:1px solid var(--line);padding-top:15px}
-  .cc-rule{display:flex;gap:11px;align-items:flex-start}
-  .cc-rule .cc-ric{width:28px;height:28px;border-radius:8px;background:var(--court-soft);color:var(--court);display:flex;align-items:center;justify-content:center;flex:none;font-size:15px;font-weight:700}
+  .cc-rules{display:flex;flex-direction:column;gap:14px;margin-top:4px}
+  .cc-rule{display:flex;gap:12px;align-items:flex-start}
+  .cc-rule .cc-ric{width:32px;height:32px;border-radius:9px;background:var(--court-soft);color:var(--court);display:flex;align-items:center;justify-content:center;flex:none;font-size:16px;font-weight:700}
   .cc-rule .cc-ric.star{color:#f2b705;background:#fdf6e3}
-  .cc-rule b{font-size:13px;color:var(--ink);display:block;margin-bottom:1px}
-  .cc-rule>div span{font-size:12px;color:var(--muted);line-height:1.5}
+  .cc-rule b{font-size:14.5px;color:var(--ink);display:block;margin-bottom:2px}
+  .cc-rule>div span{font-size:13.5px;color:var(--muted);line-height:1.55}
+  /* pestaña Horas: tramos en cajitas */
+  .hb-list{display:flex;flex-direction:column;gap:12px;margin-bottom:20px}
+  .hb-card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:14px 16px}
+  .hb-title{font-size:12px;font-weight:800;color:var(--court);text-transform:uppercase;letter-spacing:.05em;margin-bottom:9px}
+  .hb-body{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .hb-days{font-size:16px;font-weight:700;color:var(--ink)}
+  .hb-badge{background:var(--court-soft);color:var(--court);font-size:14px;font-weight:800;padding:9px 15px;border-radius:12px;white-space:nowrap}
+  .hb-badge.none{background:#fbeee9;color:var(--clay)}
+  .hb-note{display:flex;gap:10px;align-items:flex-start;background:var(--court-soft);border-radius:12px;padding:13px 15px;margin-bottom:18px;font-size:14px;color:var(--ink);line-height:1.5}
+  .hb-note svg{flex:none;margin-top:1px}
+  .hb-note b{color:var(--court)}
   .past-panel .row{opacity:.72}
   /* Reglamento */
   .reg-wrap{max-width:840px}
@@ -620,10 +631,10 @@
   .mr-item:last-child{border-bottom:none}
   .mr-item .row{border-bottom:none}
   .mr-title{text-align:center;font-size:17px;font-weight:700;color:var(--court);margin:0 0 10px}
-  .mr-row{display:flex;align-items:center;gap:12px;padding:14px 18px}
-  .mr-txt{flex:1;min-width:0}
-  .mr-txt b{font-size:14.5px;color:var(--ink);display:block}
-  .mr-txt span{font-size:13px;color:var(--muted)}
+  .mr-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 18px}
+  .mr-row.tap{cursor:pointer}
+  .mr-day{font-size:15px;font-weight:700;color:var(--ink)}
+  .mr-hour{font-size:15px;font-weight:800;color:var(--court);white-space:nowrap}
   .row-seek{display:flex;align-items:center;justify-content:center;gap:8px;margin:0 18px 14px;padding:11px;border-radius:11px;border:1.5px solid var(--court);background:#fff;color:var(--court);font-size:14px;font-weight:700;cursor:pointer}
   .row-seek:active{background:var(--court-soft)}
   .row-match{display:flex;align-items:center;gap:9px;margin:0 18px 14px;background:var(--court-soft);border-radius:11px;padding:10px 12px;font-size:13px;color:var(--court-dark)}
@@ -959,7 +970,7 @@
     <button class="btn-primary" onclick="doLogin()">Ingresar</button>
     <a class="forgot" onclick="doForgot()">¿Olvidaste tu clave?</a>
     <div style="text-align:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);font-size:13.5px;color:var(--muted)">¿Primera vez? <a class="forgot" style="display:inline" onclick="showSignup(true)">Crear cuenta nueva</a></div>
-    <div id="loginVersion" style="text-align:center;margin-top:12px;font-size:11px;color:var(--muted)">Versión 2026-07-22d</div>
+    <div id="loginVersion" style="text-align:center;margin-top:12px;font-size:11px;color:var(--muted)">Versión 2026-07-22e</div>
   </div>
   <div class="login-card hidden" id="signupCard">
     <div class="brand"><div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#c6e84b" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M5 5c4 3 4 11 0 14M19 5c-4 3-4 11 0 14"/></svg></div>
@@ -1073,7 +1084,7 @@ if('serviceWorker' in navigator){
 /* ======================= DATA ======================= */
 let NOW = new Date(); // hora real. Se re-sincroniza al volver a la app (syncClock) para no quedar congelada.
 let APP_START = Date.now(); // base de liveNow(); DEBE existir antes del primer _computeOWS() (si no, TDZ y la app se cuelga en el splash)
-const APP_VERSION = '2026-07-22d'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
+const APP_VERSION = '2026-07-22e'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
 const DOW = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
 const DOWL = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const MON = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
@@ -1961,7 +1972,25 @@ function regMaintList(){
     return `<li><b>${SCHED_DOW_NAMES[d]}</b><span>${ranges}</span></li>`;
   }).join('')+`</ul>`;
 }
-function viewHoras(){ return cupoCard(); }   // pestaña "Horas": desglose por tramo (se ampliará con más detalle)
+// Nombre largo del tramo: "Lunes a jueves"
+function blockLabelLong(b){ const DIAS=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+  const idxs=b.dows.map(d=>WEEK_ORDER.indexOf(d)).filter(i=>i>=0).sort((x,y)=>x-y); if(!idxs.length) return '';
+  const a=WEEK_ORDER[idxs[0]], z=WEEK_ORDER[idxs[idxs.length-1]];
+  return idxs.length===1?cap1(DIAS[a]):cap1(DIAS[a])+' a '+DIAS[z]; }
+function viewHoras(){   // pestaña "Horas": un renglón por tramo, con la explicación clara abajo
+  const hs=myHouses(), blks=blocksList(), multi=multiBlocks();
+  const cards=blks.map((b,i)=>{
+    const left = hs.length>1 ? hs.reduce((s,hh)=>s+blockRemaining(hh,b),0) : blockRemaining(hs[0]||'',b);
+    const days = multi ? blockLabelLong(b) : 'Toda la semana';
+    const title = multi ? ('Bloque '+(i+1)) : 'Tus horas';
+    return `<div class="hb-card">
+      <div class="hb-title">${title}</div>
+      <div class="hb-body"><span class="hb-days">${days}</span><span class="hb-badge${left<=0?' none':''}">${fmtH(left)} disponible${left===1?'':'s'}</span></div>
+    </div>`;
+  }).join('');
+  const note = multi ? `<div class="hb-note">${svgIco('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>',18,'var(--court)')}<span>Las horas de cada tramo sirven <b>solo para esos días</b>. Lo que no uses en un tramo <b>no pasa</b> al otro.</span></div>` : '';
+  return `<div class="hb-list">${cards}</div>${note}${cupoRules()}`;
+}
 function cupoCard(){
   const hs=myHouses();
   const blks=blocksList();
@@ -2076,7 +2105,9 @@ function calHeader(){
   const clockIco='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg>';
   const court=(state.role==='admin')
     ? `<button class="cb-btn" onclick="openCourtHours()">${clockIco}<span>Horario cancha</span></button>` : '';
-  return `<div class="cal-bar"><div class="cb-info">${info}</div><div class="cb-actions">${peek}${court}${rain}</div></div>`;
+  const actions=`${peek}${court}${rain}`;
+  if(!info && !actions) return '';   // sin chips ni acciones (residente día normal) -> no dejar barra vacía que ocupe espacio
+  return `<div class="cal-bar"><div class="cb-info">${info}</div><div class="cb-actions">${actions}</div></div>`;
 }
 function toggleFullWeek(){state.fullWeek=!state.fullWeek;render();}
 function horasTexto(n){if(n<=0)return '';const f=Math.floor(n),half=(n-f)>=0.5;if(f===0)return 'media hora';const base=f===1?'una hora':f===2?'dos horas':f===3?'tres horas':f+' horas';return half?base+' y media':base;}
@@ -2317,10 +2348,10 @@ function viewMine(){
   const past=mine.filter(r=>dateAt(r.date,r.h)<NOW && r.date>=ws && r.date<=OPEN_WEEK_END).sort((a,b)=>dateAt(b.date,b.h)-dateAt(a.date,a.h));
   const DIAS_FULL=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
   const resRangeTxt=(r)=>{ const eTot=r.h*60+(r.min||0)+r.dur, eH=Math.floor(eTot/60), eM=eTot%60;
-    const ap=x=>x<12?'a.m.':'p.m.', hh=x=>x%12||12, fmt=(H,M)=>hh(H)+(M?':'+String(M).padStart(2,'0'):'');
-    return ap(r.h)===ap(eH) ? `de ${fmt(r.h,r.min||0)} a ${fmt(eH,eM)} ${ap(eH)}` : `de ${fmt(r.h,r.min||0)} ${ap(r.h)} a ${fmt(eH,eM)} ${ap(eH)}`; };
+    const ap=x=>x<12?'a.m.':'p.m.', hh=x=>x%12||12, fmt=(H,M)=>hh(H)+':'+String(M).padStart(2,'0');
+    return ap(r.h)===ap(eH) ? `${fmt(r.h,r.min||0)} a ${fmt(eH,eM)} ${ap(eH)}` : `${fmt(r.h,r.min||0)} ${ap(r.h)} a ${fmt(eH,eM)} ${ap(eH)}`; };
   const card=(r)=>{
-    const d=dateAt(r.date,r.h);const fut=d>=NOW;const cancelable=(d-NOW)>(r.type==='class'?1:0.5)*3600000;
+    const d=dateAt(r.date,r.h);const fut=d>=NOW;
     const dateLine=`${cap1(DIAS_FULL[d.getDay()])} ${d.getDate()} de ${MESES[d.getMonth()]}`;
     let matchFoot='';
     if(fut && r.type==='normal'){                       // "Buscar con quién jugar" en la lista
@@ -2333,9 +2364,8 @@ function viewMine(){
         matchFoot=`<button class="row-seek" onclick="seekMatch(${r.id})">${svgIco(BALL_P,14)} Buscar con quién jugar</button>`;
       }
     }
-    return `<div class="mr-item"><div class="mr-row">
-      <div class="mr-txt"><b>${dateLine}</b><span>${resRangeTxt(r)}</span></div>
-      ${fut&&cancelable?`<button class="btn-cancel" onclick="cancelRes(${r.id})">Cancelar</button>`:''}
+    return `<div class="mr-item"><div class="mr-row${fut?' tap':''}"${fut?` onclick="openMyRes(${r.id})"`:''}>
+      <span class="mr-day">${dateLine}</span><span class="mr-hour">${resRangeTxt(r)}</span>
     </div>${matchFoot}</div>`;};
   let html='';
   // 1) Próximas
