@@ -788,14 +788,16 @@
     display:none;align-items:flex-end;justify-content:center;z-index:60;padding:0}
   .modal-bg.show{display:flex}
   .modal{background:var(--card);border-radius:22px 22px 0 0;width:100%;max-width:440px;padding:8px 22px 26px;
-    animation:up .25s ease;max-height:92vh;overflow-y:auto}
-  @keyframes up{from{transform:translateY(40px);opacity:.6}to{transform:translateY(0);opacity:1}}
+    animation:up .38s cubic-bezier(.16,1,.3,1);max-height:92vh;overflow-y:auto;will-change:transform,opacity}
+  @keyframes up{from{transform:translateY(52px) scale(.985);opacity:0}to{transform:none;opacity:1}}
+  .modal-bg.show{animation:bgin .3s ease}
+  @keyframes bgin{from{opacity:0}to{opacity:1}}
   /* Reservar: modal a pantalla completa */
   /* Reservar: tarjeta compacta (no pantalla completa) que se despliega con efecto */
   .modal.fb{position:relative;max-width:480px;border-radius:22px 22px 0 0;
     padding:18px 20px calc(20px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:0;max-height:92vh;overflow-y:auto;
-    animation:fbin .32s cubic-bezier(.2,.85,.2,1)}
-  @keyframes fbin{from{transform:translateY(46px) scale(.96);opacity:.25}to{transform:none;opacity:1}}
+    animation:fbin .4s cubic-bezier(.16,1,.3,1);will-change:transform,opacity}
+  @keyframes fbin{from{transform:translateY(56px) scale(.955);opacity:0}to{transform:none;opacity:1}}
   .modal.fb .fb-x{position:absolute;top:12px;right:12px;width:36px;height:36px;border-radius:50%;background:var(--court-soft);color:var(--court);display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;z-index:2}
   .fb-head{text-align:center;margin:8px 0 16px}
   .fb-day{font-size:23px;font-weight:800;color:var(--ink);line-height:1.2}
@@ -954,10 +956,12 @@
       /* Fija la barra a su propia capa de GPU: evita el bug de Safari (iPhone) donde
          al hacer scroll la barra no se repinta y queda "flotando" a media pantalla. */
       transform:translateZ(0);-webkit-transform:translateZ(0);will-change:transform;backface-visibility:hidden}
-    .tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);
-      font-size:10.5px;font-weight:600;position:relative;padding:4px 0}
-    .tabbar button svg{width:23px;height:23px}
-    .tabbar button.active{color:var(--court)}
+    .tabbar button{flex:1;display:flex;justify-content:center;align-items:center;color:var(--muted);
+      position:relative;padding:2px 0;background:none;border:none}
+    .tabbar .tab-in{display:inline-flex;flex-direction:column;align-items:center;gap:3px;padding:7px 15px;border-radius:16px;font-size:10.5px;font-weight:600;transition:background .2s ease,color .2s ease}
+    .tabbar button svg{width:22px;height:22px}
+    .tabbar button.active{color:#fff}
+    .tabbar button.active .tab-in{background:var(--court-dark)}   /* burbuja de la pestaña activa */
     .tabbar button.tab-prof{color:var(--court);padding:10px 0}
     .tabbar button.tab-prof span{font-size:18px;font-weight:800}
     .tabbar button .tb{position:absolute;top:0;right:50%;margin-right:-22px;background:var(--danger);color:#fff;
@@ -990,7 +994,7 @@
     <button class="btn-primary" onclick="doLogin()">Ingresar</button>
     <a class="forgot" onclick="doForgot()">¿Olvidaste tu clave?</a>
     <div style="text-align:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);font-size:13.5px;color:var(--muted)">¿Primera vez? <a class="forgot" style="display:inline" onclick="showSignup(true)">Crear cuenta nueva</a></div>
-    <div id="loginVersion" style="text-align:center;margin-top:12px;font-size:11px;color:var(--muted)">Versión 2026-07-22j</div>
+    <div id="loginVersion" style="text-align:center;margin-top:12px;font-size:11px;color:var(--muted)">Versión 2026-07-22m</div>
   </div>
   <div class="login-card hidden" id="signupCard">
     <div class="brand"><div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#c6e84b" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M5 5c4 3 4 11 0 14M19 5c-4 3-4 11 0 14"/></svg></div>
@@ -1032,17 +1036,13 @@
   <!-- MOBILE HEADER -->
   <div class="mobile-head" id="mobileHead">
     <div class="mh-top" id="mhTopNormal">
-      <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#c6e84b" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M5 5c4 3 4 11 0 14M19 5c-4 3-4 11 0 14"/></svg></div>
-      <b id="mtitle">Reservas</b>
-      <div class="mh-right">
-        <button class="mh-bell" id="mhBell" onclick="go('notif')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg>
-          <span class="bdot" id="mbell">2</span>
-        </button>
-        <button class="mh-acct" onclick="go('profile')" aria-label="Mi perfil">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/></svg>
-        </button>
-      </div>
+      <button class="mh-acct" onclick="go('profile')" aria-label="Mi perfil">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0"/></svg>
+      </button>
+      <button class="mh-bell" id="mhBell" onclick="go('notif')" style="margin-left:auto">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+        <span class="bdot" id="mbell">2</span>
+      </button>
     </div>
     <div class="mh-top mh-prof" id="mhTopProf" style="display:none">
       <button class="mh-big" onclick="go('notif')">Notificaciones<span class="mh-bdot" id="mhProfBell" style="display:none"></span></button>
@@ -1104,7 +1104,7 @@ if('serviceWorker' in navigator){
 /* ======================= DATA ======================= */
 let NOW = new Date(); // hora real. Se re-sincroniza al volver a la app (syncClock) para no quedar congelada.
 let APP_START = Date.now(); // base de liveNow(); DEBE existir antes del primer _computeOWS() (si no, TDZ y la app se cuelga en el splash)
-const APP_VERSION = '2026-07-22j'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
+const APP_VERSION = '2026-07-22m'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
 const DOW = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
 const DOWL = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const MON = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
@@ -1687,12 +1687,11 @@ function render(){
   // tabbar (mobile) — sin "Notificaciones" (se accede por la campana de arriba)
   const tabs=items.filter(it=>it.id!=='notif').slice(0,5);
   const profTab = state.role==='prof';   // el profesor: un solo botón grande "Mis clases", sin ícono
-  document.getElementById('tabbar').innerHTML=tabs.map(it=>`
-    <button class="${state.view===it.id?'active':''}${profTab?' tab-prof':''}" onclick="go('${it.id}')">
-      ${profTab?'':`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${ICONS[it.icon]}</svg>`}
-      <span>${profTab?it.label:(it.id==='mine'?'Reservas':it.label.split(' ')[0])}</span>
-      ${it.badge?`<span class="tb">${it.badge}</span>`:''}
-    </button>`).join('');
+  document.getElementById('tabbar').innerHTML=tabs.map(it=>{
+    const active=state.view===it.id;
+    if(profTab) return `<button class="${active?'active':''} tab-prof" onclick="go('${it.id}')"><span>${it.label}</span>${it.badge?`<span class="tb">${it.badge}</span>`:''}</button>`;
+    return `<button class="${active?'active':''}" onclick="go('${it.id}')"><span class="tab-in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${ICONS[it.icon]}</svg><span>${it.id==='mine'?'Reservas':it.label.split(' ')[0]}</span></span>${it.badge?`<span class="tb">${it.badge}</span>`:''}</button>`;
+  }).join('');
 
   // Portería: una sola pantalla. Profesor en acción: modo inmersivo (sin barras).
   const soloUna = state.role==='portero';
@@ -1723,7 +1722,7 @@ function render(){
     notif:'Notificaciones',users:'Gestión de usuarios',settings:'Ajustes',avail:'Profesor',maint:'Mantenimiento de la cancha',history:'Historial de actividad',reglamento:'Reglamento de uso',profile:'Mi perfil'};
   const _ttl = state.view==='calendar' ? titles.calendar+' · '+monthTitle() : titles[state.view];
   document.getElementById('ttitle').textContent=_ttl;
-  document.getElementById('mtitle').textContent=_ttl;
+  const _mt=document.getElementById('mtitle'); if(_mt) _mt.textContent=_ttl;   // el título móvil se quitó del header
   const subs={calendar:'',mine:'Tus reservas de la semana',horas:'Tus horas por tramo de la semana',lights:'Horarios para prender y apagar las luces',rain:'Cierra la cancha cuando esté lloviendo o encharcada',porteria:'Luces de la cancha y modo lluvia',classes:'Tus clases del día',notif:'Avisos de la cancha',users:'Cuentas fijas y residentes',settings:'Configuración de la cancha',avail:state.role==='prof'?'Abre tus horarios para práctica libre o clase':'Horario del profesor y ausencias',maint:'',history:'Quién reserva y cancela, y a qué hora',reglamento:'Normas de uso de la cancha de tenis',profile:'Tu información y tu cuenta'};
   document.getElementById('tsub').textContent=subs[state.view]||'';
   document.getElementById('weekNav').style.display='none';
@@ -2301,7 +2300,32 @@ function renderDayStrip(){
       <span class="dw">${DOW[d.getDay()]}</span><span class="dn">${d.getDate()}</span></button>`;}
   strip.innerHTML=html;
 }
-function setDay(date){state.mobileDay=date;render();scrollTop();fadeContent();}
+function setDay(date){
+  const old=state.mobileDay;
+  const dir = date>old ? 1 : (date<old ? -1 : 0);   // 1 = adelante (entra desde la derecha), -1 = atrás
+  const c=document.getElementById('content');
+  const oldHTML = (dir!==0 && c) ? c.innerHTML : '';
+  state.mobileDay=date; render(); scrollTop();
+  if(dir!==0 && c && c.animate) slideDayCarousel(c, oldHTML, dir); else fadeContent();
+}
+// Transición tipo "tira": el día actual sale a la izquierda mientras el nuevo entra desde la derecha, como un solo bloque.
+function slideDayCarousel(c, oldHTML, dir){
+  c.style.position='relative'; c.style.overflow='hidden';
+  const nw=document.createElement('div');                       // contenido NUEVO (queda en el flujo, da la altura)
+  while(c.firstChild) nw.appendChild(c.firstChild);
+  c.appendChild(nw);
+  const ow=document.createElement('div');                       // contenido VIEJO (superpuesto, sale a un lado)
+  ow.style.cssText='position:absolute;left:0;right:0;top:0;pointer-events:none';
+  ow.innerHTML=oldHTML; c.appendChild(ow);
+  const ease='cubic-bezier(.33,0,.2,1)', dur=330;
+  nw.animate([{transform:`translateX(${dir*100}%)`},{transform:'none'}], {duration:dur, easing:ease});
+  const a=ow.animate([{transform:'none'},{transform:`translateX(${-dir*100}%)`}], {duration:dur, easing:ease, fill:'forwards'});
+  let done=false; const cleanup=()=>{ if(done)return; done=true;
+    try{a.cancel();}catch(_){}; try{ow.remove();}catch(_){}
+    while(nw.firstChild) c.appendChild(nw.firstChild); try{nw.remove();}catch(_){}
+    c.style.overflow=''; c.style.position=''; };
+  a.onfinish=cleanup; setTimeout(cleanup, dur+90);
+}
 function mobileDay(){
   const date=state.mobileDay;const d=dateAt(date,0);
   const faded=!state.fullWeek && state.weekView===0, isToday=date===ymd(NOW), lineHour=NOW.getHours();
@@ -4170,7 +4194,23 @@ async function doClose(){
     toast('Cancha cerrada · '+desc);
   }catch(e){ toast(e.message,'warn'); }
 }
-function closeModal(){document.getElementById('modalBg').classList.remove('show');const m=document.getElementById('modal');if(m)m.classList.remove('fb');}
+function closeModal(){
+  const bg=document.getElementById('modalBg'), m=document.getElementById('modal');
+  if(!bg || !bg.classList.contains('show')) return;
+  const isFb = m && m.classList.contains('fb');
+  let done=false, a1=null, a2=null;
+  const finish=()=>{ if(done) return; done=true;
+    try{ a1&&a1.cancel(); a2&&a2.cancel(); }catch(_){}
+    bg.classList.remove('show'); if(m){ m.classList.remove('fb'); m.style.transform=''; m.style.opacity=''; } bg.style.opacity=''; };
+  if(!m || !m.animate){ finish(); return; }                 // respaldo sin Web Animations
+  try{
+    a1=m.animate([{transform:'none',opacity:1},{transform:isFb?'translateY(72px) scale(.965)':'translateY(56px)',opacity:0}],
+      {duration:270, easing:'cubic-bezier(.4,0,.75,.3)', fill:'forwards'});
+    a2=bg.animate([{opacity:1},{opacity:0}], {duration:270, easing:'ease', fill:'forwards'});
+    a1.onfinish=finish;
+    setTimeout(finish, 330);                                // respaldo por si onfinish no dispara
+  }catch(e){ finish(); }
+}
 
 /* helpers */
 function emptyState(msg){return `<div class="panel"><div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg><div>${msg}</div></div></div>`}
