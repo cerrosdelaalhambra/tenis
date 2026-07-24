@@ -791,26 +791,33 @@
     animation:up .25s ease;max-height:92vh;overflow-y:auto}
   @keyframes up{from{transform:translateY(40px);opacity:.6}to{transform:translateY(0);opacity:1}}
   /* Reservar: modal a pantalla completa */
-  .modal.fb{position:relative;max-width:480px;height:100dvh;max-height:100dvh;border-radius:0;
-    padding:22px 20px calc(20px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:0;overflow-y:auto}
-  .modal.fb .fb-x{position:absolute;top:14px;right:14px;width:40px;height:40px;border-radius:50%;background:var(--court-soft);color:var(--court);display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;z-index:2}
-  .fb-head{text-align:center;margin:34px 0 20px}
-  .fb-day{font-size:25px;font-weight:800;color:var(--ink);line-height:1.2}
-  .fb-house{margin-bottom:16px}
-  .fb-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  .fb-dur{padding:24px 0;border-radius:16px;border:2px solid var(--line);background:#fff;font-size:19px;font-weight:800;color:var(--court);cursor:pointer}
+  /* Reservar: tarjeta compacta (no pantalla completa) que se despliega con efecto */
+  .modal.fb{position:relative;max-width:480px;border-radius:22px 22px 0 0;
+    padding:18px 20px calc(20px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:0;max-height:92vh;overflow-y:auto;
+    animation:fbin .32s cubic-bezier(.2,.85,.2,1)}
+  @keyframes fbin{from{transform:translateY(46px) scale(.96);opacity:.25}to{transform:none;opacity:1}}
+  .modal.fb .fb-x{position:absolute;top:12px;right:12px;width:36px;height:36px;border-radius:50%;background:var(--court-soft);color:var(--court);display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;z-index:2}
+  .fb-head{text-align:center;margin:8px 0 16px}
+  .fb-day{font-size:23px;font-weight:800;color:var(--ink);line-height:1.2}
+  .fb-house{margin-bottom:14px}
+  .fb-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+  .fb-dur{padding:20px 0;border-radius:15px;border:2px solid var(--line);background:#fff;font-size:18px;font-weight:800;color:var(--court);cursor:pointer}
   .fb-dur.on{border-color:var(--court);background:var(--court);color:#fff}
-  .fb-range{font-size:28px;font-weight:800;color:var(--court);text-align:center;margin:20px 0 4px}
+  .fb-range{font-size:26px;font-weight:800;color:var(--court);text-align:center;margin:16px 0 4px}
   .fb-range.pop{animation:bkpop .28s cubic-bezier(.2,.8,.2,1)}
   @keyframes bkpop{0%{transform:scale(.86);opacity:.35}100%{transform:scale(1);opacity:1}}
-  .fb-mid{flex:1;display:flex;flex-direction:column;justify-content:center;margin:8px 0}
-  .fb-seek{background:var(--teal);border-radius:18px;padding:24px 18px;text-align:center;color:#fff;box-shadow:0 8px 22px rgba(14,116,144,.25)}
-  .fb-seek-q{font-size:19px;font-weight:800;margin-bottom:16px;line-height:1.25}
-  .fb-seek-btn{background:rgba(255,255,255,.14);color:#fff;border:1.6px solid rgba(255,255,255,.55);border-radius:13px;padding:12px 26px;font-size:15.5px;font-weight:800;cursor:pointer;transition:.15s}
-  .fb-seek-btn .on-lbl{display:none}
+  .fb-mid{margin:10px 0 14px}
+  .fb-seek{background:var(--teal);border-radius:16px;padding:15px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;color:#fff}
+  .fb-seek-q{font-size:15.5px;font-weight:800;line-height:1.25;text-align:left;flex:1;min-width:0}
+  .fb-seek-btn{flex:none;background:rgba(255,255,255,.16);color:#fff;border:1.5px solid rgba(255,255,255,.55);border-radius:11px;padding:10px 18px;font-size:14px;font-weight:800;cursor:pointer;white-space:nowrap}
   .fb-seek-btn.on{background:#fff;color:var(--teal);border-color:#fff}
-  .fb-seek-btn.on .off-lbl{display:none}
-  .fb-seek-btn.on .on-lbl{display:inline}
+  /* switch No / Sí (por defecto No) */
+  .fb-toggle{position:relative;display:inline-flex;background:rgba(255,255,255,.2);border-radius:22px;padding:4px;cursor:pointer;flex:none}
+  .fb-toggle .lbl{position:relative;z-index:1;padding:7px 17px;font-size:14.5px;font-weight:800;color:#fff;transition:color .18s}
+  .fb-toggle .ft-knob{position:absolute;top:4px;bottom:4px;left:4px;width:calc(50% - 4px);background:#fff;border-radius:20px;transition:transform .2s}
+  .fb-toggle.on .ft-knob{transform:translateX(100%)}
+  .fb-toggle:not(.on) .ft-no{color:var(--teal)}
+  .fb-toggle.on .ft-si{color:var(--teal)}
   .fb-confirm{width:100%;padding:16px;font-size:16px;flex:none}
   .fb-save{width:100%;padding:15px;font-size:15.5px;flex:none;margin-bottom:10px}
   .fb-nocancel{text-align:center;color:var(--muted);font-size:13.5px;padding:12px;flex:none}
@@ -983,7 +990,7 @@
     <button class="btn-primary" onclick="doLogin()">Ingresar</button>
     <a class="forgot" onclick="doForgot()">¿Olvidaste tu clave?</a>
     <div style="text-align:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);font-size:13.5px;color:var(--muted)">¿Primera vez? <a class="forgot" style="display:inline" onclick="showSignup(true)">Crear cuenta nueva</a></div>
-    <div id="loginVersion" style="text-align:center;margin-top:12px;font-size:11px;color:var(--muted)">Versión 2026-07-22g</div>
+    <div id="loginVersion" style="text-align:center;margin-top:12px;font-size:11px;color:var(--muted)">Versión 2026-07-22h</div>
   </div>
   <div class="login-card hidden" id="signupCard">
     <div class="brand"><div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#c6e84b" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M5 5c4 3 4 11 0 14M19 5c-4 3-4 11 0 14"/></svg></div>
@@ -1097,7 +1104,7 @@ if('serviceWorker' in navigator){
 /* ======================= DATA ======================= */
 let NOW = new Date(); // hora real. Se re-sincroniza al volver a la app (syncClock) para no quedar congelada.
 let APP_START = Date.now(); // base de liveNow(); DEBE existir antes del primer _computeOWS() (si no, TDZ y la app se cuelga en el splash)
-const APP_VERSION = '2026-07-22g'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
+const APP_VERSION = '2026-07-22h'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
 const DOW = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
 const DOWL = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const MON = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
@@ -3882,7 +3889,7 @@ function openBook(date,h,ctx){
       <div class="fb-mid">
         ${isMember()?`<div class="fb-seek">
           <div class="fb-seek-q">¿Buscas con quién jugar?</div>
-          <button type="button" class="fb-seek-btn" id="bkSeek" onclick="this.classList.toggle('on')"><span class="off-lbl">Buscar contrincante</span><span class="on-lbl">✓ Buscando</span></button>
+          <div class="fb-toggle" id="bkSeek" onclick="this.classList.toggle('on')"><span class="lbl ft-no">No</span><span class="lbl ft-si">Sí</span><span class="ft-knob"></span></div>
         </div>`:''}
       </div>
       <button class="btn-primary fb-confirm" id="bkConfirm" onclick="confirmBook('${date}',${h},'full')">Confirmar reserva</button>`;
