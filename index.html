@@ -625,6 +625,21 @@
   .notif-act .na-no{background:#eef1f0;color:var(--muted)}
   .notif-act .na-no:hover{background:#e2e6e4}
   .notif-act .na-wa{display:inline-flex;align-items:center;gap:7px;background:#25d366;color:#fff;font-size:13px;font-weight:600;padding:8px 14px;border-radius:9px;text-decoration:none}
+  /* Notificaciones — encabezado y tarjetas nuevas */
+  .ntf-head{display:flex;gap:10px;margin-bottom:12px}
+  .ntf-btn{flex:1;padding:12px;border-radius:12px;border:1.5px solid var(--court);background:#fff;color:var(--court);font-size:14px;font-weight:700;cursor:pointer}
+  .ntf-btn.act{background:var(--court);color:#fff;border-color:var(--court)}
+  .ntf-btn.done{background:var(--court-soft);color:var(--court);border-color:var(--court-soft);cursor:default}
+  .ntf-clearwrap{display:flex;justify-content:flex-end;margin:0 2px 12px}
+  .ntf-clear{display:inline-flex;align-items:center;gap:6px;background:none;border:none;color:var(--muted);font-size:13px;font-weight:600;cursor:pointer}
+  .ntf-list{display:flex;flex-direction:column;gap:10px}
+  .ntf{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow)}
+  .ntf.unread{border-color:var(--court);border-width:1.5px}
+  .ntf-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:5px}
+  .ntf-title{font-size:14.5px;font-weight:700;color:var(--ink);line-height:1.3}
+  .ntf-time{flex:none;font-size:11.5px;font-weight:800;padding:4px 11px;border-radius:20px;white-space:nowrap}
+  .ntf-body{font-size:13px;color:#46524e;line-height:1.5}
+  .ntf .notif-act{margin-top:11px}
   .notif-act .na-wa svg{width:16px;height:16px}
   /* contrincante: control en Mis reservas y en el modal */
   .mr-item{border-bottom:1px solid var(--line)}
@@ -996,7 +1011,7 @@
     <button class="btn-primary" onclick="doLogin()">Ingresar</button>
     <a class="forgot" onclick="doForgot()">¿Olvidaste tu clave?</a>
     <div style="text-align:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);font-size:13.5px;color:var(--muted)">¿Primera vez? <a class="forgot" style="display:inline" onclick="showSignup(true)">Crear cuenta nueva</a></div>
-    <div id="loginVersion" style="text-align:center;margin-top:12px;font-size:11px;color:var(--muted)">Versión 2026-07-22o</div>
+    <div id="loginVersion" style="text-align:center;margin-top:12px;font-size:11px;color:var(--muted)">Versión 2026-07-22p</div>
   </div>
   <div class="login-card hidden" id="signupCard">
     <div class="brand"><div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#c6e84b" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M5 5c4 3 4 11 0 14M19 5c-4 3-4 11 0 14"/></svg></div>
@@ -1106,7 +1121,7 @@ if('serviceWorker' in navigator){
 /* ======================= DATA ======================= */
 let NOW = new Date(); // hora real. Se re-sincroniza al volver a la app (syncClock) para no quedar congelada.
 let APP_START = Date.now(); // base de liveNow(); DEBE existir antes del primer _computeOWS() (si no, TDZ y la app se cuelga en el splash)
-const APP_VERSION = '2026-07-22o'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
+const APP_VERSION = '2026-07-22p'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
 const DOW = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
 const DOWL = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const MON = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
@@ -1764,6 +1779,7 @@ function render(){
   else if(state.view==='reglamento') c.innerHTML=viewReglamento();
   else if(state.view==='profile') c.innerHTML=viewProfile();
   if(state.view==='calendar' && state.pendingScrollNow){ state.pendingScrollNow=false; setTimeout(scrollToNow, 40); }   // al entrar al calendario, baja a la hora actual
+  if(state.view==='notif') refreshNotifActivate();   // estado del botón Activar/Activadas
 }
 function scrollToNow(){ const el=document.querySelector('.mday .m-now'); if(el && el.scrollIntoView) el.scrollIntoView({block:'start'}); }
 function plusIcon(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>'}
@@ -2818,13 +2834,14 @@ function viewNotif(){
     match_seek:['var(--court)','#e7f1ee','<circle cx="12" cy="12" r="9"/><path d="M5 5c4 3 4 11 0 14M19 5c-4 3-4 11 0 14"/>'],
     match_found:['var(--court)','#e7f1ee','<circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/>'],
     match_confirm:['var(--court)','#e7f1ee','<circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/>']};
-  const settingsPanel = isMember() ? `<div class="panel" style="margin-bottom:14px"><div style="padding:14px 18px;display:flex;align-items:center;gap:12px">
-      <div style="flex:1;min-width:0"><b style="font-size:14px">Notificaciones</b><p style="font-size:12px;color:var(--muted);margin-top:2px">Recibe los avisos en tu celular. Actívalas aquí.</p></div>
-      <button class="btn-ghost" style="box-shadow:none" onclick="openNotifSettings()">Ajustes</button></div></div>` : '';
+  const head = isMember() ? `<div class="ntf-head">
+      <button id="ntfActivate" class="ntf-btn act" onclick="notifActivate()">Activar</button>
+      <button class="ntf-btn" onclick="openNotifSettings()">Preferencias</button>
+    </div>` : '';
   const vis=visibleNotifs();
-  if(!vis.length) return settingsPanel+emptyState('No tienes notificaciones.');
-  const clearBar=`<div style="display:flex;justify-content:flex-end;margin:0 2px 8px"><button class="btn-ghost" style="box-shadow:none;color:var(--muted);display:inline-flex;align-items:center;gap:6px" onclick="clearNotifsInbox()">${svgIco('<path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>',14)} Limpiar</button></div>`;
-  const rows=vis.map(n=>{const[col,bg,path]=ic[n.type]||ic.open;
+  const clearBtn = vis.length ? `<div class="ntf-clearwrap"><button class="ntf-clear" onclick="clearNotifsInbox()">${svgIco('<path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>',14)} Borrar todas</button></div>` : '';
+  if(!vis.length) return head+emptyState('No tienes notificaciones.');
+  const rows=vis.map(n=>{const[col,bg]=ic[n.type]||ic.open;
     let extra='';
     if(n.type==='rain' && n.status==='pending') extra=`<div class="notif-act"><button class="na-yes" onclick="rainAccept(${n.id})">Aceptar y cancelar</button><button class="na-no" onclick="rainReject(${n.id})">Rechazar</button></div>`;
     else if(n.type==='rain' && n.status==='accepted') extra=`<div class="notif-st ok">Cancelaste tu reserva. Recuperaste tus horas.</div>`;
@@ -2837,12 +2854,11 @@ function viewNotif(){
     else if(n.type==='cancel_req' && n.status==='rejected') extra=`<div class="notif-st">Cancelación rechazada.</div>`;
     else if(n.type==='match_seek') extra=`<div class="notif-act"><button class="na-yes" onclick="acceptMatchN(${n.matchId})">Aceptar</button><button class="na-no" onclick="rejectMatchN(${n.matchId})">Rechazar</button></div>`;
     else if((n.type==='match_found'||n.type==='match_confirm') && n.meta && n.meta.phone) extra=`<div class="notif-act"><a class="na-wa" href="${waMatchLink(n.meta.name,n.meta.phone)}" target="_blank" rel="noopener">${WA_ICON} Escribir por WhatsApp</a></div>`;
-    return `<div class="notif ${n.unread?'unread':''}">
-      <div class="ic" style="background:${bg};color:${col}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${path}</svg></div>
-      <div class="body"><b>${n.title}</b><p>${n.body}</p>${extra}<time>${n.time}</time></div>
-      ${n.unread?'<span class="dot"></span>':''}
+    return `<div class="ntf${n.unread?' unread':''}">
+      <div class="ntf-top"><b class="ntf-title">${n.title}</b><span class="ntf-time" style="background:${bg};color:${col}">${n.time}</span></div>
+      ${n.body?`<p class="ntf-body">${n.body}</p>`:''}${extra}
     </div>`;}).join('');
-  return settingsPanel+clearBar+`<div class="panel">${rows}</div>`;
+  return head+clearBtn+`<div class="ntf-list">${rows}</div>`;
 }
 async function clearNotifsInbox(){
   if(!state.profile) return;
@@ -2853,6 +2869,26 @@ async function clearNotifsInbox(){
     await loadData(); render();
     toast('Bandeja limpia');
   }catch(e){ toast(e.message,'warn'); }
+}
+// Botón "Activar" de la pantalla de notificaciones: solo activa; al quedar activo, muestra "Activadas" e inerte.
+async function notifActivate(){
+  try{
+    if(!pushSupported()){ toast('Este dispositivo no soporta notificaciones.','warn'); return; }
+    if(Notification.permission==='denied'){ toast('Las tienes bloqueadas en el navegador; actívalas en los ajustes del sitio.','warn'); return; }
+    const perm=await Notification.requestPermission();
+    if(perm!=='granted'){ toast('No diste permiso para las notificaciones.','warn'); return; }
+    const reg=await navigator.serviceWorker.ready;
+    const sub=await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey:urlB64ToUint8Array(DB.VAPID_PUBLIC_KEY) });
+    await DB.savePushSub(state.profile.id, sub);
+    toast('Notificaciones activadas ✓'); refreshNotifActivate();
+  }catch(e){ toast('No se pudieron activar las notificaciones.','warn'); }
+}
+async function refreshNotifActivate(){
+  const b=document.getElementById('ntfActivate'); if(!b) return;
+  const set=(txt,done)=>{ b.textContent=txt; b.disabled=!!done; b.classList.toggle('done',!!done); b.classList.toggle('act',!done); };
+  if(!pushSupported()){ set('No disponible', true); return; }
+  if(Notification.permission==='denied'){ set('Bloqueadas', true); return; }
+  try{ const sub=await getPushSub(); set(sub?'Activadas ✓':'Activar', !!sub); }catch(e){ set('Activar', false); }
 }
 /* ---- Notificaciones push (residente) ---- */
 function pushSupported(){ return ('serviceWorker' in navigator) && ('PushManager' in window) && ('Notification' in window); }
@@ -2872,45 +2908,35 @@ async function disablePush(){
   try{
     const sub=await getPushSub();
     if(sub){ const ep=sub.endpoint; try{ await sub.unsubscribe(); }catch(_){} await DB.removePushSub(ep); }
-    toast('Notificaciones desactivadas en este dispositivo'); openNotifSettings();
+    closeModal(); render(); toast('Notificaciones desactivadas en este dispositivo');
   }catch(e){ toast(e.message,'warn'); }
 }
 async function openNotifSettings(){
   const p=state.profile||{};
-  const prefs=p.notif_prefs||{release:true,rain:true,perm:true,reminder:true,freed:true,reset:true};
-  let stateHtml;
-  if(!pushSupported()){
-    stateHtml=`<div class="perm-note"><b>Tu navegador no soporta notificaciones.</b><span>Prueba con Chrome en Android, o instala la app en la pantalla de inicio de tu iPhone.</span></div>`;
-  } else if(Notification.permission==='denied'){
-    stateHtml=`<div class="perm-note"><b>Notificaciones bloqueadas.</b><span>Las tienes bloqueadas en el navegador. Actívalas en los ajustes del sitio para poder recibirlas.</span></div>`;
-  } else {
+  const prefs=p.notif_prefs||{release:true,rain:true,perm:true,reminder:true,freed:true,reset:true,match:true};
+  const chk=(k,label)=>`<label class="chk" style="margin:11px 0" onclick="toggleNotifPref('${k}',event)"><span class="chk-box ${prefs[k]!==false?'on':''}" id="np_${k}">${prefs[k]!==false?'✓':''}</span><span>${label}</span></label>`;
+  let offBtn='';
+  if(pushSupported() && Notification.permission!=='denied'){
     const sub=await getPushSub();
-    stateHtml = sub
-      ? `<div class="notif-st ok" style="margin:4px 0 8px">Activadas en este dispositivo ✓</div><button class="btn-soft" style="width:100%" onclick="disablePush()">Desactivar en este dispositivo</button>`
-      : `<p style="font-size:13px;color:var(--muted);margin:2px 0 10px">Actívalas para recibir los avisos directo en este celular.</p><button class="btn-primary" style="width:100%" onclick="enablePush()">Activar notificaciones</button>`;
+    if(sub) offBtn=`<button class="btn-soft" style="width:100%;margin-top:16px" onclick="disablePush()">Desactivar notificaciones en este dispositivo</button>`;
   }
-  const chk=(k,label)=>`<label class="chk" style="margin:9px 0" onclick="toggleNotifPref('${k}',event)"><span class="chk-box ${prefs[k]!==false?'on':''}" id="np_${k}">${prefs[k]!==false?'✓':''}</span><span>${label}</span></label>`;
   const m=document.getElementById('modal');
-  m.innerHTML=`<div class="grab"></div><h3>Notificaciones</h3>
-    <div class="msub">Recibe en tu celular los avisos importantes de la cancha.</div>
-    ${stateHtml}
-    <div class="opt-label" style="margin-top:14px">¿Qué avisos quieres recibir?</div>
-    ${chk('release','Cuando el profesor libera un horario')}
-    ${chk('freed','Cuando alguien cancela y la cancha queda libre')}
+  m.innerHTML=`<div class="grab"></div><h3>¿Qué avisos quieres recibir?</h3>
+    ${chk('freed','Cuando la cancha queda libre (alguien canceló)')}
+    ${chk('match','Cuando alguien busca con quién jugar')}
     ${chk('reset','Cuando se reinician tus horas de la semana')}
+    ${chk('release','Cuando el profesor libera un horario')}
     ${chk('rain','Modo lluvia (te piden cancelar tu reserva)')}
     ${chk('reminder','Recordatorio 15 minutos antes de tu reserva')}
+    ${offBtn}
     <div class="modal-actions"><button class="btn-soft" onclick="closeModal()">Cerrar</button>
     <button class="btn-primary" onclick="saveNotifPrefs()">Guardar preferencias</button></div>`;
   document.getElementById('modalBg').classList.add('show');
 }
 function toggleNotifPref(k,e){ if(e)e.stopPropagation(); const box=document.getElementById('np_'+k); const on=!box.classList.contains('on'); box.classList.toggle('on',on); box.textContent=on?'✓':''; }
 async function saveNotifPrefs(){
-  const prefs={ release:document.getElementById('np_release').classList.contains('on'),
-                freed:document.getElementById('np_freed').classList.contains('on'),
-                reset:document.getElementById('np_reset').classList.contains('on'),
-                rain:document.getElementById('np_rain').classList.contains('on'),
-                reminder:document.getElementById('np_reminder').classList.contains('on') };
+  const g=k=>{const el=document.getElementById('np_'+k);return el?el.classList.contains('on'):true;};
+  const prefs={ release:g('release'), freed:g('freed'), reset:g('reset'), rain:g('rain'), reminder:g('reminder'), match:g('match') };
   closeModal();
   try{ await DB.Auth.setNotifSettings(state.profile.id, {prefs}); if(state.profile) state.profile.notif_prefs=prefs; toast('Preferencias guardadas'); }
   catch(e){ toast(e.message,'warn'); }
