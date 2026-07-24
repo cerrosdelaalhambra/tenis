@@ -114,6 +114,11 @@ const ERR_MSG = {
   YA_RESUELTA:'Esa solicitud ya fue atendida.',
   PEDIR_A_ADMIN:'Ya usaste tu cancelación de último momento de esta semana. Puedes pedirle a administración que la cancele.',
   YA_EMPEZO:'Esa reserva ya empezó; no se puede cancelar.',
+  YA_TOMADO:'Alguien más ya aceptó ese partido.',
+  YA_BUSCANDO:'Ya estás buscando contrincante para esa reserva.',
+  YA_PASO:'Esa reserva ya pasó.',
+  NO_ES_TUYA:'Esa reserva no es tuya.',
+  ES_TUYA:'No puedes aceptar tu propia búsqueda.',
   YA_PEDIDO:'Ya enviaste la solicitud de cancelación; espera la respuesta de administración.',
   SOLO_NORMAL:'Solo se puede solicitar la cancelación de una reserva normal.',
   CLASE_YA_TIENE_CASA:'Ese horario de clase ya tiene una casa asignada; no se puede solicitar.',
@@ -342,10 +347,24 @@ async function getNotifications(role, profileId, seenAt, clearedAt){
     id:n.id, type:n.type, title:n.title, body:n.body,
     roles: n.role==='member' ? ['member','master'] : (n.role ? [n.role] : ['member','master']),
     resId: n.reservation_id, recId: n.recurring_id, house: n.houses && n.houses.label,
+    matchId: n.match_id, meta: n.meta || null,   // contrincante: id del match + datos (nombre/casa/teléfono)
     // No leída solo si no está marcada y es más nueva que la marca del usuario.
     // Así las notificaciones por rol (sin profile_id) tampoco reaparecen tras recargar.
     status: n.status, unread: !n.read && new Date(n.created_at).getTime() > seen, time: relTime(n.created_at)
   }));
+}
+// Matches del usuario (contrincante + teléfono, solo a los involucrados). Resiliente si aún no existe el SQL.
+async function getMatches(){
+  try{ const {data,error}=await sb.rpc('my_matches'); if(error) return [];
+    return (data||[]).map(m=>({ id:m.id, resId:m.reservation_id, status:m.status, role:m.role,
+      otherName:m.other_name, otherHouse:m.other_house, otherPhone:m.other_phone })); }
+  catch(e){ return []; }
+}
+// match_ids que este usuario rechazó (para ocultarle esos avisos). Resiliente.
+async function getMatchRejections(){
+  try{ const {data,error}=await sb.from('match_rejections').select('match_id'); if(error) return [];
+    return (data||[]).map(x=>x.match_id); }
+  catch(e){ return []; }
 }
 async function getActivity(){                       // historial (admin/portería)
   const {data,error}=await sb.from('activity_log')
@@ -385,7 +404,7 @@ async function fetchAll(profile){
   const staff  = profile.role==='admin' || profile.role==='portero';
   const isProf = profile.role==='prof';
   // TODO en un solo lote paralelo (antes había hasta 3 fases secuenciales)
-  const [myHouses, reservations, releases, closures, holidays, houses, cfg, notifs, profSchedule, recurring, activity, users, profClasses, absences, maintSchedule, classTemplate, quotaBlocks] = await Promise.all([
+  const [myHouses, reservations, releases, closures, holidays, houses, cfg, notifs, profSchedule, recurring, activity, users, profClasses, absences, maintSchedule, classTemplate, quotaBlocks, matches, matchRejections] = await Promise.all([
     member ? getMyHouses(profile.id) : Promise.resolve([]),
     getCalendar(profile.role), getReleases(), getClosures(), getHolidays(),
     getHouses(), getConfig(), getNotifications(profile.role, profile.id, profile.notif_seen_at, profile.notif_cleared_at),
@@ -395,13 +414,15 @@ async function fetchAll(profile){
     isProf ? getProfClasses() : Promise.resolve([]),
     getAbsences(), getMaintSchedule(),
     getClassTemplate(),  // para todos: sirve para el Excel (admin) y para mostrar clases de días ya pasados
-    getQuotaBlocks()     // tramos de cupo (vacío si aún no se corre el SQL -> se comporta como hoy)
+    getQuotaBlocks(),    // tramos de cupo (vacío si aún no se corre el SQL -> se comporta como hoy)
+    member ? getMatches() : Promise.resolve([]),          // contrincante: estado de mis matches
+    member ? getMatchRejections() : Promise.resolve([])   // avisos de match que rechacé
   ]);
   return { profile, myHouses, reservations, releases, closures, holidays, houses,
     cupo:cfg.cupo, profFlexible:cfg.profFlexible, permEnabled:cfg.permEnabled, permRoute:'both',
     openStart:cfg.openStart, openEnd:cfg.openEnd, halfHours:cfg.halfHours, resetHour:cfg.resetHour,
     notifs, profSchedule, recurring, activity, users, profClasses, absences, maintSchedule, classTemplate,
-    blocks: quotaBlocks };
+    blocks: quotaBlocks, matches, matchRejections };
 }
 function isMemberRole(role){ return role==='member' || role==='master'; }
 
@@ -591,6 +612,11 @@ const Rain = {
   async deactivate(){ const {error}=await sb.rpc('deactivate_rain'); if(error) throw mapError(error); }
 };
 async function markNotif(id, status){ const {error}=await sb.from('notifications').update({status, read:true}).eq('id',id); if(error) throw mapError(error); }
+/* ===== Contrincante (buscar con quién jugar) ===== */
+async function requestMatch(resId){ const {data,error}=await sb.rpc('request_match',{p_res:resId}); if(error) throw mapError(error); return data; }
+async function acceptMatch(matchId){ const {error}=await sb.rpc('accept_match',{p_match:matchId}); if(error) throw mapError(error); }
+async function rejectMatch(matchId){ const {error}=await sb.rpc('reject_match',{p_match:matchId}); if(error) throw mapError(error); }
+async function cancelMatch(matchId){ const {error}=await sb.rpc('cancel_match',{p_match:matchId}); if(error) throw mapError(error); }
 async function markAllRead(profileId){
   // Marca todo como leído con la HORA DEL SERVIDOR y la devuelve, para que la app
   // la guarde en memoria sin desfase de reloj. Así las notificaciones por rol
@@ -621,6 +647,7 @@ async function clearNotifs(profileId){
 window.DB = {
   Auth, Admin, Rain,
   fetchAll, book, cancel, requestCancel, decideCancel, markNotif, markAllRead, clearNotifs,
+  requestMatch, acceptMatch, rejectMatch, cancelMatch,
   getProfClasses, changeClassHouse, releaseClass, markAbsence, unmarkAbsence, setClassTemplate,
   requestRecurring, decideRecurring, cancelRecurring, materializeRecurring, materializeClasses,
   VAPID_PUBLIC_KEY, savePushSub, removePushSub,
