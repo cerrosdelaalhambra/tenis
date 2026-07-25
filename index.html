@@ -1011,7 +1011,7 @@
     <button class="btn-primary" onclick="doLogin()">Ingresar</button>
     <a class="forgot" onclick="doForgot()">¿Olvidaste tu clave?</a>
     <div style="text-align:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);font-size:13.5px;color:var(--muted)">¿Primera vez? <a class="forgot" style="display:inline" onclick="showSignup(true)">Crear cuenta nueva</a></div>
-    <div id="loginVersion" style="text-align:center;margin-top:12px;font-size:11px;color:var(--muted)">Versión 2026-07-22r</div>
+    <div id="loginVersion" style="text-align:center;margin-top:12px;font-size:11px;color:var(--muted)">Versión 2026-07-22s</div>
   </div>
   <div class="login-card hidden" id="signupCard">
     <div class="brand"><div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#c6e84b" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M5 5c4 3 4 11 0 14M19 5c-4 3-4 11 0 14"/></svg></div>
@@ -1121,7 +1121,7 @@ if('serviceWorker' in navigator){
 /* ======================= DATA ======================= */
 let NOW = new Date(); // hora real. Se re-sincroniza al volver a la app (syncClock) para no quedar congelada.
 let APP_START = Date.now(); // base de liveNow(); DEBE existir antes del primer _computeOWS() (si no, TDZ y la app se cuelga en el splash)
-const APP_VERSION = '2026-07-22r'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
+const APP_VERSION = '2026-07-22s'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
 const DOW = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
 const DOWL = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const MON = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
@@ -2366,8 +2366,12 @@ function slideContent(c, oldHTML, dir){
   const a=ow.animate([{transform:'none'},{transform:`translateX(${-dir*100}%)`}], {duration:dur, easing:ease, fill:'forwards'});
   let done=false; const cleanup=()=>{ if(done)return; done=true;
     try{a.cancel();}catch(_){}; try{ow.remove();}catch(_){}
-    while(nw.firstChild) c.appendChild(nw.firstChild); try{nw.remove();}catch(_){}
-    c.style.overflow=''; c.style.position=''; };
+    // Solo devolvemos el contenido nuevo al flujo si NADIE re-pintó durante la animación.
+    // Si un render() (refreshData, cambio rápido de pestaña, etc.) reemplazó el contenido,
+    // `nw` quedó desprendido: reinyectarlo duplicaría la vista. En ese caso lo dejamos como está.
+    if(nw.parentNode===c){ while(nw.firstChild) c.appendChild(nw.firstChild); try{nw.remove();}catch(_){} }
+    c.style.overflow=''; c.style.position='';   // los estilos SIEMPRE se limpian (render no los toca)
+  };
   a.onfinish=cleanup; setTimeout(cleanup, dur+90);
 }
 function mobileDay(){
