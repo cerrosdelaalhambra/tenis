@@ -63,7 +63,8 @@ function mapReservation(r){                       // r puede traer joins (houses
     house: r.house_label || (r.houses && r.houses.label) || r.house,
     name: r.name || r.student_name || (r.profiles && r.profiles.full_name) || null,
     type: r.type,
-    profile_id: r.profile_id || null
+    profile_id: r.profile_id || null,
+    mine: !!r.by_me            // ¿la hizo la cuenta actual? (casa compartida: cada quien gestiona lo suyo)
   };
 }
 function mapReleasesToHalves(rows){               // rango → medias horas {date,h,half,type,relId}
@@ -332,7 +333,7 @@ async function getCalendar(role){
       m.fromHouse = (home && home!==m.house) ? home : null;   // su casa, si reservó a nombre de otra
       return m; });
   }
-  const {data}=await sb.from('v_calendar').select('id,house_label,starts_at,ends_at,type,student_name,name').gte('starts_at', cutoff).order('starts_at');
+  const {data}=await sb.from('v_calendar').select('id,house_label,starts_at,ends_at,type,student_name,name,by_me').gte('starts_at', cutoff).order('starts_at');
   return (data||[]).map(mapReservation);
 }
 async function primaryHouseMap(){                   // profile_id -> etiqueta de su casa principal

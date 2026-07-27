@@ -1011,7 +1011,7 @@
     <button class="btn-primary" onclick="doLogin()">Ingresar</button>
     <a class="forgot" onclick="doForgot()">¿Olvidaste tu clave?</a>
     <div style="text-align:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);font-size:13.5px;color:var(--muted)">¿Primera vez? <a class="forgot" style="display:inline" onclick="showSignup(true)">Crear cuenta nueva</a></div>
-    <div id="loginVersion" style="text-align:center;margin-top:12px;font-size:11px;color:var(--muted)">Versión 2026-07-22s</div>
+    <div id="loginVersion" style="text-align:center;margin-top:12px;font-size:11px;color:var(--muted)">Versión 2026-07-27a</div>
   </div>
   <div class="login-card hidden" id="signupCard">
     <div class="brand"><div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#c6e84b" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M5 5c4 3 4 11 0 14M19 5c-4 3-4 11 0 14"/></svg></div>
@@ -1108,7 +1108,7 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<script src="data.js?v=20260722g"></script>
+<script src="data.js?v=20260727a"></script>
 <script>
 /* PWA: registra el service worker (ruta relativa para que funcione bajo /tenis/) */
 if('serviceWorker' in navigator){
@@ -1121,7 +1121,7 @@ if('serviceWorker' in navigator){
 /* ======================= DATA ======================= */
 let NOW = new Date(); // hora real. Se re-sincroniza al volver a la app (syncClock) para no quedar congelada.
 let APP_START = Date.now(); // base de liveNow(); DEBE existir antes del primer _computeOWS() (si no, TDZ y la app se cuelga en el splash)
-const APP_VERSION = '2026-07-22s'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
+const APP_VERSION = '2026-07-27a'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
 const DOW = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
 const DOWL = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const MON = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
@@ -1635,7 +1635,7 @@ async function submitSignup(){
   if(pass.length<6){toast('La contraseña debe tener al menos 6 caracteres.','warn');return;}
   const btn=event&&event.target; if(btn){btn.disabled=true;btn.textContent='Enviando…';}
   try{
-    if(await DB.Auth.houseTaken(house)){ toast('La '+canonHouse(house)+' ya tiene una cuenta registrada. Si es tu casa y no tienes acceso, escribe a la administración.','warn'); if(btn){btn.disabled=false;btn.textContent='Enviar solicitud';} return; }
+    const houseTaken = await DB.Auth.houseTaken(house);   // varias cuentas por casa: ya NO bloquea; solo informa y el admin verifica al aprobar
     if(!(await DB.Auth.usernameAvailable(username))){ toast('Ese usuario ya está en uso. Elige otro.','warn'); if(btn){btn.disabled=false;btn.textContent='Enviar solicitud';} return; }
     await DB.Auth.signUp({email,password:pass,full_name:name,phone,house,username});
     try{ await DB.Auth.signOut(); }catch(e){}   // cerrar la sesión auto-creada (queda pendiente) para no atascarse
@@ -1643,7 +1643,7 @@ async function submitSignup(){
     document.getElementById('loginCard').classList.remove('hidden');
     document.getElementById('loginCard').innerHTML =
       '<div class="brand"><div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#c6e84b" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M5 5c4 3 4 11 0 14M19 5c-4 3-4 11 0 14"/></svg></div>'+
-      '<h1>¡Solicitud enviada!</h1><p>Tu cuenta para la casa '+house+' quedó pendiente. La administración la revisará y te avisará por WhatsApp cuando esté activa; ahí podrás entrar con tu correo o usuario y tu contraseña.</p></div>'+
+      '<h1>¡Solicitud enviada!</h1><p>Tu cuenta para la casa '+house+' quedó pendiente.'+(houseTaken?' Esta casa ya tiene otra cuenta; la administración confirmará que perteneces a ella antes de activarla.':'')+' La administración la revisará y te avisará por WhatsApp cuando esté activa; ahí podrás entrar con tu correo o usuario y tu contraseña.</p></div>'+
       '<button class="btn-primary" onclick="backToLogin()">Volver al inicio</button>';
   }catch(e){ toast(e.message,'warn'); if(btn){btn.disabled=false;btn.textContent='Enviar solicitud';} }
 }
@@ -2443,7 +2443,7 @@ function viewMine(){
   // Una clase fija (de la plantilla) NO va en "Próximas reservas": va en "Mis clases semanales".
   const isFixedClass=(r)=>{ if(r.type!=='class') return false; const dw=dateAt(r.date,r.h).getDay(); const sm=r.h*60+(r.min||0);
     return (CLASS_TEMPLATE||[]).some(c=>normHouseKey(c.house)===normHouseKey(r.house) && c.dow===dw && c.startMin===sm); };
-  const mine=reservations.filter(r=>hs.includes(r.house) && !isFixedClass(r));
+  const mine=reservations.filter(r=>r.mine && !isFixedClass(r));   // casa compartida: aquí solo van MIS reservas (las clases fijas van aparte)
   const up=mine.filter(r=>dateAt(r.date,r.h)>=NOW).sort((a,b)=>dateAt(a.date,a.h)-dateAt(b.date,b.h));
   const ws=ymd(OPEN_WEEK_START);
   const past=mine.filter(r=>dateAt(r.date,r.h)<NOW && r.date>=ws && r.date<=OPEN_WEEK_END).sort((a,b)=>dateAt(b.date,b.h)-dateAt(a.date,a.h));
@@ -3478,6 +3478,19 @@ function houseHint(inputId, hintId){
   if(houseExists(canon)){ el.textContent='✓ Casa existente: '+canon; el.style.color='var(--court)'; }
   else { el.textContent='Se creará una casa nueva: '+canon; el.style.color='#b8860b'; }
 }
+// Cuentas de residente YA vinculadas a una casa (para avisar al admin si aprueba una 2ª cuenta).
+function accountsForHouse(label){
+  const k=normHouseKey(label); if(!k) return [];
+  return (users||[]).filter(u=>(u.role==='member'||u.role==='master') && (u.houses||[]).some(hh=>normHouseKey(hh)===k)).map(u=>u.name);
+}
+function apAccountWarn(){   // aviso en vivo dentro del modal "Aprobar residente"
+  const el=document.getElementById('apAccounts'); if(!el) return;
+  const inp=document.getElementById('apHouse'); const names=accountsForHouse(inp?inp.value:'');
+  if(names.length){
+    el.innerHTML='⚠️ Esta casa ya tiene '+names.length+' cuenta'+(names.length>1?'s':'')+' ('+names.join(', ')+'). Compartirán la misma bolsa de horas de la semana. Aprueba solo si esta persona también pertenece a esta casa.';
+    el.style.display='block';
+  } else { el.textContent=''; el.style.display='none'; }
+}
 function openApprove(i){
   const u=users[i];
   const m=document.getElementById('modal');
@@ -3486,12 +3499,13 @@ function openApprove(i){
   m.innerHTML=`<div class="grab"></div><h3>Aprobar residente</h3>
     <div class="msub">${u.name}${u.username?' · @'+u.username:''}${u.phone?' · '+u.phone:''}</div>
     <div class="opt-label">Casa</div>
-    <input id="apHouse" style="${FORM_INP}" value="${(u.requestedHouse||'').replace(/"/g,'&quot;')}" placeholder="Ej. 29A, 21B…" oninput="houseHint('apHouse','apHint')">
+    <input id="apHouse" style="${FORM_INP}" value="${(u.requestedHouse||'').replace(/"/g,'&quot;')}" placeholder="Ej. 29A, 21B…" oninput="houseHint('apHouse','apHint');apAccountWarn()">
     <div id="apHint" style="font-size:12px;min-height:16px;margin-bottom:4px"></div>
+    <div id="apAccounts" style="font-size:12.5px;color:#b45309;background:#fff7ed;border:1px solid #fed7aa;border-radius:9px;padding:8px 10px;margin-bottom:8px;display:none;line-height:1.35"></div>
     <div class="modal-actions"><button class="btn-soft" onclick="closeModal()">Cancelar</button>
     <button class="btn-primary" onclick="doApprove('${u.id}')">Aprobar</button></div>`;
   document.getElementById('modalBg').classList.add('show');
-  houseHint('apHouse','apHint');
+  houseHint('apHouse','apHint'); apAccountWarn();
 }
 async function doApprove(id){
   const house=(document.getElementById('apHouse').value||'').trim();
@@ -3814,8 +3828,9 @@ function durSegHTML(date,h,house){
 }
 function durPick(el){ segPick(el,'durSeg'); const hw=document.getElementById('halfWrap'); if(hw) hw.style.display=(+el.dataset.d===30)?'block':'none'; }
 // ---- Modal de reservar a pantalla completa (contexto 'full') ----
-function fullDurs(date,h,house){
-  const cap=Math.min(freeRunMin(date,h,0), Math.round(blockRemaining(house, blockForDate(date))*60));
+function fullDurs(date,h,house,half){
+  half=half||0;
+  const cap=Math.min(freeRunMin(date,h,half), Math.round(blockRemaining(house, blockForDate(date))*60));
   const step=HALF_HOURS?30:60; let durs=[];
   if(HALF_HOURS && cap>=30) durs.push(30);
   for(let dd=60; dd<=cap; dd+=step) durs.push(dd);
@@ -3830,13 +3845,13 @@ function bookRangeTxt(startMin,dur){
 function setBkRange(txt){ const rg=document.getElementById('bkRange'); if(!rg) return; rg.textContent=txt; rg.classList.remove('pop'); void rg.offsetWidth; rg.classList.add('pop'); }
 function durPickFull(el){
   document.querySelectorAll('#durSeg .fb-dur').forEach(b=>b.classList.remove('on')); el.classList.add('on');
-  const c=state.bookCtx; if(c) setBkRange(bookRangeTxt(c.h*60, +el.dataset.d));
+  const c=state.bookCtx; if(c) setBkRange(bookRangeTxt(c.start!=null?c.start:c.h*60, +el.dataset.d));
 }
 function renderFullGrid(house){   // recalcula duraciones al cambiar de casa (máster/portería)
   const c=state.bookCtx; if(!c) return;
-  const durs=fullDurs(c.date,c.h,house), def=durs.includes(60)?60:durs[0];
+  const durs=fullDurs(c.date,c.h,house,c.half||0), def=durs.includes(60)?60:durs[0];
   const grid=document.getElementById('durSeg'); if(grid) grid.innerHTML=durs.map(dd=>`<button class="fb-dur${dd===def?' on':''}" data-d="${dd}" onclick="durPickFull(this)">${durLabel(dd)}</button>`).join('');
-  setBkRange(bookRangeTxt(c.h*60,def));
+  setBkRange(bookRangeTxt(c.start!=null?c.start:c.h*60,def));
 }
 // ---- Editar duración de una reserva existente (pantalla "Mi reserva") ----
 function editDurs(r){
@@ -3960,10 +3975,14 @@ function openBook(date,h,ctx){
   const nightCallout = (h>=21||h<6) ? `<div class="rule-night">${svgIco('<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',15)} A esta hora hay vecinos durmiendo. Por favor, juega en silencio y evita gritos, ruido fuerte y música o parlantes a alto volumen.</div>` : '';
   const rulesBox = `<div class="rules"><b>Antes de confirmar, recuerda:</b>${nightCallout}<ul>${RULES.map(r=>`<li>${r}</li>`).join('')}</ul></div>`;
   // ---- Reservar un espacio libre: pantalla completa, título dinámico, 2×2 ----
-  if(ctx==='full'){
+  // El diseño nuevo cubre tanto la hora entera libre ('full') como una media hora suelta
+  // (h0/h1) cuando la otra mitad ya está ocupada. Así los 30 minutos también salen bonitos.
+  const fbHalf = isHalf && !bonus && !isFlex;
+  if(ctx==='full' || fbHalf){
     if(isMember() && !hasHoursForDate(date)){ toast('No tienes más horas en este tramo.','warn'); return; }
-    state.bookCtx={date,h};
-    const durs=fullDurs(date,h,bookHouse); const def=durs.includes(60)?60:durs[0];
+    const bkHalf=(ctx==='h1')?1:0, bkStart=h*60+bkHalf*30;   // arranca en :00 o :30 según la media hora tocada
+    state.bookCtx={date,h,start:bkStart,half:bkHalf};
+    const durs=fullDurs(date,h,bookHouse,bkHalf); const def=durs.includes(60)?60:durs[0];
     const durBtns=durs.map(dd=>`<button class="fb-dur${dd===def?' on':''}" data-d="${dd}" onclick="durPickFull(this)">${durLabel(dd)}</button>`).join('');
     const dayTitle=`${cap1(['domingo','lunes','martes','miércoles','jueves','viernes','sábado'][d.getDay()])} ${d.getDate()} de ${MESES[d.getMonth()]}`;
     const modalEl=document.getElementById('modal'); modalEl.classList.add('fb');
@@ -3972,14 +3991,14 @@ function openBook(date,h,ctx){
       <div class="fb-head"><div class="fb-day">${dayTitle}</div></div>
       ${houseSelect?`<div class="fb-house">${houseSelect}</div>`:''}
       <div class="fb-grid" id="durSeg">${durBtns}</div>
-      <div class="fb-range" id="bkRange">${bookRangeTxt(h*60,def)}</div>
+      <div class="fb-range" id="bkRange">${bookRangeTxt(bkStart,def)}</div>
       <div class="fb-mid">
         ${isMember()?`<div class="fb-seek">
           <div class="fb-seek-q">¿Buscas con quién jugar?</div>
           <div class="fb-toggle" id="bkSeek" onclick="this.classList.toggle('on')"><span class="lbl ft-no">No</span><span class="lbl ft-si">Sí</span><span class="ft-knob"></span></div>
         </div>`:''}
       </div>
-      <button class="btn-primary fb-confirm" id="bkConfirm" onclick="confirmBook('${date}',${h},'full')">Confirmar reserva</button>`;
+      <button class="btn-primary fb-confirm" id="bkConfirm" onclick="confirmBook('${date}',${h},'${ctx}')">Confirmar reserva</button>`;
     document.getElementById('modalBg').classList.add('show');
     return;
   }
@@ -4034,8 +4053,11 @@ async function confirmBook(date,h,ctx){
     }
   }
   let min=0,dur=60,type='normal';
-  if(ctx==='h0'){min=0;dur=30;}
-  else if(ctx==='h1'){min=30;dur=30;}
+  if(ctx==='h0'||ctx==='h1'){
+    min=(ctx==='h1')?30:0;
+    const dEl=document.querySelector('#durSeg button.on');   // diseño nuevo: grilla de duración; si es bonus (sin grilla) → 30 min
+    dur=dEl?+dEl.dataset.d:30;
+  }
   else if(ctx==='full'){const dEl=document.querySelector('#durSeg button.on');dur=dEl?+dEl.dataset.d:60;if(dur===30){const mEl=document.querySelector('#halfSeg button.on');min=mEl?+mEl.dataset.m:0;}}
   else if(ctx==='openfull'){type='open';}
   else if(ctx==='classfull'){const u=document.querySelector('#useType button.on');type=(u&&u.dataset.u==='free')?'open':'class';}
@@ -4057,7 +4079,7 @@ async function confirmBook(date,h,ctx){
   const houseId=houseIdByLabel[house];
   if(!houseId){ toast('No se encontró esa casa.','warn'); return; }
   if(isMember()&&myHouses().length>1) state.lastHouse=house; // recordar última casa elegida
-  const sw=document.getElementById('bkSeek'); const seek = (ctx==='full') && !!(sw && sw.classList.contains('on'));   // ¿pidió contrincante? (leer antes de cerrar)
+  const sw=document.getElementById('bkSeek'); const seek = (ctx==='full'||ctx==='h0'||ctx==='h1') && !!(sw && sw.classList.contains('on'));   // ¿pidió contrincante? (leer antes de cerrar)
   closeModal();
   try{
     const newRes = await DB.book({houseId, date, h, min, dur, type});   // el servidor valida cupo, horario, choque
@@ -4073,8 +4095,26 @@ function mergeHour(date,h){
     reservations.push({id:++resId,date,h,min:0,dur:60,house:r0.house,name:r0.name,type:'normal'});
   }
 }
+// Ver (sin gestionar) una reserva hecha por OTRO miembro de la misma casa (2B).
+function openHouseResInfo(r){
+  const d=dateAt(r.date,r.h);
+  const dayTitle=`${cap1(['domingo','lunes','martes','miércoles','jueves','viernes','sábado'][d.getDay()])} ${d.getDate()} de ${MESES[d.getMonth()]}`;
+  const startMin=r.h*60+(r.min||0);
+  const who=r.name||'otro miembro de tu casa', first=who.split(' ')[0];
+  const modalEl=document.getElementById('modal'); modalEl.classList.add('fb');
+  modalEl.innerHTML=`
+    <button class="fb-x" onclick="closeModal()" aria-label="Cerrar">${svgIco('<path d="M18 6 6 18M6 6l12 12"/>',20)}</button>
+    <div class="fb-head"><div class="fb-day">${dayTitle}</div></div>
+    <div class="fb-range">${bookRangeTxt(startMin, r.dur)}</div>
+    <div class="fb-mid">
+      <div style="text-align:center;font-size:15px;color:var(--court);margin-top:4px">Reservó <b>${who}</b> · ${HOUSE_ICON}${houseNum(r.house)}</div>
+      <div style="text-align:center;font-size:13px;color:var(--muted);margin-top:10px;line-height:1.4;padding:0 6px">Es una reserva de tu casa, pero solo ${first} puede cancelarla o cambiarla. Comparten la misma bolsa de horas de la semana.</div>
+    </div>`;
+  document.getElementById('modalBg').classList.add('show');
+}
 function openMyRes(id){
   const r=reservations.find(x=>x.id===id);if(!r)return;
+  if(isMember() && !r.mine) return openHouseResInfo(r);   // reserva de otro miembro de la casa: solo lectura (2B)
   const d=dateAt(r.date,r.h);
   const isClass=(r.type==='class');
   const cancelable = isClass ? (d-NOW)>3600000 : (d-NOW)>1200000;   // clase: 1 h antes; normal: hasta 20 min antes
