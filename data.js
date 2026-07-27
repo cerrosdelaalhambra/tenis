@@ -333,7 +333,20 @@ async function getCalendar(role){
       m.fromHouse = (home && home!==m.house) ? home : null;   // su casa, si reservó a nombre de otra
       return m; });
   }
-  const {data}=await sb.from('v_calendar').select('id,house_label,starts_at,ends_at,type,student_name,name,by_me').gte('starts_at', cutoff).order('starts_at');
+  // Residente: la vista trae by_me (¿la hice yo? · casa compartida). Si la vista TODAVÍA no
+  // tiene by_me (SQL sin correr o caché de PostgREST sin refrescar), la consulta fallaría y el
+  // calendario se quedaría VACÍO (todo se vería libre). Por eso, si falla, recargamos SIN by_me
+  // para que el calendario nunca quede vacío; la marca "mía" la deduce loadData por casa (modo compatible).
+  let {data,error}=await sb.from('v_calendar')
+    .select('id,house_label,starts_at,ends_at,type,student_name,name,by_me')
+    .gte('starts_at', cutoff).order('starts_at');
+  if(error){
+    console.warn('getCalendar: by_me no disponible aún, modo compatible:', error.message);
+    const r2=await sb.from('v_calendar')
+      .select('id,house_label,starts_at,ends_at,type,student_name,name')
+      .gte('starts_at', cutoff).order('starts_at');
+    return (r2.data||[]).map(r=>{ const m=mapReservation(r); m.mine=undefined; return m; });
+  }
   return (data||[]).map(mapReservation);
 }
 async function primaryHouseMap(){                   // profile_id -> etiqueta de su casa principal
