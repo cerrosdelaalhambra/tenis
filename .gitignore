@@ -1,0 +1,39 @@
+# ============================================================================
+#  Qué NO debe subirse al repositorio público (GitHub Pages sirve el repo,
+#  así que cualquier archivo aquí quedaría descargable por cualquiera).
+#
+#  El repo SOLO debe tener: index.html, data.js, og.png,
+#  y .github/workflows/keepalive.yml
+# ============================================================================
+
+# Contraseñas y llaves — JAMÁS
+CREDENCIALES_PRIVADAS.md
+
+# SQL: contiene el esquema y datos internos
+*.sql
+
+# Funciones de servidor (se despliegan en Supabase, no en la web)
+edge_*.ts
+
+# Documentos internos / privados
+INSTRUCCIONES_*.md
+PLAN_*.md
+REQUERIMIENTOS.md
+Valoracion_App_Tenis.*
+Que_Incluye_El_Pago.*
+Calendario_Como_Replicarlo.md
+Calendario_Demo.html
+PLAN_DE_RECUPERACION.md
+
+# Contexto para IA / desarrollador (internos, no van al sitio público)
+CLAUDE.md
+ARQUITECTURA_TECNICA.md
+INFORME_SEGURIDAD.md
+
+# Prototipos y pruebas
+prototipo.html
+test_conexion.html
+
+# Basura de macOS y credenciales locales (direnv)
+.DS_Store
+.envrc
