@@ -635,6 +635,17 @@ const Rain = {
   async activate(hours){ const {data,error}=await sb.rpc('activate_rain',{p_hours:hours}); if(error) throw mapError(error); return data; },
   async deactivate(){ const {error}=await sb.rpc('deactivate_rain'); if(error) throw mapError(error); }
 };
+/* ===== Reunión de propietarios: asistencia por persona (supabase_reunion.sql) ===== */
+const Meeting = {
+  // true/false si ya respondió, null si no ha respondido, undefined si no se pudo saber (SQL no desplegado / sin red)
+  async mine(key, profileId){
+    const {data,error}=await sb.from('meeting_rsvp').select('attending').eq('meeting_key',key).eq('profile_id',profileId).maybeSingle();
+    if(error){ console.warn('meeting_rsvp:', error.message); return undefined; }
+    return data ? data.attending : null;
+  },
+  async answer(key, attending){ const {error}=await sb.rpc('rsvp_meeting',{p_key:key, p_attending:attending}); if(error) throw mapError(error); },
+  async summary(key){ const {data,error}=await sb.rpc('meeting_summary',{p_key:key}); if(error) throw mapError(error); return data||[]; }
+};
 async function markNotif(id, status){ const {error}=await sb.from('notifications').update({status, read:true}).eq('id',id); if(error) throw mapError(error); }
 /* ===== Contrincante (buscar con quién jugar) ===== */
 async function requestMatch(resId){ const {data,error}=await sb.rpc('request_match',{p_res:resId}); if(error) throw mapError(error); return data; }
@@ -669,7 +680,7 @@ async function clearNotifs(profileId){
 
 /* ===== API pública del módulo ===== */
 window.DB = {
-  Auth, Admin, Rain,
+  Auth, Admin, Rain, Meeting,
   fetchAll, book, updateReservation, cancel, requestCancel, decideCancel, markNotif, markAllRead, clearNotifs,
   requestMatch, acceptMatch, rejectMatch, cancelMatch,
   getProfClasses, changeClassHouse, releaseClass, markAbsence, unmarkAbsence, setClassTemplate,

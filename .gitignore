@@ -37,3 +37,6 @@ test_conexion.html
 # Basura de macOS y credenciales locales (direnv)
 .DS_Store
 .envrc
+
+# Configuración local de Claude Code (permisos y ayudantes; no van al sitio público)
+.claude/
