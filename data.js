@@ -641,9 +641,10 @@ const Meeting = {
   async mine(key, profileId){
     const {data,error}=await sb.from('meeting_rsvp').select('attending').eq('meeting_key',key).eq('profile_id',profileId).maybeSingle();
     if(error){ console.warn('meeting_rsvp:', error.message); return undefined; }
-    return data ? data.attending : null;
+    return data ? data.attending : null;          // "más tarde" se guarda como NULL → se vuelve a preguntar
   },
   async answer(key, attending){ const {error}=await sb.rpc('rsvp_meeting',{p_key:key, p_attending:attending}); if(error) throw mapError(error); },
+  async later(key){ const {error}=await sb.rpc('rsvp_meeting_later',{p_key:key}); if(error) console.warn('rsvp_meeting_later:', error.message); },   // "responder más tarde" (attending NULL)
   async summary(key){ const {data,error}=await sb.rpc('meeting_summary',{p_key:key}); if(error) throw mapError(error); return data||[]; }
 };
 async function markNotif(id, status){ const {error}=await sb.from('notifications').update({status, read:true}).eq('id',id); if(error) throw mapError(error); }
