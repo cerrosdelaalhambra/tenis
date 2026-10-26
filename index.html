@@ -4460,6 +4460,15 @@ async function doClose(){
     toast('Cancha cerrada · '+desc);
   }catch(e){ toast(e.message,'warn'); }
 }
+// iOS a veces deja la barra inferior fija "flotando" a media pantalla después de cerrar un modal
+// (con la página bajada) o al cambiar el alto visible. Sacarla y volverla a poner la re-ancla abajo.
+// No se usa transform en .tabbar: rompe el área táctil en iOS (ver CSS de .tabbar).
+function reanchorTabbar(){
+  const tb=document.getElementById('tabbar');
+  if(!tb || tb.style.display==='none') return;
+  tb.style.display='none'; void tb.offsetHeight; tb.style.display='';
+}
+if(window.visualViewport) window.visualViewport.addEventListener('resize', reanchorTabbar);
 function closeModal(){
   const bg=document.getElementById('modalBg'), m=document.getElementById('modal');
   if(!bg || !bg.classList.contains('show')) return;
@@ -4467,7 +4476,8 @@ function closeModal(){
   let done=false, a1=null, a2=null;
   const finish=()=>{ if(done) return; done=true;
     try{ a1&&a1.cancel(); a2&&a2.cancel(); }catch(_){}
-    bg.classList.remove('show'); if(m){ m.classList.remove('fb'); m.style.transform=''; m.style.opacity=''; } bg.style.opacity=''; };
+    bg.classList.remove('show'); if(m){ m.classList.remove('fb'); m.style.transform=''; m.style.opacity=''; } bg.style.opacity='';
+    reanchorTabbar(); };
   if(!m || !m.animate){ finish(); return; }                 // respaldo sin Web Animations
   try{
     a1=m.animate([{transform:'none',opacity:1},{transform:isFb?'translateY(72px) scale(.965)':'translateY(56px)',opacity:0}],
