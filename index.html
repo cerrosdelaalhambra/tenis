@@ -1191,7 +1191,7 @@ if('serviceWorker' in navigator){
 /* ======================= DATA ======================= */
 let NOW = new Date(); // hora real. Se re-sincroniza al volver a la app (syncClock) para no quedar congelada.
 let APP_START = Date.now(); // base de liveNow(); DEBE existir antes del primer _computeOWS() (si no, TDZ y la app se cuelga en el splash)
-const APP_VERSION = '2026-10-26c'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
+const APP_VERSION = '2026-10-27a'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
 const DOW = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
 const DOWL = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const MON = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
@@ -1270,6 +1270,11 @@ function isMaintHalf(dow,h,half){
   const sStart=h*60+half*30, sEnd=sStart+30;
   return MAINT_SCHEDULE.some(r=>r.dow===dow && r.startMin<sEnd && r.endMin>sStart);
 }
+// Mantenimiento que arranca a mitad de una media hora (p. ej. 6:40): esa media hora (6:30–7:00) queda
+// bloqueada, y quien reserva la media hora anterior (6:00–6:30) paga 30 min pero juega hasta las 6:40.
+function maintCutStart(dow,s){ const m=(MAINT_SCHEDULE||[]).filter(r=>r.dow===dow && r.startMin>s && r.startMin<s+30).map(r=>r.startMin); return m.length?Math.min(...m):null; }
+function playEndMin(date,endMin){ return maintCutStart(dateAt(date,0).getDay(), endMin) || endMin; }   // hasta cuándo se juega lo que termina en endMin
+function maintStartInHalf(date,s){ const d=dateAt(date,0).getDay(); const m=(MAINT_SCHEDULE||[]).filter(r=>r.dow===d && r.startMin<s+30 && r.endMin>s).map(r=>Math.max(s,r.startMin)); return m.length?Math.min(...m):s; }
 function isProfHalf(dow,h,half){
   const sStart=h*60+half*30, sEnd=sStart+30;
   // Horario editable (mismo criterio de solape que el servidor). Si está vacío, usa el respaldo fijo.
@@ -2450,7 +2455,8 @@ function houseTotalRemaining(house){ return blocksList().reduce((s,b)=>s+blockRe
 function amHour(h){ const ap=h<12?'a.m.':'p.m.'; const hh=h%12||12; return hh+' '+ap; }
 function amRange(h){ const s=h,e=h+1,ap=x=>x<12?'a.m.':'p.m.',hh=x=>x%12||12;
   return ap(s)===ap(e)? `${hh(s)} a ${hh(e)} ${ap(e)}` : `${hh(s)} ${ap(s)} a ${hh(e)} ${ap(e)}`; }
-function amRangeHalf(h,half){ const sMin=h*60+half*30,eMin=sMin+30;
+function amRangeHalf(h,half){ const sMin=h*60+half*30; return amRangeMin(sMin,sMin+30); }
+function amRangeMin(sMin,eMin){
   const ap=t=>Math.floor(t/60)<12?'a.m.':'p.m.',hh=t=>{const H=Math.floor(t/60)%12;return H||12;},mm=t=>t%60?':'+String(t%60).padStart(2,'0'):'',f=t=>hh(t)+mm(t);
   return ap(sMin)===ap(eMin)? `${f(sMin)} a ${f(eMin)} ${ap(eMin)}` : `${f(sMin)} ${ap(sMin)} a ${f(eMin)} ${ap(eMin)}`; }
 // ¿La casa (o alguna de las del máster) tiene horas en el tramo de ese día?
@@ -2755,7 +2761,9 @@ const M_CHEV='<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentC
 // Un solo renglón: rango a la izquierda, contenido a la derecha.
 function msRow(cls,t,r,click,chev){ return `<div class="mslot ${cls}"${click?' '+click:''}><span class="ms-t">${t}</span><span class="ms-r">${r}</span>${chev?M_CHEV:''}</div>`; }
 function mHalf(date,h,half,s){
-  const T=amRangeHalf(h,half), k=s.kind;
+  const k=s.kind, s0=h*60+half*30;
+  // con un mantenimiento a mitad de media hora (6:40): la anterior se muestra "6 a 6:40" y el mantenimiento "6:40 a 7"
+  const T = k==='maint' ? amRangeMin(maintStartInHalf(date,s0), s0+30) : amRangeMin(s0, playEndMin(date,s0+30));
   if(k==='mine'){const r=s.res;return msRow('mine',T,`${HOUSE_ICON}${houseNum(r.house)}${r.name?' · '+r.name:''}`,`onclick="openMyRes(${r.id})"`,true);}
   if(k==='reserved'){const r=s.res;const st=isStaff()||profCanRelease(r.type);return msRow('reserved',T,`${HOUSE_ICON}${houseNum(r.house)}${r.name?' · '+r.name:''}`,st?`onclick="openAdminRes(${r.id})"`:'',st);}
   if(k==='classinfo'){const r=s.res;return r.school?msRow('clasem',T,'Escuela de tenis','',false):msRow('clasem',T,`${HOUSE_ICON}${houseNum(r.house)}${r.name?' · '+r.name:''} (clase)`,'',false);}
@@ -2806,7 +2814,7 @@ function viewMine(){
   const ws=ymd(OPEN_WEEK_START);
   const past=mine.filter(r=>dateAt(r.date,r.h)<NOW && r.date>=ws && r.date<=OPEN_WEEK_END).sort((a,b)=>dateAt(b.date,b.h)-dateAt(a.date,a.h));
   const DIAS_FULL=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
-  const resRangeTxt=(r)=>{ const eTot=r.h*60+(r.min||0)+r.dur, eH=Math.floor(eTot/60), eM=eTot%60;
+  const resRangeTxt=(r)=>{ const eTot=playEndMin(r.date, r.h*60+(r.min||0)+r.dur), eH=Math.floor(eTot/60), eM=eTot%60;
     const ap=x=>x<12?'a.m.':'p.m.', hh=x=>x%12||12, fmt=(H,M)=>hh(H)+':'+String(M).padStart(2,'0');
     return ap(r.h)===ap(eH) ? `${fmt(r.h,r.min||0)} a ${fmt(eH,eM)} ${ap(eH)}` : `${fmt(r.h,r.min||0)} ${ap(r.h)} a ${fmt(eH,eM)} ${ap(eH)}`; };
   const card=(r)=>{
@@ -3442,7 +3450,7 @@ function initMaintDraft(){
 }
 function maintEditorHTML(){
   if(!state.maintDraft) initMaintDraft();
-  const step=HALF_HOURS?30:60, first=HALF_HOURS?240:300;
+  const step=10, first=HALF_HOURS?240:300;   // cada 10 min: permite mantenimientos cortos (p. ej. 6:40 a 7:00)
   const opts=[]; for(let m=first;m<=1380;m+=step) opts.push({v:m,label:schedMinLabel(m)});
   const order=[1,2,3,4,5,6];
   // Se muestra un día si tiene elementos O si quedó vacío pero con cambios sin guardar
@@ -4195,22 +4203,22 @@ function fullDurs(date,h,house,half){
   if(!durs.length) durs.push(HALF_HOURS?30:60);
   return durs.slice(0,4);   // hasta 4 opciones (2×2)
 }
-function bookRangeTxt(startMin,dur){
-  const s=startMin, e=s+dur;
+function bookRangeTxt(startMin,dur,date){
+  const s=startMin, e=date?playEndMin(date,s+dur):s+dur;   // si después arranca un mantenimiento a mitad de media hora, se juega hasta ese momento
   const ap=t=>Math.floor(t/60)<12?'a.m.':'p.m.', hh=t=>{const H=Math.floor(t/60)%12;return H||12;}, mm=t=>':'+String(t%60).padStart(2,'0'), f=t=>hh(t)+mm(t);   // siempre con :00
   return ap(s)===ap(e) ? f(s)+' – '+f(e)+' '+ap(e) : f(s)+' '+ap(s)+' – '+f(e)+' '+ap(e);
 }
 function setBkRange(txt){ const rg=document.getElementById('bkRange'); if(!rg) return; rg.textContent=txt; rg.classList.remove('pop'); void rg.offsetWidth; rg.classList.add('pop'); }
 function durPickFull(el){
   document.querySelectorAll('#durSeg .fb-dur').forEach(b=>b.classList.remove('on')); el.classList.add('on');
-  const c=state.bookCtx; if(c) setBkRange(bookRangeTxt(c.start!=null?c.start:c.h*60, +el.dataset.d));
+  const c=state.bookCtx; if(c) setBkRange(bookRangeTxt(c.start!=null?c.start:c.h*60, +el.dataset.d, c.date));
   setBkCost(+el.dataset.d);
 }
 function renderFullGrid(house){   // recalcula duraciones al cambiar de casa (máster/portería)
   const c=state.bookCtx; if(!c) return;
   const durs=fullDurs(c.date,c.h,house,c.half||0), def=durs.includes(60)?60:durs[0];
   const grid=document.getElementById('durSeg'); if(grid) grid.innerHTML=durs.map(dd=>`<button class="fb-dur${dd===def?' on':''}" data-d="${dd}" onclick="durPickFull(this)">${durLabel(dd)}</button>`).join('');
-  setBkRange(bookRangeTxt(c.start!=null?c.start:c.h*60,def));
+  setBkRange(bookRangeTxt(c.start!=null?c.start:c.h*60,def,c.date));
   setBkCost(def);
 }
 // ---- Editar duración de una reserva existente (pantalla "Mi reserva") ----
@@ -4233,7 +4241,7 @@ function editDurs(r){
 function durPickEdit(el){
   document.querySelectorAll('#durSeg .fb-dur').forEach(b=>b.classList.remove('on')); el.classList.add('on');
   const er=state.editRes; if(!er) return;
-  setBkRange(bookRangeTxt(er.h*60+er.min, +el.dataset.d));
+  setBkRange(bookRangeTxt(er.h*60+er.min, +el.dataset.d, er.date));
   const sv=document.getElementById('erSave'); if(sv) sv.style.display=(+el.dataset.d!==er.curDur)?'block':'none';
 }
 async function saveEditRes(){
@@ -4356,7 +4364,7 @@ function openBook(date,h,ctx){
       <div class="fb-head"><div class="fb-day">${dayTitle}</div></div>
       ${houseSelect?`<div class="fb-house">${houseSelect}</div>`:''}
       <div class="fb-grid" id="durSeg">${durBtns}</div>
-      <div class="fb-range" id="bkRange">${bookRangeTxt(bkStart,def)}</div>
+      <div class="fb-range" id="bkRange">${bookRangeTxt(bkStart,def,date)}</div>
       ${FREE_ENABLED?`<div class="fb-cost" id="bkCost">${bookCostTxt(date,bkStart,def)}</div>`:''}
       <div class="fb-mid">
         ${isMember()?`<div class="fb-seek">
@@ -4471,7 +4479,7 @@ function openHouseResInfo(r){
   modalEl.innerHTML=`
     <button class="fb-x" onclick="closeModal()" aria-label="Cerrar">${svgIco('<path d="M18 6 6 18M6 6l12 12"/>',20)}</button>
     <div class="fb-head"><div class="fb-day">${dayTitle}</div></div>
-    <div class="fb-range">${bookRangeTxt(startMin, r.dur)}</div>
+    <div class="fb-range">${bookRangeTxt(startMin, r.dur, r.date)}</div>
     <div class="fb-mid">
       <div style="text-align:center;font-size:15px;color:var(--court);margin-top:4px">Reservó <b>${who}</b> · ${HOUSE_ICON}${houseNum(r.house)}</div>
       <div style="text-align:center;font-size:13px;color:var(--muted);margin-top:10px;line-height:1.4;padding:0 6px">Es una reserva de tu casa, pero solo ${first} puede cancelarla o cambiarla. Comparten la misma bolsa de horas de la semana.</div>
@@ -4511,7 +4519,7 @@ function openMyRes(id){
     <button class="fb-x" onclick="closeModal()" aria-label="Cerrar">${svgIco('<path d="M18 6 6 18M6 6l12 12"/>',20)}</button>
     <div class="fb-head"><div class="fb-day">${dayTitle}</div></div>
     ${gridHTML}
-    <div class="fb-range" id="bkRange">${bookRangeTxt(startMin, r.dur)}</div>
+    <div class="fb-range" id="bkRange">${bookRangeTxt(startMin, r.dur, r.date)}</div>
     <div class="fb-mid">${matchHTML}</div>
     ${canEdit?`<button class="btn-primary fb-save" id="erSave" style="display:none" onclick="saveEditRes()">Guardar cambio de duración</button>`:''}
     ${cancelable?`<button class="btn-primary fb-confirm" style="background:var(--danger)" onclick="cancelRes(${r.id})">Cancelar reserva</button>`
