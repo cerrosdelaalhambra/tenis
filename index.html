@@ -417,6 +417,9 @@
   .s-bonus{background:#fff;border:1.5px dashed var(--ball-dark);color:var(--court);cursor:pointer;position:relative}
   .s-bonus:hover{background:var(--court-soft)}
   .bstar{color:#f2b705}
+  .fb-cost{text-align:center;font-size:14px;font-weight:600;color:var(--muted);margin-top:-4px}
+  .mr-libre{font-size:12px;font-weight:700;color:var(--court);background:var(--court-soft);padding:2px 7px;border-radius:8px;margin-left:4px;white-space:nowrap}
+  .mr-libre::first-letter{color:#f2b705}
   .s-bonus .bstar{position:absolute;top:50%;right:8px;transform:translateY(-50%);font-size:12px}
   .cdot-amber::before{background:#d9932a}
   .s-flex{background:#fff7e6;border:1.5px dashed #e0a92e;color:#7a5410;cursor:pointer;position:relative}
@@ -1166,7 +1169,7 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<script src="data.js?v=20261025b"></script>
+<script src="data.js?v=20261026a"></script>
 <script>
 /* PWA: registra el service worker (ruta relativa para que funcione bajo /tenis/) */
 if('serviceWorker' in navigator){
@@ -1343,6 +1346,9 @@ let PROF_FLEX = false;    // modo flexible: horas del profesor reservables por e
 let PROF_CLASSES = [];    // clases del profesor (casa + nombre del alumno), solo en el rol 'prof'
 let ABSENCES = [];        // ausencias del profesor (rangos por fecha); esas horas quedan libres (gastan cupo)
 let MAINT_SCHEDULE = [];  // mantenimiento recurrente (semanal); esas franjas no se pueden reservar
+let PEAK_SCHEDULE = [];   // horas pico (semanal): con las horas libres activas, solo estas gastan cupo
+let FREE_ENABLED = false; // horas libres (apagado por defecto: todo gasta cupo, como antes)
+let FREE_MAX = 2;         // horas libres pendientes a la vez, por residente
 let CLASS_TEMPLATE = [];  // plantilla de clases (dow, horas, casa, nombre) — para exportar/importar Excel (admin)
 let RECURRING = [];       // horarios permanentes (clases fijas), desde la base
 let PERM_ENABLED = true; // horarios permanentes: SIEMPRE activos (ya no hay interruptor)
@@ -1497,6 +1503,7 @@ async function loadData(){
   state.rainHours = rainC ? Math.max(1,Math.round((rainC.endTs-rainC.startTs)/3600000)) : 0;
   HOLIDAYS=b.holidays||new Set(); notifs=b.notifs||[]; activity=b.activity||[]; users=b.users||[];
   PROF_SCHEDULE=b.profSchedule||[]; PROF_FLEX=!!b.profFlexible; PROF_CLASSES=b.profClasses||[]; ABSENCES=b.absences||[]; MAINT_SCHEDULE=b.maintSchedule||[]; CLASS_TEMPLATE=b.classTemplate||[];
+  PEAK_SCHEDULE=b.peakSchedule||[]; FREE_ENABLED=!!b.freeEnabled; FREE_MAX=b.freeMax!=null?b.freeMax:2;
   RECURRING=b.recurring||[]; PERM_ENABLED=true; PERM_ROUTE=b.permRoute||'both';   // permanentes siempre activos
   houses=(b.houses||[]).map(h=>h.label); houseIdByLabel={}; houseLabelById={};
   (b.houses||[]).forEach(h=>{ houseIdByLabel[h.label]=h.id; houseLabelById[h.id]=h.label; });
@@ -1858,6 +1865,7 @@ function go(view){ const _old=state.view; state.view=view; try{localStorage.setI
   state.histQuery='';        // el historial abre sin filtro
   state.profAction=null;     // el profesor sale del flujo de acción al cambiar de pestaña
   state.blocksDraft=null;    // el editor de tramos se reinicia con lo guardado al entrar
+  state.peakDraft=null;      // igual el editor de horas pico
   if(view==='calendar') state.pendingScrollNow=true;   // al entrar al calendario, baja a la hora actual
   if(view==='avail'){ state.schedDraft=null; state.maintDraft=null; }   // los editores se reinician con lo guardado al entrar
   if(view==='notif'){
@@ -2065,6 +2073,7 @@ function cupoRules(){
     + row('★', 'Las clases con el profesor no consumen horas.', true)
     + row(svgIco(BALL_P,17), 'Si la cancha está libre y ya no te quedan horas, puedes jugar; pero si llega alguien con reserva, debes cederla.');
   if(multiBlocks()) out += row(svgIco(CLK_P,17), 'Las horas de cada tramo son solo para esos días. Lo que no uses en un tramo no pasa al otro.');
+  if(FREE_ENABLED) out += row('★', `Las horas marcadas ★ Libre (fuera de las horas pico) no gastan tus horas. Puedes tener hasta ${fmtH(FREE_MAX)} libres reservadas a la vez; cuando juegas una, puedes reservar otra.`, true);
   return `<div class="cc-rules">${out}</div>`;
 }
 /* ======================= REGLAMENTO (admin, residentes y profesor) ======================= */
@@ -2223,13 +2232,18 @@ function viewHoras(){   // pestaña "Horas": un renglón por tramo, con la expli
   const cards=blks.map((b,i)=>{
     const left = hs.length>1 ? hs.reduce((s,hh)=>s+blockRemaining(hh,b),0) : blockRemaining(hs[0]||'',b);
     const days = multi ? blockLabelLong(b) : 'Toda la semana';
-    const title = multi ? ('Bloque '+(i+1)) : 'Tus horas';
+    const title = FREE_ENABLED ? 'Horas pico' : (multi ? ('Bloque '+(i+1)) : 'Tus horas');
     return `<div class="hb-card">
       <div class="hb-title">${title}</div>
       <div class="hb-body"><span class="hb-days">${days}</span><span class="hb-badge${left<=0?' none':''}">${fmtH(left)} disponible${left===1?'':'s'}</span></div>
     </div>`;
   }).join('');
-  return `<div class="hb-list">${cards}</div>${cupoRules()}`;
+  const fl=freeLeft();
+  const libre = FREE_ENABLED ? `<div class="hb-card">
+      <div class="hb-title"><span class="bstar">★</span> Horas libres</div>
+      <div class="hb-body"><span class="hb-days">Fuera de las horas pico · a la vez</span><span class="hb-badge${fl<=0?' none':''}">${fmtH(fl)} de ${fmtH(FREE_MAX)}</span></div>
+    </div>` : '';
+  return `<div class="hb-list">${cards}${libre}</div>${cupoRules()}`;
 }
 function cupoCard(){
   const hs=myHouses();
@@ -2368,7 +2382,7 @@ function blockForDate(date){ const dw=dateAt(date,0).getDay(); const l=blocksLis
 function blockLabel(b){ const idxs=b.dows.map(d=>WEEK_ORDER.indexOf(d)).filter(i=>i>=0).sort((x,y)=>x-y); if(!idxs.length) return ''; const a=WEEK_ORDER[idxs[0]], z=WEEK_ORDER[idxs[idxs.length-1]]; return idxs.length===1?DOW_ABBR[a]:DOW_ABBR[a]+'–'+DOW_ABBR[z]; }
 function houseUsedInBlock(house,b){ const ws=ymd(OPEN_WEEK_START), we=OPEN_WEEK_END;
   return reservations.filter(r=>r.house===house&&r.type==='normal'&&r.date>=ws&&r.date<=we&&b.dows.includes(dateAt(r.date,0).getDay()))
-    .reduce((s,r)=>s+r.dur/60,0); }
+    .reduce((s,r)=>s+resPeakMin(r)/60,0); }
 function blockRemaining(house,b){ return Math.max(0, b.hours - houseUsedInBlock(house,b)); }
 function houseTotalRemaining(house){ return blocksList().reduce((s,b)=>s+blockRemaining(house,b),0); }
 // Rango horario claro para el calendario: "5 a 6 a.m." (una sola vez el a.m./p.m. si coincide)
@@ -2380,6 +2394,114 @@ function amRangeHalf(h,half){ const sMin=h*60+half*30,eMin=sMin+30;
   return ap(sMin)===ap(eMin)? `${f(sMin)} a ${f(eMin)} ${ap(eMin)}` : `${f(sMin)} ${ap(sMin)} a ${f(eMin)} ${ap(eMin)}`; }
 // ¿La casa (o alguna de las del máster) tiene horas en el tramo de ese día?
 function hasHoursForDate(date){ if(!isMember()) return true; const blk=blockForDate(date); return myHouses().some(h=>blockRemaining(h,blk)>0); }
+/* ===== Horas libres: con FREE_ENABLED, el cupo solo se gasta en horas pico ===== */
+// Minutos de la franja que caen en hora pico (cada minuto cuenta una vez aunque dos franjas se solapen). Igual a peak_minutes() del servidor.
+function peakMinutes(date,startMin,endMin){
+  const d=dateAt(date,0).getDay(); let m=0;
+  for(let t=startMin;t<endMin;t+=5) if(PEAK_SCHEDULE.some(p=>p.dow===d && t>=p.startMin && t<p.endMin)) m+=5;
+  return m;
+}
+function resPeakMin(r){ const s=r.h*60+(r.min||0); return FREE_ENABLED ? peakMinutes(r.date,s,s+r.dur) : r.dur; }
+function isLibre(date,startMin,endMin){ return FREE_ENABLED && peakMinutes(date,startMin,endMin)===0; }
+// Horas libres pendientes por jugar del residente (por persona, no por casa)
+function myFreePending(){
+  const me=state.profile&&state.profile.id, now=liveNow().getTime();
+  return reservations.filter(r=>r.type==='normal' && r.profile_id===me && dateAt(r.date,r.h).getTime()+((r.min||0)+r.dur)*60000>now)
+    .reduce((s,r)=>s+(r.dur-resPeakMin(r))/60,0);
+}
+function freeLeft(){ return Math.max(0, FREE_MAX-myFreePending()); }
+// ¿Cabe una reserva de 'dur' minutos desde 'startMin'? Pico contra el cupo del tramo; libre contra las horas libres del residente.
+function bookFits(date,startMin,dur,house){
+  const pk=FREE_ENABLED?peakMinutes(date,startMin,startMin+dur):dur, fr=dur-pk;
+  if(pk>0 && pk>Math.round(blockRemaining(house,blockForDate(date))*60)) return false;
+  if(fr>0 && isMember() && fr>Math.round(freeLeft()*60)) return false;
+  return true;
+}
+function bookCostTxt(date,startMin,dur){
+  const pk=peakMinutes(date,startMin,startMin+dur), fr=dur-pk, tr=multiBlocks()?' de tu tramo '+blockLabel(blockForDate(date)):' de tu semana';
+  if(!pk) return '<span class="bstar">★</span> No gasta tus horas';
+  if(!fr) return 'Gasta '+fmtH(pk/60)+tr;
+  return 'Gasta '+fmtH(pk/60)+tr+' · '+fmtH(fr/60)+' <span class="bstar">★</span> libre';
+}
+function setBkCost(dur){ const el=document.getElementById('bkCost'), c=state.bookCtx; if(el&&c) el.innerHTML=bookCostTxt(c.date,c.start!=null?c.start:c.h*60,dur); }
+// Renglón del calendario (celular) para una franja libre que no gasta cupo
+function libreRow(T,startMin,dur,canBook,click){
+  if(canBook && isMember() && freeLeft()*60<Math.min(dur,30)) return msRow('free nofit',T,'Ya tienes '+fmtH(FREE_MAX)+' libres','',false);
+  return msRow('bonus',T,'<span class="bstar">★</span> Libre',canBook?click:'',canBook);
+}
+/* ===== Admin: horas libres (interruptor, máximo a la vez y editor de horas pico) ===== */
+function freeHoursSettingsHTML(){
+  const seg=`<button class="${FREE_ENABLED?'':'on'}" onclick="setFreeEnabled(false)">Apagado</button><button class="${FREE_ENABLED?'on':''}" onclick="setFreeEnabled(true)">Activo</button>`;
+  return `<div class="set-row" style="flex-direction:column;align-items:stretch;gap:0">
+    <div class="set-t"><b><span class="bstar">★</span> Horas libres</b><p>Si está activo, solo las horas pico gastan cupo. Fuera de ellas se reserva como ★ Libre, con un máximo de horas pendientes a la vez por residente.</p></div>
+    <div class="seg" style="margin-top:12px;align-self:flex-start">${seg}</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px"><span style="font-size:13.5px;font-weight:600">Horas libres a la vez por residente</span>
+      <div class="bl-stepper"><button onclick="setFreeMax(-1)" aria-label="menos">–</button><span>${FREE_MAX} h</span><button onclick="setFreeMax(1)" aria-label="más">+</button></div></div>
+    <div class="opt-label" style="margin-top:18px">Horas pico (gastan cupo)</div>
+    <div id="peakEditor">${peakEditorHTML()}</div>
+  </div>`;
+}
+async function setFreeEnabled(on){
+  if(on===FREE_ENABLED) return;
+  if(on && !PEAK_SCHEDULE.length){ toast('Primero define las horas pico.','warn'); return; }
+  try{ await DB.Admin.setFreeEnabled(on); await loadData(); render(); toast(on?'Horas libres activadas':'Horas libres apagadas · todas las reservas gastan cupo, como antes'); }
+  catch(e){ toast(e.message,'warn'); }
+}
+async function setFreeMax(delta){
+  const v=Math.min(6,Math.max(1,FREE_MAX+delta)); if(v===FREE_MAX) return;
+  try{ await DB.Admin.setFreeMax(v); FREE_MAX=v; render(); toast('Horas libres a la vez: '+v+' h'); }
+  catch(e){ toast(e.message,'warn'); }
+}
+const PEAK_ORDER=[1,2,3,4,5,6,0];   // lunes..domingo
+function initPeakDraft(){
+  state.peakDraft={}; state.peakSaved={};
+  for(let d=0;d<7;d++) state.peakDraft[d]=[];
+  (PEAK_SCHEDULE||[]).forEach(r=>state.peakDraft[r.dow].push({startMin:r.startMin,endMin:r.endMin}));
+  for(let d=0;d<7;d++){ state.peakDraft[d].sort((a,b)=>a.startMin-b.startMin); state.peakSaved[d]=cpRanges(state.peakDraft[d]); }
+}
+function peakEditorHTML(){
+  if(!state.peakDraft) initPeakDraft();
+  const step=HALF_HOURS?30:60, opts=[]; for(let m=OPEN_START*60;m<=OPEN_END*60;m+=step) opts.push({v:m,label:schedMinLabel(m)});
+  const cards=PEAK_ORDER.map(d=>{
+    const rgs=state.peakDraft[d]||[], mins=rgs.reduce((s,r)=>s+Math.max(0,r.endMin-r.startMin),0);
+    const rows=rgs.map((rg,i)=>`<div class="sched-row">
+        ${psel('ppk_s_'+d+'_'+i, opts.filter(o=>o.v<OPEN_END*60), rg.startMin, 'peakSync')}
+        <span class="sched-a">a</span>
+        ${psel('ppk_e_'+d+'_'+i, opts.filter(o=>o.v>rg.startMin), rg.endMin, 'peakSync')}
+        <button class="sched-del" title="Quitar" onclick="peakDel(${d},${i})">✕</button>
+      </div>`).join('');
+    const dirty=!rangesEqual(rgs, state.peakSaved[d]||[]);
+    const foot=`<div class="sched-foot"><button class="sched-add" onclick="peakAdd(${d})">+ Agregar</button>${dirty?`<button class="sched-savebtn" onclick="savePeakDay(${d})">Guardar</button>`:''}</div>`;
+    return `<div class="sched-day">
+      <div class="sched-dh"><b>${SCHED_DOW_NAMES[d]}</b><span class="sched-count">${rgs.length?fmtHoras(mins):'Todo libre'}</span></div>
+      <div class="sched-body">${rows}${foot}</div>
+    </div>`;
+  }).join('');
+  return `<div class="sched-grid">${cards}</div>`;
+}
+function peakRerender(){ const el=document.getElementById('peakEditor'); if(el) el.innerHTML=peakEditorHTML(); }
+function peakSync(){
+  PEAK_ORDER.forEach(d=>{ (state.peakDraft[d]||[]).forEach((rg,i)=>{
+    const s=document.getElementById('ppk_s_'+d+'_'+i), e=document.getElementById('ppk_e_'+d+'_'+i);
+    if(s) rg.startMin=+s.value; if(e) rg.endMin=+e.value;
+    if(rg.endMin<=rg.startMin) rg.endMin=rg.startMin+(HALF_HOURS?30:60);
+  }); });
+  peakRerender();
+}
+function peakAdd(d){ (state.peakDraft[d]=state.peakDraft[d]||[]).push({startMin:1020,endMin:1080}); peakRerender(); }
+function peakDel(d,i){ state.peakDraft[d].splice(i,1); peakRerender(); }
+// Guarda SOLO ese día (los demás conservan lo guardado).
+async function savePeakDay(d){
+  const draft=state.peakDraft, saved=state.peakSaved;
+  if((draft[d]||[]).some(r=>r.endMin<=r.startMin)){ toast('Revisa: la hora de fin debe ser mayor que la de inicio.','warn'); return; }
+  const rows=[];
+  PEAK_ORDER.forEach(x=>{ const src=(x===d)?(draft[x]||[]):(saved[x]||[]); src.forEach(r=>rows.push({dow:x,startMin:r.startMin,endMin:r.endMin})); });
+  try{ await DB.Admin.setPeakSchedule(rows); }
+  catch(e){ toast(e.message,'warn'); return; }
+  saved[d]=cpRanges(draft[d]);
+  await loadData(); render();
+  toast(SCHED_DOW_NAMES[d]+' · horas pico guardadas');
+}
 /* ===== Admin: editor de tramos (repartidor de semana) ===== */
 function initBlocksDraft(){
   const ordered=blocksList().map(b=>({idxs:b.dows.map(d=>WEEK_ORDER.indexOf(d)).filter(i=>i>=0).sort((a,c)=>a-c), hours:b.hours}))
@@ -2473,7 +2595,8 @@ function halfCell(date,h,half,s){
   if(k==='past'||k==='locked'||k==='na') return `<div class="half h-na"></div>`;
   // Media hora libre: se muestra siempre como "Libre" (igual que la hora completa);
   // clickeable solo si quien mira puede reservar (el admin gestiona, no reserva).
-  return `<div class="half h-free" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'h${half}')"`:''} title="${canBookFree(date,h)?'Reservar '+rangeLabel(h,half*30,30):rangeLabel(h,half*30,30)+' · libre'}"><span class="plus">+</span>Libre</div>`;
+  if(isLibre(date,h*60+half*30,h*60+half*30+30)) return `<div class="half h-bonus" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'h${half}')"`:''} title="No gasta horas"><span><span class="plus">+</span>Libre</span><span class="bstar">★</span></div>`;
+  return `<div class="half h-free" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'h${half}')"`:''} title="${canBookFree(date,h)?'Reservar '+rangeLabel(h,half*30,30):rangeLabel(h,half*30,30)+' · libre'}"><span class="plus">+</span>${FREE_ENABLED?'Disponible':'Libre'}</div>`;
 }
 function slotHTML(date,h){
   const sc=slotCat(date,h), cat=sc.cat, res=sc.res, mc=sc.mc;
@@ -2491,7 +2614,8 @@ function slotHTML(date,h){
   if(cat==='rain') return `<div class="slot s-rain" title="Cerrada por lluvia · no disponible">${svgIco(RAIN_P,15,'#5b7fc0')}</div>`;
   if(cat==='locked') return `<div class="slot s-locked" title="Se abre el domingo a las ${rhShort()}">${svgIco('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',15)}</div>`;
   if(cat==='past') return `<div class="slot s-past" title="Hora ya pasada"><span>—</span></div>`;
-  if(cat==='free') return `<div class="slot s-free" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'full')"`:''}><b><span class="plus">+</span>Libre</b></div>`;
+  if(cat==='free' && isLibre(date,h*60,h*60+60)) return `<div class="slot s-bonus" title="No gasta horas" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'full')"`:''}><b><span class="plus">+</span>Libre</b><span class="bstar">★</span></div>`;
+  if(cat==='free') return `<div class="slot s-free" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'full')"`:''}><b><span class="plus">+</span>${FREE_ENABLED?'Disponible':'Libre'}</b></div>`;
   return '';
 }
 
@@ -2579,6 +2703,8 @@ function mHalf(date,h,half,s){
   if(k==='maint') return msRow('maint',T,`${svgIco(ICONS.tool,16,'#fff')} Mantenimiento`,'',false);
   if(k!=='free') return '';
   if(!canBookFree(date,h)) return '';
+  const hs=h*60+half*30;
+  if(isLibre(date,hs,hs+30)) return libreRow(T,hs,30,true,`onclick="openBook('${date}',${h},'h${half}')"`);   // no gasta cupo
   if(isMember() && !hasHoursForDate(date)) return msRow('free nofit',T,'Sin horas en este tramo','',false);
   return msRow('free',T,'Disponible',`onclick="openBook('${date}',${h},'h${half}')"`,true);
 }
@@ -2586,6 +2712,7 @@ function mSlot(date,h,sc){
   const cat=sc.cat,res=sc.res,mc=sc.mc, T=amRange(h);
   if(cat==='free'){
     const canBook=canBookFree(date,h);
+    if(isLibre(date,h*60,h*60+60)) return libreRow(T,h*60,60,canBook,`onclick="openBook('${date}',${h},'full')"`);   // no gasta cupo
     if(canBook && isMember() && !hasHoursForDate(date)) return msRow('free nofit',T,'Sin horas en este tramo','',false);   // sin cupo: no deja tocar
     return msRow('free',T,'Disponible',canBook?`onclick="openBook('${date}',${h},'full')"`:'',canBook);
   }
@@ -2642,7 +2769,7 @@ function viewMine(){
       actions = `<div class="mr-actions">${cancelBtn}${right}</div>`;
     }
     return `<div class="mr-item"><div class="mr-row${fut?' tap':''}"${fut?` onclick="openMyRes(${r.id})"`:''}>
-      <span class="mr-day">${dateLine}</span><span class="mr-hour">${resRangeTxt(r)}</span>
+      <span class="mr-day">${dateLine}${(FREE_ENABLED && r.type==='normal' && !resPeakMin(r))?' <span class="mr-libre">★ Libre</span>':''}</span><span class="mr-hour">${resRangeTxt(r)}</span>
     </div>${actions}</div>`;};
   let html='';
   // 1) Próximas
@@ -3561,7 +3688,8 @@ function viewUsers(){
   const cuentasFijas=`<div class="panel" style="margin-bottom:16px"><div class="panel-h"><h3>Cuentas fijas</h3><div class="spacer"></div><span style="font-size:12px;color:var(--muted)">No se eliminan</span></div>${fixedRows}</div>`;
   // 4) Reglas de reserva (config)
   const reglas=`<div class="panel"><div class="panel-h"><h3>Reglas de reserva</h3></div>
-      <div class="set-row" style="flex-direction:column;align-items:stretch;gap:0"><div class="set-t"><b>Horas de reserva por semana</b><p>Divide la semana en hasta 3 tramos consecutivos, cada uno con sus horas.</p></div><div id="blocksEditor" style="margin-top:14px">${blocksEditorHTML()}</div></div>
+      <div class="set-row" style="flex-direction:column;align-items:stretch;gap:0"><div class="set-t"><b>Horas de reserva por semana</b><p>Divide la semana en hasta 3 tramos consecutivos, cada uno con sus horas.${FREE_ENABLED?' Con las horas libres activas, estas horas solo se gastan en horas pico.':''}</p></div><div id="blocksEditor" style="margin-top:14px">${blocksEditorHTML()}</div></div>
+      ${freeHoursSettingsHTML()}
       <div class="set-row"><div class="set-t"><b>Reinicio semanal (domingo)</b><p>Hora del domingo en que se reinician las horas de todos.</p></div><div class="seg">${resetSeg}</div></div>
     </div>`;
   return meetingAdminCard() + solicitudes + residentes + cuentasFijas + reglas +
@@ -3975,12 +4103,11 @@ function freeRunMin(date,h,half){
 function durLabel(m){ if(m<60) return m+' min'; const H=Math.floor(m/60), r=m%60; return H+(r>=30?'½':'')+' h'; }
 // Opciones de duración según lo libre que esté la cancha y las horas que le quedan a la casa.
 function durSegHTML(date,h,house){
-  const left=blockRemaining(house, blockForDate(date));   // tope = horas restantes del TRAMO de ese día
-  const cap=Math.min(freeRunMin(date,h,0), Math.round(left*60));   // tope = min(libre seguido, horas de la casa)
+  const run=freeRunMin(date,h,0);                    // tope = libre seguido, y que quepa en el cupo pico / horas libres
   const step=HALF_HOURS?30:60;
   const durs=[];
-  if(HALF_HOURS && cap>=30) durs.push(30);          // media hora (solo si está permitida)
-  for(let d=60; d<=cap; d+=step) durs.push(d);       // 1h, (1½), 2h, ... hasta el tope
+  if(HALF_HOURS && run>=30 && bookFits(date,h*60,30,house)) durs.push(30);   // media hora (solo si está permitida)
+  for(let d=60; d<=run; d+=step) if(bookFits(date,h*60,d,house)) durs.push(d);   // 1h, (1½), 2h, ... hasta el tope
   if(!durs.length) durs.push(HALF_HOURS?30:60);
   const def = durs.includes(60)?60:durs[0];
   const btns = durs.map(d=>`<button class="${d===def?'on':''}" data-d="${d}" onclick="durPick(this)">${durLabel(d)}</button>`).join('');
@@ -3998,10 +4125,10 @@ function durPick(el){ segPick(el,'durSeg'); const hw=document.getElementById('ha
 // ---- Modal de reservar a pantalla completa (contexto 'full') ----
 function fullDurs(date,h,house,half){
   half=half||0;
-  const cap=Math.min(freeRunMin(date,h,half), Math.round(blockRemaining(house, blockForDate(date))*60));
+  const run=freeRunMin(date,h,half), st=h*60+half*30;   // tope: libre seguido + cupo pico del tramo + horas libres a la vez
   const step=HALF_HOURS?30:60; let durs=[];
-  if(HALF_HOURS && cap>=30) durs.push(30);
-  for(let dd=60; dd<=cap; dd+=step) durs.push(dd);
+  if(HALF_HOURS && run>=30 && bookFits(date,st,30,house)) durs.push(30);
+  for(let dd=60; dd<=run; dd+=step) if(bookFits(date,st,dd,house)) durs.push(dd);
   if(!durs.length) durs.push(HALF_HOURS?30:60);
   return durs.slice(0,4);   // hasta 4 opciones (2×2)
 }
@@ -4014,20 +4141,26 @@ function setBkRange(txt){ const rg=document.getElementById('bkRange'); if(!rg) r
 function durPickFull(el){
   document.querySelectorAll('#durSeg .fb-dur').forEach(b=>b.classList.remove('on')); el.classList.add('on');
   const c=state.bookCtx; if(c) setBkRange(bookRangeTxt(c.start!=null?c.start:c.h*60, +el.dataset.d));
+  setBkCost(+el.dataset.d);
 }
 function renderFullGrid(house){   // recalcula duraciones al cambiar de casa (máster/portería)
   const c=state.bookCtx; if(!c) return;
   const durs=fullDurs(c.date,c.h,house,c.half||0), def=durs.includes(60)?60:durs[0];
   const grid=document.getElementById('durSeg'); if(grid) grid.innerHTML=durs.map(dd=>`<button class="fb-dur${dd===def?' on':''}" data-d="${dd}" onclick="durPickFull(this)">${durLabel(dd)}</button>`).join('');
   setBkRange(bookRangeTxt(c.start!=null?c.start:c.h*60,def));
+  setBkCost(def);
 }
 // ---- Editar duración de una reserva existente (pantalla "Mi reserva") ----
 function editDurs(r){
   const endMin=r.h*60+(r.min||0)+r.dur, endH=Math.floor(endMin/60), endHalf=(endMin%60)>=30?1:0;
   const freeAfter=freeRunMin(r.date,endH,endHalf);                              // minutos libres tras el fin actual
-  const cupoCap=Math.round((blockRemaining(r.house,blockForDate(r.date))+r.dur/60)*60);   // tope de cupo (esta reserva ya cuenta)
-  const maxDur=Math.min(r.dur+freeAfter, cupoCap);
   const step=HALF_HOURS?30:60, start=HALF_HOURS?30:60; let durs=[];
+  // Tope: libre seguido, cupo pico del tramo y horas libres a la vez (esta reserva ya cuenta en ambos).
+  const s0=r.h*60+(r.min||0), ownPk=resPeakMin(r), ownFr=r.dur-ownPk;
+  const pkCap=Math.round(blockRemaining(r.house,blockForDate(r.date))*60)+ownPk, frCap=Math.round(freeLeft()*60)+ownFr;
+  let maxDur=r.dur+freeAfter;
+  while(maxDur>r.dur){ const pk=FREE_ENABLED?peakMinutes(r.date,s0,s0+maxDur):maxDur, fr=maxDur-pk;
+    if(pk<=pkCap && (!FREE_ENABLED || !isMember() || fr<=frCap)) break; maxDur-=step; }
   for(let dd=start; dd<=maxDur; dd+=step) durs.push(dd);
   if(!durs.includes(r.dur)) durs.push(r.dur);
   durs.sort((a,b)=>a-b);
@@ -4147,8 +4280,9 @@ function openBook(date,h,ctx){
   // (h0/h1) cuando la otra mitad ya está ocupada. Así los 30 minutos también salen bonitos.
   const fbHalf = isHalf && !bonus && !isFlex;
   if(ctx==='full' || fbHalf){
-    if(isMember() && !hasHoursForDate(date)){ toast('No tienes más horas en este tramo.','warn'); return; }
     const bkHalf=(ctx==='h1')?1:0, bkStart=h*60+bkHalf*30;   // arranca en :00 o :30 según la media hora tocada
+    if(isMember() && !bookFits(date,bkStart,HALF_HOURS?30:60,bookHouse)){
+      toast(isLibre(date,bkStart,bkStart+30)?'Ya tienes '+fmtH(FREE_MAX)+' libres reservadas. Cuando juegues una, puedes reservar otra.':'No tienes más horas en este tramo.','warn'); return; }
     state.bookCtx={date,h,start:bkStart,half:bkHalf};
     const durs=fullDurs(date,h,bookHouse,bkHalf); const def=durs.includes(60)?60:durs[0];
     const durBtns=durs.map(dd=>`<button class="fb-dur${dd===def?' on':''}" data-d="${dd}" onclick="durPickFull(this)">${durLabel(dd)}</button>`).join('');
@@ -4160,6 +4294,7 @@ function openBook(date,h,ctx){
       ${houseSelect?`<div class="fb-house">${houseSelect}</div>`:''}
       <div class="fb-grid" id="durSeg">${durBtns}</div>
       <div class="fb-range" id="bkRange">${bookRangeTxt(bkStart,def)}</div>
+      ${FREE_ENABLED?`<div class="fb-cost" id="bkCost">${bookCostTxt(date,bkStart,def)}</div>`:''}
       <div class="fb-mid">
         ${isMember()?`<div class="fb-seek">
           <div class="fb-seek-q">¿Buscas con quién jugar?</div>

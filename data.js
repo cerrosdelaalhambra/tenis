@@ -96,7 +96,8 @@ function relTime(iso){
 
 /* ===== Errores del servidor → mensajes amables ===== */
 const ERR_MSG = {
-  SIN_CUPO:'Esa casa ya no tiene horas en este tramo de la semana. Las horas de un tramo no se pasan a otro. Puedes reservar horarios que libera el profesor: eso no consume horas.',
+  SIN_CUPO:'Esa casa ya no tiene horas en este tramo de la semana. Las horas de un tramo no se pasan a otro. Puedes reservar las horas marcadas ★ Libre: esas no consumen horas.',
+  SIN_HORAS_LIBRES:'Ya tienes el máximo de horas libres reservadas a la vez. Cuando juegues una, puedes reservar otra.',
   YA_RESERVADO:'Ese horario ya está reservado.',
   HORARIO_DEL_PROFESOR:'Ese horario es del profesor.',
   FUERA_DE_HORARIO:'Ese horario está fuera del horario de la cancha.',
@@ -271,7 +272,9 @@ async function getConfig(){
     openStart: m.open_start ? Number(m.open_start) : 5,   // primera hora reservable (4/5/6)
     openEnd:   m.open_end   ? Number(m.open_end)   : 23,  // hora de cierre (22 o 23)
     halfHours: m.half_hours==='true',                     // ¿se permite reservar media hora? (por defecto NO)
-    resetHour: m.reset_hour!=null ? Number(m.reset_hour) : 20  // hora del domingo en que se reinician los cupos
+    resetHour: m.reset_hour!=null ? Number(m.reset_hour) : 20,  // hora del domingo en que se reinician los cupos
+    freeEnabled: m.free_enabled==='true',                 // horas libres: el cupo solo se gasta en horas pico (apagado por defecto)
+    freeMax: m.free_max_hours!=null ? Number(m.free_max_hours) : 2   // horas libres pendientes a la vez, por residente
   };
 }
 // Bloques de cupo (tramos de días con sus horas). Resiliente: si la tabla aún no existe, devuelve [].
@@ -286,6 +289,14 @@ async function getQuotaBlocks(){
 async function getProfSchedule(){
   const {data}=await sb.from('prof_schedule').select('dow,start_min,end_min').order('dow').order('start_min');
   return (data||[]).map(r=>({dow:r.dow, startMin:r.start_min, endMin:r.end_min}));
+}
+// Horas pico (las que gastan cupo cuando las horas libres están activas). Resiliente: sin tabla => [].
+async function getPeakSchedule(){
+  try{
+    const {data,error}=await sb.from('peak_schedule').select('dow,start_min,end_min').order('dow').order('start_min');
+    if(error) return [];
+    return (data||[]).map(r=>({dow:r.dow, startMin:r.start_min, endMin:r.end_min}));
+  }catch(e){ return []; }
 }
 async function getMaintSchedule(){
   const {data}=await sb.from('maint_schedule').select('dow,start_min,end_min').order('dow').order('start_min');
@@ -420,7 +431,7 @@ async function fetchAll(profile){
   const staff  = profile.role==='admin' || profile.role==='portero';
   const isProf = profile.role==='prof';
   // TODO en un solo lote paralelo (antes había hasta 3 fases secuenciales)
-  const [myHouses, reservations, releases, closures, holidays, houses, cfg, notifs, profSchedule, recurring, activity, users, profClasses, absences, maintSchedule, classTemplate, quotaBlocks, matches, matchRejections] = await Promise.all([
+  const [myHouses, reservations, releases, closures, holidays, houses, cfg, notifs, profSchedule, recurring, activity, users, profClasses, absences, maintSchedule, classTemplate, quotaBlocks, matches, matchRejections, peakSchedule] = await Promise.all([
     member ? getMyHouses(profile.id) : Promise.resolve([]),
     getCalendar(profile.role), getReleases(), getClosures(), getHolidays(),
     getHouses(), getConfig(), getNotifications(profile.role, profile.id, profile.notif_seen_at, profile.notif_cleared_at),
@@ -432,11 +443,13 @@ async function fetchAll(profile){
     getClassTemplate(),  // para todos: sirve para el Excel (admin) y para mostrar clases de días ya pasados
     getQuotaBlocks(),    // tramos de cupo (vacío si aún no se corre el SQL -> se comporta como hoy)
     member ? getMatches() : Promise.resolve([]),          // contrincante: estado de mis matches
-    member ? getMatchRejections() : Promise.resolve([])   // avisos de match que rechacé
+    member ? getMatchRejections() : Promise.resolve([]),  // avisos de match que rechacé
+    getPeakSchedule()    // horas pico (vacío si aún no se corre supabase_horas_libres.sql)
   ]);
   return { profile, myHouses, reservations, releases, closures, holidays, houses,
     cupo:cfg.cupo, profFlexible:cfg.profFlexible, permEnabled:cfg.permEnabled, permRoute:'both',
     openStart:cfg.openStart, openEnd:cfg.openEnd, halfHours:cfg.halfHours, resetHour:cfg.resetHour,
+    freeEnabled:cfg.freeEnabled, freeMax:cfg.freeMax, peakSchedule,
     notifs, profSchedule, recurring, activity, users, profClasses, absences, maintSchedule, classTemplate,
     blocks: quotaBlocks, matches, matchRejections };
 }
@@ -531,6 +544,16 @@ const Admin = {
     if(del.error) throw mapError(del.error);
     if(rows&&rows.length){
       const ins=await sb.from('prof_schedule').insert(rows.map(r=>({dow:r.dow, start_min:r.startMin, end_min:r.endMin})));
+      if(ins.error) throw mapError(ins.error);
+    }
+  },
+  async setFreeEnabled(on){ const {error}=await sb.from('app_config').update({value:on?'true':'false'}).eq('key','free_enabled'); if(error) throw mapError(error); },
+  async setFreeMax(hours){ const {error}=await sb.from('app_config').update({value:String(hours)}).eq('key','free_max_hours'); if(error) throw mapError(error); },
+  async setPeakSchedule(rows){
+    const del=await sb.from('peak_schedule').delete().gte('dow',0);
+    if(del.error) throw mapError(del.error);
+    if(rows&&rows.length){
+      const ins=await sb.from('peak_schedule').insert(rows.map(r=>({dow:r.dow, start_min:r.startMin, end_min:r.endMin})));
       if(ins.error) throw mapError(ins.error);
     }
   },
