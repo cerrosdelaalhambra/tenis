@@ -2403,10 +2403,12 @@ function peakMinutes(date,startMin,endMin){
 }
 function resPeakMin(r){ const s=r.h*60+(r.min||0); return FREE_ENABLED ? peakMinutes(r.date,s,s+r.dur) : r.dur; }
 function isLibre(date,startMin,endMin){ return FREE_ENABLED && peakMinutes(date,startMin,endMin)===0; }
-// Horas libres pendientes por jugar del residente (por persona, no por casa)
+// Horas libres pendientes por jugar del residente (por persona, no por casa).
+// El residente no recibe profile_id (la vista v_calendar solo trae by_me → r.mine); el staff sí.
 function myFreePending(){
   const me=state.profile&&state.profile.id, now=liveNow().getTime();
-  return reservations.filter(r=>r.type==='normal' && r.profile_id===me && dateAt(r.date,r.h).getTime()+((r.min||0)+r.dur)*60000>now)
+  const isMine=r=>r.profile_id ? r.profile_id===me : !!r.mine;
+  return reservations.filter(r=>r.type==='normal' && isMine(r) && dateAt(r.date,r.h).getTime()+((r.min||0)+r.dur)*60000>now)
     .reduce((s,r)=>s+(r.dur-resPeakMin(r))/60,0);
 }
 function freeLeft(){ return Math.max(0, FREE_MAX-myFreePending()); }
