@@ -845,9 +845,36 @@
   .modal.pop p{font-size:16.5px;line-height:1.55;color:var(--muted);margin:0;max-width:340px}
   .modal.pop p b{color:var(--ink)}
   .modal.pop .btn-primary{width:100%;padding:15px;font-size:16px}
-  .modal.pop .pop-ic.warn{background:#fdf1dc;color:#b7791f}
-  .modal.pop .pop-tip{background:var(--court-soft);border-radius:16px;padding:14px 16px;font-size:15.5px;color:var(--court-dark)}
-  .modal.pop .pop-tip b{color:var(--court-dark)}
+  /* Aviso al cancelar: franja de color con el tiempo en grande + medidor contra las 24 h recomendadas.
+     Medidas proporcionales a un celular de 375×812 (min(vw,svh)) con piso legible. */
+  .modal.pop.cn{padding:0;overflow-x:hidden;overflow-y:auto;max-height:calc(100svh - 20px);align-items:stretch;text-align:center}
+  .cn.warn{--cn:#c4831f;--cn-soft:#fdf1dc;--cn-ink:#7a4c0c;--cn-track:rgba(122,76,12,.13)}
+  .cn.ok{--cn:var(--court);--cn-soft:var(--court-soft);--cn-ink:var(--court-dark);--cn-track:rgba(14,62,53,.12)}
+  .cn-hero{background:var(--cn-soft);color:var(--cn-ink);display:flex;flex-direction:column;align-items:center;
+    padding:clamp(16px,min(7.5vw,3.7svh),32px) clamp(18px,6vw,24px) clamp(14px,min(6.4vw,3svh),26px)}
+  .cn-ic{width:clamp(46px,min(15vw,7.4svh),58px);height:clamp(46px,min(15vw,7.4svh),58px);border-radius:50%;background:#fff;color:var(--cn);
+    display:flex;align-items:center;justify-content:center;box-shadow:0 2px 10px rgba(20,40,35,.08);margin-bottom:clamp(8px,1.5svh,14px)}
+  .cn-ic svg{width:52%;height:52%}
+  .cn-pre,.cn-post{font-size:clamp(14px,min(4.3vw,2svh),16px);font-weight:600;opacity:.85}
+  .cn-big{display:flex;align-items:baseline;justify-content:center;line-height:1;margin:clamp(4px,.8svh,8px) 0 clamp(2px,.5svh,6px)}
+  .cn-num{font-size:clamp(40px,min(17vw,8.2svh),66px);font-weight:800;letter-spacing:-.03em}
+  .cn-unit{font-size:clamp(20px,min(6.6vw,3.2svh),26px);font-weight:800;margin-left:.3em}
+  .cn-meter{width:100%;max-width:330px;margin-top:clamp(10px,2.4svh,20px)}
+  .cn-bar{position:relative;height:clamp(9px,1.3svh,11px);border-radius:99px;background:var(--cn-track);overflow:hidden}
+  .cn-fill{position:absolute;inset:0 auto 0 0;border-radius:inherit;background:var(--cn);min-width:clamp(9px,1.3svh,11px)}
+  .cn-scale{display:flex;justify-content:space-between;margin-top:7px;font-size:clamp(11.5px,min(3.4vw,1.6svh),13px);font-weight:700;opacity:.8}
+  .cn-body{flex:1;display:flex;flex-direction:column;justify-content:center;gap:clamp(8px,1.8svh,16px);padding:clamp(12px,2.5svh,24px) clamp(18px,6vw,24px)}
+  .modal.pop.cn .cn-body h3{font-size:clamp(21px,min(6.6vw,3.2svh),26px);line-height:1.2}
+  .modal.pop.cn .cn-body p{max-width:none;font-size:clamp(14.5px,min(4.5vw,2.1svh),17px);line-height:1.5}
+  .cn-tip{display:flex;gap:12px;align-items:flex-start;text-align:left;background:var(--court-soft);border-radius:16px;
+    padding:clamp(12px,1.9svh,16px) clamp(14px,4.3vw,18px)}
+  .cn-tip svg{flex:none;width:clamp(20px,min(6vw,2.9svh),24px);height:clamp(20px,min(6vw,2.9svh),24px);color:var(--court);margin-top:1px}
+  .modal.pop.cn .cn-tip p{color:var(--court-dark);font-size:clamp(13.5px,min(4.1vw,1.95svh),15.5px);line-height:1.45}
+  .modal.pop.cn .cn-tip b{color:var(--court-dark)}
+  .modal.pop.cn .cn-thanks{font-size:clamp(13.5px,min(4vw,1.9svh),15px);font-weight:600;color:var(--court)}
+  .cn-foot{padding:0 clamp(18px,6vw,24px) calc(clamp(16px,2.6svh,22px) + env(safe-area-inset-bottom))}
+  @media (max-height:640px){ .cn-ic{display:none} .modal-bg.center:has(.cn){padding:10px} .modal.pop.cn{min-height:0} }   /* celulares bajos: sin ícono, para que quepa sin deslizar */
+  .modal.pop.cn .cn-foot .btn-primary{min-height:48px;font-size:clamp(15px,min(4.5vw,2.1svh),17px)}
   .modal.fb .fb-x{position:absolute;top:12px;right:12px;width:36px;height:36px;border-radius:50%;background:var(--court-soft);color:var(--court);display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;z-index:2}
   .fb-head{text-align:center;margin:8px 0 16px}
   .fb-day{font-size:23px;font-weight:800;color:var(--ink);line-height:1.2}
@@ -1228,7 +1255,7 @@ if('serviceWorker' in navigator){
 /* ======================= DATA ======================= */
 let NOW = new Date(); // hora real. Se re-sincroniza al volver a la app (syncClock) para no quedar congelada.
 let APP_START = Date.now(); // base de liveNow(); DEBE existir antes del primer _computeOWS() (si no, TDZ y la app se cuelga en el splash)
-const APP_VERSION = '2026-10-27i'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
+const APP_VERSION = '2026-10-27j'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
 const DOW = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
 const DOWL = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const MON = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
@@ -1766,35 +1793,35 @@ function openAvailClassInfo(){
   bg.classList.add('show');
 }
 /* ===== Cultura de cancelación: al cancelar, el residente ve con cuánta anticipación lo hizo ===== */
-function leadTxt(min){   // 290 → "4 horas y media", 45 → "45 minutos", 1700 → "1 día y 4 horas"
-  const pl=(n,a,b)=>n+' '+(n===1?a:b);
-  if(min<60) return pl(Math.max(1,min),'minuto','minutos');
-  if(min<1440){ const H=Math.floor(min/60); return pl(H,'hora','horas')+(min%60>=30?' y media':''); }
-  const D=Math.floor(min/1440), H=Math.floor((min%1440)/60);
-  return pl(D,'día','días')+(H?' y '+pl(H,'hora','horas'):'');
+function leadBig(min){   // el tiempo en grande: 50 → ["50","minutos"], 270 → ["4½","horas"], 1740 → ["29","horas"], 3300 → ["2","días"]
+  if(min<60){ const n=Math.max(1,min); return [String(n), n===1?'minuto':'minutos']; }
+  if(min<2880){ const H=Math.floor(min/60), half=min%60>=30; return [H+(half?'½':''), H===1&&!half?'hora':'horas']; }
+  const D=Math.floor(min/1440); return [String(D),'días'];
 }
 // startMs = cuándo empezaba lo cancelado (si fue una parte, la primera media hora cancelada)
 function openCancelNote(startMs, partial){
-  const min=Math.floor((startMs-liveNow().getTime())/60000), ok=min>=1440;
-  const what=partial?'parte de tu reserva':'tu reserva';
+  const min=Math.floor((startMs-liveNow().getTime())/60000), ok=min>=1440, [num,unit]=leadBig(min);
+  const pct=Math.min(100, Math.max(0, min/1440*100)).toFixed(1);
   const m=document.getElementById('modal'), bg=document.getElementById('modalBg');
-  m.classList.remove('fb'); m.classList.add('pop'); bg.classList.add('center'); m.style.pointerEvents='';
-  m.innerHTML=ok
-    ? `<div class="pop-body">
-        <div class="pop-ic">${svgIco('<path d="M20 6 9 17l-5-5"/>',40)}</div>
-        <h3>¡Gracias por cancelar a tiempo!</h3>
-        <p>Cancelaste ${what} con <b>${leadTxt(min)}</b> de anticipación.</p>
-        <p>Así otros propietarios tienen tiempo de programarse y aprovechar ese horario.</p>
-      </div>
-      <button class="btn-primary" onclick="closeModal()">Listo</button>`
-    : `<div class="pop-body">
-        <div class="pop-ic warn">${svgIco(ICONS.clock,40)}</div>
-        <h3>Cancelaste con ${leadTxt(min)} de anticipación</h3>
-        <p>${min<180?'Cuando se cancela a última hora es muy difícil que alguien más alcance a usar la cancha.':'Ese horario ya quedó disponible, pero con poco tiempo para que alguien más lo aproveche.'}</p>
-        <p class="pop-tip">Recuerda: lo ideal es cancelar con <b>mínimo 24 horas</b> de anticipación, para que otros propietarios tengan tiempo de programarse y reservar ese horario.</p>
-        <p>¡Gracias por ayudarnos a aprovechar mejor la cancha!</p>
-      </div>
-      <button class="btn-primary" onclick="closeModal()">Entendido</button>`;
+  m.classList.remove('fb'); m.classList.add('pop','cn'); m.classList.toggle('ok',ok); m.classList.toggle('warn',!ok);
+  bg.classList.add('center'); m.style.pointerEvents='';
+  m.innerHTML=`<div class="cn-hero">
+      <div class="cn-ic">${svgIco(ok?'<path d="M20 6 9 17l-5-5"/>':ICONS.clock,28)}</div>
+      <div class="cn-pre">Cancelaste ${partial?'parte de tu reserva':'tu reserva'} con</div>
+      <div class="cn-big"><span class="cn-num">${num}</span><span class="cn-unit">${unit}</span></div>
+      <div class="cn-post">de anticipación</div>
+      <div class="cn-meter"><div class="cn-bar"><div class="cn-fill" style="width:${pct}%"></div></div>
+        <div class="cn-scale"><span>0 h</span><span>${ok?'✓ ':''}24 h · lo recomendado</span></div></div>
+    </div>
+    <div class="cn-body">${ok
+      ? `<h3>¡Gracias por cancelar a tiempo!</h3>
+         <p>Así otros propietarios tienen tiempo de programarse y aprovechar ese horario.</p>
+         <div class="cn-tip">${svgIco(ICONS.bell,22)}<p>Ya les avisamos a <b>todos los residentes</b> que ese horario quedó disponible.</p></div>`
+      : `<p>${min<180?'Cuando se cancela a última hora es muy difícil que alguien más alcance a usar la cancha.':'Ese horario ya quedó disponible, pero con poco tiempo para que alguien más lo aproveche.'}</p>
+         <div class="cn-tip">${svgIco(ICONS.cal,22)}<p>Lo ideal es cancelar con <b>mínimo 24 horas</b> de anticipación: así otros propietarios alcanzan a programarse y reservar ese horario.</p></div>
+         <p class="cn-thanks">¡Gracias por ayudarnos a aprovechar mejor la cancha!</p>`}
+    </div>
+    <div class="cn-foot"><button class="btn-primary" onclick="closeModal()">${ok?'Listo':'Entendido'}</button></div>`;
   bg.classList.add('show');
 }
 function unlockModal(){ const m=document.getElementById('modal'); if(m) m.style.pointerEvents=''; }
@@ -4928,7 +4955,7 @@ function closeModal(){
   let done=false, a1=null, a2=null;
   const finish=()=>{ if(done) return; done=true;
     try{ a1&&a1.cancel(); a2&&a2.cancel(); }catch(_){}
-    bg.classList.remove('show','center'); if(m){ m.classList.remove('fb','pop'); m.style.transform=''; m.style.opacity=''; m.style.pointerEvents=''; } bg.style.opacity='';
+    bg.classList.remove('show','center'); if(m){ m.classList.remove('fb','pop','cn','ok','warn'); m.style.transform=''; m.style.opacity=''; m.style.pointerEvents=''; } bg.style.opacity='';
     reanchorTabbar();
     if(state.liveStale){ state.liveStale=false; scheduleLive(); } };   // llegó un cambio en vivo mientras estaba abierto
   if(!m || !m.animate){ finish(); return; }                 // respaldo sin Web Animations
