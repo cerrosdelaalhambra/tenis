@@ -417,6 +417,14 @@
   .s-bonus{background:#fff;border:1.5px dashed var(--ball-dark);color:var(--court);cursor:pointer;position:relative}
   .s-bonus:hover{background:var(--court-soft)}
   .bstar{color:#f2b705}
+  /* deslizar para refrescar (solo se usa en la app instalada) */
+  .ptr{position:fixed;left:50%;top:0;z-index:16;width:38px;height:38px;margin-left:-19px;border-radius:50%;background:var(--card);
+    box-shadow:0 4px 14px rgba(20,40,35,.16);display:flex;align-items:center;justify-content:center;color:var(--court);
+    opacity:0;transform:translateY(-34px);pointer-events:none;transition:opacity .15s}
+  .ptr svg{width:20px;height:20px}
+  .ptr.spin{transition:opacity .15s,transform .2s ease}
+  .ptr.spin svg{animation:ptrspin .8s linear infinite}
+  @keyframes ptrspin{to{transform:rotate(360deg)}}
   .fb-cost{text-align:center;font-size:14px;font-weight:600;color:var(--muted);margin-top:-4px}
   .mr-libre{font-size:12px;font-weight:700;color:var(--court);background:var(--court-soft);padding:2px 7px;border-radius:8px;margin-left:4px;white-space:nowrap}
   .mr-libre::first-letter{color:#f2b705}
@@ -1151,6 +1159,7 @@
   </div>
 
   <!-- MOBILE TABBAR -->
+  <div class="ptr" id="ptr" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg></div>
   <div class="tabbar" id="tabbar"><div class="tabbar-in" id="tabbarInner"></div></div>
 </div>
 
@@ -1169,7 +1178,7 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<script src="data.js?v=20261026a"></script>
+<script src="data.js?v=20261026b"></script>
 <script>
 /* PWA: registra el service worker (ruta relativa para que funcione bajo /tenis/) */
 if('serviceWorker' in navigator){
@@ -1182,7 +1191,7 @@ if('serviceWorker' in navigator){
 /* ======================= DATA ======================= */
 let NOW = new Date(); // hora real. Se re-sincroniza al volver a la app (syncClock) para no quedar congelada.
 let APP_START = Date.now(); // base de liveNow(); DEBE existir antes del primer _computeOWS() (si no, TDZ y la app se cuelga en el splash)
-const APP_VERSION = '2026-10-26b'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
+const APP_VERSION = '2026-10-26c'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
 const DOW = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
 const DOWL = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const MON = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
@@ -1493,14 +1502,18 @@ function showPending(){
     '<h1>Cuenta pendiente</h1><p>Tu solicitud quedó registrada. La administración la revisará y te avisará por WhatsApp cuando tu cuenta esté activa.</p></div>'+
     '<button class="btn-primary" onclick="backToLogin()">Volver al inicio</button>';
 }
-async function loadData(){
-  const prof=state.profile;
-  const b=await DB.fetchAll({id:prof.id, role:prof.role, notif_seen_at:prof.notif_seen_at, notif_cleared_at:prof.notif_cleared_at}); // marcas de "todo leído" y de "limpieza"
+// Reservas, liberaciones y cierres (lo que cambia en vivo). Lo usan loadData y el refresco por Realtime.
+function applyLive(b){
   reservations=b.reservations||[]; released=b.releases||[];
   const allClos=b.closures||[]; const rainC=allClos.find(c=>c.kind==='rain' && c.endTs>Date.now());
   closures=allClos.filter(c=>c.kind!=='rain');                         // mantenimiento → maintAt
   state.rainUntil = rainC ? rainC.endTs : null;                        // lluvia → marca/banner
   state.rainHours = rainC ? Math.max(1,Math.round((rainC.endTs-rainC.startTs)/3600000)) : 0;
+}
+async function loadData(){
+  const prof=state.profile;
+  const b=await DB.fetchAll({id:prof.id, role:prof.role, notif_seen_at:prof.notif_seen_at, notif_cleared_at:prof.notif_cleared_at}); // marcas de "todo leído" y de "limpieza"
+  applyLive(b);
   HOLIDAYS=b.holidays||new Set(); notifs=b.notifs||[]; activity=b.activity||[]; users=b.users||[];
   PROF_SCHEDULE=b.profSchedule||[]; PROF_FLEX=!!b.profFlexible; PROF_CLASSES=b.profClasses||[]; ABSENCES=b.absences||[]; MAINT_SCHEDULE=b.maintSchedule||[]; CLASS_TEMPLATE=b.classTemplate||[];
   PEAK_SCHEDULE=b.peakSchedule||[]; FREE_ENABLED=!!b.freeEnabled; FREE_MAX=b.freeMax!=null?b.freeMax:2;
@@ -1520,7 +1533,8 @@ async function loadData(){
   state.user = { name:prof.full_name||'(sin nombre)',
     house: myLabels[0] || (prof.role==='admin'?'Administración':prof.role==='prof'?'Entrenador':prof.role==='portero'?'Recepción':'—'),
     houses: myLabels, phone:prof.phone };
-  if(!navItems().some(i=>i.id===state.view) && !['notif','profile','reglamento'].includes(state.view)) state.view = navItems()[0].id;   // cae en una pestaña válida del rol (notif/profile/reglamento son válidas aunque no estén en el menú)
+  if(!navItems().some(i=>i.id===state.view) && !['notif','profile','reglamento'].includes(state.view)) state.view = navItems()[0].id;
+  startLive();   // calendario en vivo (una sola suscripción por sesión)   // cae en una pestaña válida del rol (notif/profile/reglamento son válidas aunque no estén en el menú)
   const init=(state.user.name||'?').split(' ').map(s=>s[0]).slice(0,2).join('');
   document.getElementById('avatar').textContent=init;
   document.getElementById('uname').textContent=state.user.name;
@@ -1530,6 +1544,7 @@ async function loadData(){
 }
 async function logout(){
   try{ closeModal(); }catch(e){}
+  stopLive();
   try{ closeMeeting(); window.__meetLater=false; state.meetSum=undefined; }catch(e){}   // la invitación es por persona: la siguiente cuenta la ve
   try{ localStorage.removeItem('tcv'); }catch(e){}
   const app=document.getElementById('app');
@@ -1691,6 +1706,52 @@ async function refreshData(){
   if(document.getElementById('modalBg').classList.contains('show')) return;  // no interrumpir un modal abierto
   try{ await loadData(); render(); }catch(e){}
 }
+/* ===== Calendario en vivo (Supabase Realtime, ver supabase_realtime_ping.sql) ===== */
+let _liveTimer=null, _liveLast=0;
+function startLive(){ if(state.liveUnsub || !window.DB || !DB.onCalendarChange) return; state.liveUnsub=DB.onCalendarChange(scheduleLive); }
+function stopLive(){ try{ state.liveUnsub && state.liveUnsub(); }catch(e){} state.liveUnsub=null; }
+// Varias reservas seguidas (domingo 8 pm) llegan como varios avisos: se juntan en un solo refresco,
+// con una espera al azar para que no todos los celulares consulten en el mismo instante.
+function scheduleLive(){
+  if(_liveTimer) return;
+  const wait=Math.max(400+Math.random()*800, 2500-(Date.now()-_liveLast));
+  _liveTimer=setTimeout(()=>{ _liveTimer=null; refreshLive(); }, wait);
+}
+async function refreshLive(){
+  if(!state.profile || document.hidden || !document.getElementById('app').classList.contains('show')) return;
+  if(document.getElementById('modalBg').classList.contains('show')){ state.liveStale=true; return; }   // no cambiar la pantalla con un modal abierto
+  _liveLast=Date.now();
+  try{
+    const b=await DB.fetchLive(state.profile.role); applyLive(b);
+    const my=(state.user&&state.user.houses)||[];
+    reservations.forEach(r=>{ if(r.mine===undefined) r.mine=my.includes(r.house); });   // modo compatible (sin by_me)
+    render();
+  }catch(e){}
+}
+/* ===== Deslizar hacia abajo para refrescar (solo app instalada: en el navegador ya existe el gesto) ===== */
+(function(){
+  const standalone=(window.matchMedia && matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone===true;
+  if(!standalone) return;
+  const TH=70; let y0=null, dist=0, busy=false;
+  const el=()=>document.getElementById('ptr');
+  const canPull=()=>!busy && window.scrollY<=0 && document.getElementById('app').classList.contains('show')
+    && !document.getElementById('modalBg').classList.contains('show');
+  const place=(p)=>{ const x=el(); if(!x) return; const mh=document.getElementById('mobileHead');
+    x.style.top=((mh&&mh.offsetParent!==null)?mh.getBoundingClientRect().bottom:0)+'px';
+    x.style.opacity=Math.min(1,p/TH); x.style.transform=`translateY(${Math.min(p,110)*0.55-34}px) rotate(${p*3}deg)`; };
+  const hide=()=>{ const x=el(); if(!x) return; x.classList.remove('spin'); x.style.opacity='0'; x.style.transform='translateY(-34px)'; };
+  document.addEventListener('touchstart',e=>{ y0=(e.touches.length===1 && canPull())?e.touches[0].clientY:null; dist=0; },{passive:true});
+  document.addEventListener('touchmove',e=>{ if(y0==null) return; dist=e.touches[0].clientY-y0;
+    if(dist<=0 || window.scrollY>0){ y0=null; hide(); return; } place(dist); },{passive:true});
+  document.addEventListener('touchend',async()=>{
+    if(y0==null) return; y0=null;
+    if(dist<TH){ hide(); return; }
+    busy=true; const x=el(); if(x){ x.classList.add('spin'); x.style.opacity='1'; x.style.transform='translateY(14px)'; }
+    const t0=Date.now();
+    try{ await refreshData(); }catch(e){}
+    setTimeout(()=>{ hide(); busy=false; }, Math.max(0,500-(Date.now()-t0)));   // que el giro se alcance a ver
+  });
+})();
 /* ===== cuenta y cambio de contraseña ===== */
 function openAccount(){
   const m=document.getElementById('modal');
@@ -4614,7 +4675,8 @@ function closeModal(){
   const finish=()=>{ if(done) return; done=true;
     try{ a1&&a1.cancel(); a2&&a2.cancel(); }catch(_){}
     bg.classList.remove('show'); if(m){ m.classList.remove('fb'); m.style.transform=''; m.style.opacity=''; } bg.style.opacity='';
-    reanchorTabbar(); };
+    reanchorTabbar();
+    if(state.liveStale){ state.liveStale=false; scheduleLive(); } };   // llegó un cambio en vivo mientras estaba abierto
   if(!m || !m.animate){ finish(); return; }                 // respaldo sin Web Animations
   try{
     a1=m.animate([{transform:'none',opacity:1},{transform:isFb?'translateY(72px) scale(.965)':'translateY(56px)',opacity:0}],

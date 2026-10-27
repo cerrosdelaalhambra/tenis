@@ -454,6 +454,21 @@ async function fetchAll(profile){
     blocks: quotaBlocks, matches, matchRejections };
 }
 function isMemberRole(role){ return role==='member' || role==='master'; }
+// Solo lo que cambia en vivo (reservas, liberaciones, cierres): para el refresco por Realtime, más liviano que fetchAll.
+async function fetchLive(role){
+  const [reservations, releases, closures] = await Promise.all([getCalendar(role), getReleases(), getClosures()]);
+  return { reservations, releases, closures };
+}
+// Calendario en vivo: escucha la fila calendar_ping (supabase_realtime_ping.sql), que se toca cada vez que
+// cambian reservas/liberaciones/cierres. Devuelve la función para dejar de escuchar. Si Realtime no está, no hace nada.
+function onCalendarChange(cb){
+  try{
+    const ch=sb.channel('calendar-ping')
+      .on('postgres_changes', {event:'UPDATE', schema:'public', table:'calendar_ping'}, ()=>{ try{ cb(); }catch(e){} })
+      .subscribe();
+    return ()=>{ try{ sb.removeChannel(ch); }catch(e){} };
+  }catch(e){ return ()=>{}; }
+}
 
 /* ============================================================================
  *  ESCRITURAS (validadas en el servidor por las funciones RPC)
@@ -705,7 +720,7 @@ async function clearNotifs(profileId){
 /* ===== API pública del módulo ===== */
 window.DB = {
   Auth, Admin, Rain, Meeting,
-  fetchAll, book, updateReservation, cancel, requestCancel, decideCancel, markNotif, markAllRead, clearNotifs,
+  fetchAll, fetchLive, onCalendarChange, book, updateReservation, cancel, requestCancel, decideCancel, markNotif, markAllRead, clearNotifs,
   requestMatch, acceptMatch, rejectMatch, cancelMatch,
   getProfClasses, changeClassHouse, releaseClass, markAbsence, unmarkAbsence, setClassTemplate,
   requestRecurring, decideRecurring, cancelRecurring, materializeRecurring, materializeClasses,
