@@ -862,6 +862,18 @@
   .fb-confirm{width:100%;padding:16px;font-size:16px;flex:none}
   .fb-save{width:100%;padding:15px;font-size:15.5px;flex:none;margin-bottom:10px}
   .fb-nocancel{text-align:center;color:var(--muted);font-size:13.5px;padding:12px;flex:none}
+  /* cancelar por partes */
+  .cp-box{flex:1;display:flex;flex-direction:column;align-items:center;gap:12px;padding:14px 0 18px}
+  .cp-q{font-size:16px;font-weight:700;color:var(--court-dark)}
+  .cp-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%}
+  .cp-chip{display:flex;align-items:center;justify-content:center;gap:6px;padding:14px 8px;border-radius:14px;border:1.5px solid var(--line);
+    background:#fff;color:var(--court);font-size:15px;font-weight:700;cursor:pointer;transition:background .15s,border-color .15s,color .15s}
+  .cp-chip.on{background:#fdecee;border-color:var(--danger);color:var(--danger)}
+  .cp-chip.lock{background:#f3f5f4;color:var(--muted);border-style:dashed;cursor:default}
+  .cp-all{background:none;border:none;color:var(--court);font-weight:700;font-size:14px;cursor:pointer;padding:4px}
+  .cp-note{font-size:12.5px;color:var(--muted);text-align:center;max-width:300px}
+  .fb-confirm.cp-off{opacity:.45}
+  .cp-back{width:100%;margin-top:8px;padding:13px;flex:none}
   .grab{width:38px;height:4px;border-radius:3px;background:var(--line);margin:8px auto 14px}
   .modal h3{font-size:18px;margin-bottom:3px}
   .modal .msub{font-size:13px;color:var(--muted);margin-bottom:18px}
@@ -1190,7 +1202,7 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<script src="data.js?v=20261026b"></script>
+<script src="data.js?v=20261027a"></script>
 <script>
 /* PWA: registra el service worker (ruta relativa para que funcione bajo /tenis/) */
 if('serviceWorker' in navigator){
@@ -1203,7 +1215,7 @@ if('serviceWorker' in navigator){
 /* ======================= DATA ======================= */
 let NOW = new Date(); // hora real. Se re-sincroniza al volver a la app (syncClock) para no quedar congelada.
 let APP_START = Date.now(); // base de liveNow(); DEBE existir antes del primer _computeOWS() (si no, TDZ y la app se cuelga en el splash)
-const APP_VERSION = '2026-10-27d'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
+const APP_VERSION = '2026-10-27e'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
 const DOW = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
 const DOWL = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const MON = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
@@ -2849,7 +2861,7 @@ function viewMine(){
     const dateLine=`${cap1(DIAS_FULL[d.getDay()])} ${d.getDate()} de ${MESES[d.getMonth()]}`;
     let actions='';
     if(fut){
-      const cancelBtn = cancelable ? `<button class="mr-cancel" onclick="cancelRes(${r.id})">Cancelar</button>` : `<span class="mr-nocancel">No cancelable</span>`;
+      const cancelBtn = cancelable ? `<button class="mr-cancel" onclick="startCancel(${r.id})">Cancelar</button>` : `<span class="mr-nocancel">No cancelable</span>`;
       let right='';
       if(r.type==='normal'){
         const m=matchFor(r.id);
@@ -4549,9 +4561,74 @@ function openMyRes(id){
     <div class="fb-range" id="bkRange">${bookRangeTxt(startMin, r.dur, r.date)}</div>
     <div class="fb-mid">${matchHTML}</div>
     ${canEdit?`<button class="btn-primary fb-save" id="erSave" style="display:none" onclick="saveEditRes()">Guardar cambio de duración</button>`:''}
-    ${cancelable?`<button class="btn-primary fb-confirm" style="background:var(--danger)" onclick="cancelRes(${r.id})">Cancelar reserva</button>`
+    ${cancelable?`<button class="btn-primary fb-confirm" style="background:var(--danger)" onclick="startCancel(${r.id})">Cancelar reserva</button>`
       :`<div class="fb-nocancel">${isClass?'Ya no se puede cancelar (menos de 1 hora).':((d-NOW)>0?'Ya no se puede cancelar (menos de 20 minutos).':'La reserva ya empezó.')}</div>`}`;
   document.getElementById('modalBg').classList.add('show');
+}
+/* ===== Cancelar por partes: elegir qué medias horas cancelar (supabase_cancelar_parte.sql) ===== */
+// Reserva normal/abierta de más de media hora → se elige qué medias horas cancelar; si no, se cancela completa como antes.
+function startCancel(id){
+  const r=reservations.find(x=>x.id===id); if(!r) return;
+  if(!['normal','open'].includes(r.type) || r.dur<=30){ cancelRes(id); return; }
+  state.cancelPick={id, sel:new Array(Math.round(r.dur/30)).fill(false)};
+  renderCancelPick();
+}
+function cpHalves(r){   // medias horas de la reserva; bloqueadas si faltan 20 min o menos para que empiecen
+  const s0=r.h*60+(r.min||0), now=liveNow().getTime();
+  return Array.from({length:Math.round(r.dur/30)},(_,i)=>{ const st=s0+i*30;
+    return {st, en:st+30, locked: dateAt(r.date,0).getTime()+st*60000-now <= 20*60000}; });
+}
+function cpGroups(r,sel){   // medias horas seleccionadas agrupadas en tramos seguidos [{st,en}]
+  const hs=cpHalves(r), g=[];
+  hs.forEach((x,i)=>{ if(!sel[i]) return; const last=g[g.length-1]; if(last && last.en===x.st) last.en=x.en; else g.push({st:x.st,en:x.en}); });
+  return g;
+}
+function cpClock(t){ const H=Math.floor(t/60),M=t%60; return (H%12||12)+':'+String(M).padStart(2,'0'); }
+function cpBtnTxt(r,sel){
+  const g=cpGroups(r,sel), mins=g.reduce((a,x)=>a+x.en-x.st,0);
+  if(!g.length) return 'Elige qué cancelar';
+  if(mins===r.dur) return 'Cancelar toda la reserva';
+  return 'Cancelar '+g.map(x=>cpClock(x.st)+' a '+cpClock(x.en)).join(' y ')+' · '+durLabel(mins);
+}
+function renderCancelPick(){
+  const cp=state.cancelPick; if(!cp) return; const r=reservations.find(x=>x.id===cp.id); if(!r) return;
+  const d=dateAt(r.date,r.h), hs=cpHalves(r);
+  const dayTitle=`${cap1(['domingo','lunes','martes','miércoles','jueves','viernes','sábado'][d.getDay()])} ${d.getDate()} de ${MESES[d.getMonth()]}`;
+  const chips=hs.map((x,i)=>`<button class="cp-chip${cp.sel[i]?' on':''}${x.locked?' lock':''}" ${x.locked?'disabled':`onclick="cpToggle(${i})"`}>
+      <span>${cpClock(x.st)} – ${cpClock(x.en)}</span>${cp.sel[i]?svgIco('<path d="M18 6 6 18M6 6l12 12"/>',14):''}</button>`).join('');
+  const anyLocked=hs.some(x=>x.locked), any=cp.sel.some(Boolean);
+  const m=document.getElementById('modal'); m.classList.add('fb');
+  m.innerHTML=`
+    <button class="fb-x" onclick="closeModal()" aria-label="Cerrar">${svgIco('<path d="M18 6 6 18M6 6l12 12"/>',20)}</button>
+    <div class="fb-head"><div class="fb-day">${dayTitle}</div></div>
+    <div class="fb-range">${bookRangeTxt(r.h*60+(r.min||0), r.dur, r.date)}</div>
+    <div class="cp-box">
+      <div class="cp-q">¿Qué parte quieres cancelar?</div>
+      <div class="cp-grid">${chips}</div>
+      <button class="cp-all" onclick="cpAll()">${hs.filter(x=>!x.locked).every((x,i)=>cp.sel[hs.indexOf(x)])?'Quitar selección':'Seleccionar todo'}</button>
+      ${anyLocked?'<div class="cp-note">Las medias horas en gris ya no se pueden cancelar (faltan 20 minutos o menos).</div>':''}
+    </div>
+    <button class="btn-primary fb-confirm${any?'':' cp-off'}" style="background:var(--danger)" onclick="doCancelPick()">${cpBtnTxt(r,cp.sel)}</button>
+    <button class="btn-soft cp-back" onclick="state.cancelPick=null; openMyRes(${r.id})">Volver</button>`;
+  document.getElementById('modalBg').classList.add('show');
+}
+function cpToggle(i){ const cp=state.cancelPick; if(!cp) return; cp.sel[i]=!cp.sel[i]; renderCancelPick(); }
+function cpAll(){
+  const cp=state.cancelPick; if(!cp) return; const r=reservations.find(x=>x.id===cp.id); if(!r) return;
+  const hs=cpHalves(r), free=hs.map((x,i)=>!x.locked?i:-1).filter(i=>i>=0), all=free.every(i=>cp.sel[i]);
+  free.forEach(i=>cp.sel[i]=!all); renderCancelPick();
+}
+async function doCancelPick(){
+  const cp=state.cancelPick; if(!cp) return; const r=reservations.find(x=>x.id===cp.id); if(!r) return;
+  const g=cpGroups(r,cp.sel); if(!g.length){ toast('Toca las medias horas que quieres cancelar.','warn'); return; }
+  const mins=g.reduce((a,x)=>a+x.en-x.st,0);
+  if(mins===r.dur){ state.cancelPick=null; return cancelRes(r.id); }
+  try{
+    // del último tramo al primero: así la reserva original siempre conserva los tramos anteriores
+    for(const x of g.slice().reverse()) await DB.cancelPart(r.id, r.date, x.st, x.en);
+    state.cancelPick=null; closeModal(); await loadData(); render();
+    toast('Cancelaste '+g.map(x=>cpClock(x.st)+' a '+cpClock(x.en)).join(' y ')+' · recuperaste '+durLabel(mins));
+  }catch(e){ state.cancelPick=null; closeModal(); await loadData(); render(); toast(e.message,'warn'); }
 }
 async function cancelRes(id){
   try{

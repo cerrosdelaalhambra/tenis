@@ -493,6 +493,12 @@ async function cancel(id){
   const {error}=await sb.rpc('cancel_reservation',{p_id:id});
   if(error) throw mapError(error);
 }
+// Cancelar solo una parte [date h:min, + dur) de la reserva (supabase_cancelar_parte.sql)
+async function cancelPart(id, date, startMin, endMin){
+  const {error}=await sb.rpc('cancel_reservation_part',{p_id:id,
+    p_start:toISO(date,Math.floor(startMin/60),startMin%60), p_end:toISO(date,Math.floor(endMin/60),endMin%60)});
+  if(error) throw mapError(error);
+}
 async function getProfClasses(){                      // clases del profesor (casa + nombre del alumno)
   const {data,error}=await sb.rpc('prof_classes');
   if(error){ console.warn('prof_classes:', error.message); return []; }
@@ -720,7 +726,7 @@ async function clearNotifs(profileId){
 /* ===== API pública del módulo ===== */
 window.DB = {
   Auth, Admin, Rain, Meeting,
-  fetchAll, fetchLive, onCalendarChange, book, updateReservation, cancel, requestCancel, decideCancel, markNotif, markAllRead, clearNotifs,
+  fetchAll, fetchLive, onCalendarChange, book, updateReservation, cancel, cancelPart, requestCancel, decideCancel, markNotif, markAllRead, clearNotifs,
   requestMatch, acceptMatch, rejectMatch, cancelMatch,
   getProfClasses, changeClassHouse, releaseClass, markAbsence, unmarkAbsence, setClassTemplate,
   requestRecurring, decideRecurring, cancelRecurring, materializeRecurring, materializeClasses,
