@@ -406,10 +406,10 @@
   .half.h-clase .hicon{fill:#fff}
   .mslot.clasem .bar{background:var(--court)}
   /* Clase disponible (hora del profesor sin alumno): informativo, no reservable */
-  .s-availclass{background:#fff;border:1.5px dashed var(--court-dark);color:var(--court-dark);align-items:flex-start;justify-content:center;cursor:default}
+  .s-availclass{background:#fff;border:1.5px dashed var(--court-dark);color:var(--court-dark);align-items:flex-start;justify-content:center;cursor:pointer}
   .s-availclass b{display:flex;align-items:center;gap:3px;color:var(--court-dark)}
   .s-availclass .cs-name{font-size:10px;color:var(--court-dark);opacity:.8;display:block;font-weight:600}
-  .half.h-availclass{background:#fff;border:1.5px dashed var(--court-dark);color:var(--court-dark);font-weight:600;display:flex;align-items:center;justify-content:center;gap:2px;font-size:10px}
+  .half.h-availclass{background:#fff;border:1.5px dashed var(--court-dark);color:var(--court-dark);font-weight:600;display:flex;align-items:center;justify-content:center;gap:2px;font-size:10px;cursor:pointer}
   .mslot.availclass{background:#fff;border:1.5px dashed var(--court-dark)}
   .mslot.availclass .bar{background:var(--court-dark)}
   .mslot.availclass b{color:var(--court-dark)}
@@ -1020,7 +1020,7 @@
     /* Libre (no gasta horas), profesor-reservable, clase disponible, lluvia, mantenimiento */
     .mslot.bonus{cursor:pointer} .mslot.bonus .ms-t,.mslot.bonus .ms-r,.mslot.bonus .chev{color:var(--court)}
     .mslot.flex{cursor:pointer;background:#fff7e6;border-color:#f0d99a} .mslot.flex .ms-t,.mslot.flex .ms-r,.mslot.flex .chev{color:#a9781a}
-    .mslot.availclass{background:#fff;border:1.5px dashed var(--court-dark)} .mslot.availclass .ms-t,.mslot.availclass .ms-r{color:var(--court-dark)}
+    .mslot.availclass{background:#fff;border:1.5px dashed var(--court-dark);cursor:pointer} .mslot.availclass .ms-t,.mslot.availclass .ms-r,.mslot.availclass .chev{color:var(--court-dark)}
     .mslot.rain{background:#eef3fb} .mslot.rain .ms-t,.mslot.rain .ms-r{color:#3a5a8a}
     .mslot.maint{background:var(--clay);border-color:var(--clay)}
     .mslot.maint .ms-t,.mslot.maint .ms-r{color:#fff}
@@ -1191,7 +1191,7 @@ if('serviceWorker' in navigator){
 /* ======================= DATA ======================= */
 let NOW = new Date(); // hora real. Se re-sincroniza al volver a la app (syncClock) para no quedar congelada.
 let APP_START = Date.now(); // base de liveNow(); DEBE existir antes del primer _computeOWS() (si no, TDZ y la app se cuelga en el splash)
-const APP_VERSION = '2026-10-27a'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
+const APP_VERSION = '2026-10-27b'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
 const DOW = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
 const DOWL = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const MON = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
@@ -1710,6 +1710,15 @@ async function refreshData(){
   if(!document.getElementById('app').classList.contains('show')) return;
   if(document.getElementById('modalBg').classList.contains('show')) return;  // no interrumpir un modal abierto
   try{ await loadData(); render(); }catch(e){}
+}
+// "Clase disponible": las clases con el profesor no se reservan por la app (solo se informa a quién contactar).
+function openAvailClassInfo(){
+  const m=document.getElementById('modal');
+  m.innerHTML=`<div class="grab"></div><h3>${svgIco(BALL_P,18)} Clase con el profesor</h3>
+    <p style="font-size:14.5px;line-height:1.5;color:var(--ink);margin:6px 0 10px">Por ahora, Cerros de la Alhambra no está manejando las reservas de clases por medio de la app.</p>
+    <p style="font-size:14.5px;line-height:1.5;color:var(--muted);margin:0 0 14px">Para reservar esta clase, comunícate con la <b style="color:var(--ink)">administración</b> o directamente con el <b style="color:var(--ink)">profesor</b>.</p>
+    <div class="modal-actions"><button class="btn-primary" onclick="closeModal()">Entendido</button></div>`;
+  document.getElementById('modalBg').classList.add('show');
 }
 /* ===== Calendario en vivo (Supabase Realtime, ver supabase_realtime_ping.sql) ===== */
 let _liveTimer=null, _liveLast=0;
@@ -2655,7 +2664,7 @@ function halfCell(date,h,half,s){
   if(k==='mine'){const r=s.res;return `<div class="half h-mine" onclick="openMyRes(${r.id})" title="${rangeLabel(r.h,r.min,r.dur)}">${HOUSE_ICON}${houseNum(r.house)}${inRainWin(date,h,half)?RAINMARK:''}</div>`;}
   if(k==='reserved'){const r=s.res;return `<div class="half h-reserved" ${(isStaff()||profCanRelease(r.type))?`onclick="openAdminRes(${r.id})"`:''} title="${rangeLabel(r.h,r.min,r.dur)}${r.name?' · '+r.name:''}">${HOUSE_ICON}${houseNum(r.house)}${inRainWin(date,h,half)?RAINMARK:''}</div>`;}
   if(k==='classinfo'){const r=s.res; if(r.school) return `<div class="half h-clase" title="Escuela de tenis">${svgIco(BALL_P,11)} Escuela</div>`; return `<div class="half h-clase" title="Clase${r.name?' · '+r.name:''}">${HOUSE_ICON}${houseNum(r.house)}${r.name?' · '+r.name.split(' ')[0]:''}</div>`;}
-  if(k==='availclass') return `<div class="half h-availclass" title="Clase disponible · el profesor no tiene alumno a esta hora">${svgIco(BALL_P,11)} Clase</div>`;
+  if(k==='availclass') return `<div class="half h-availclass" onclick="openAvailClassInfo()" title="Clase disponible · el profesor no tiene alumno a esta hora">${svgIco(BALL_P,11)} Clase</div>`;
   if(k==='prof') return `<div class="half h-prof" title="Profesor"><span class="cdot cdot-black"></span>Profesor</div>`;
   if(k==='flex') return `<div class="half h-flex" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'flexh${half}')"`:''} title="Hora del profesor · reservable, con o sin profesor"><span><span class="cdot cdot-amber"></span>Profesor</span><span class="plus">+</span></div>`;
   if(k==='class'||k==='open') return `<div class="half h-bonus" ${canBookFree(date,h)?`onclick="openBook('${date}',${h},'h${half}')"`:''} title="No gasta horas${k==='class'?' · profesor disponible':''}"><span><span class="plus">+</span>Libre</span><span class="bstar">★</span></div>`;
@@ -2671,7 +2680,7 @@ function slotHTML(date,h){
   const sc=slotCat(date,h), cat=sc.cat, res=sc.res, mc=sc.mc;
   if(cat==='maint') return `<div class="slot s-maint" title="${mc?mc.reason:'Mantenimiento'}" onclick="toast(this.title)"><b>${svgIco(ICONS.tool,13,'#fff')}Mantenimiento</b></div>`;
   if(cat==='classinfo'){ if(res.school) return `<div class="slot s-clase" title="Escuela de tenis · clase grupal"><b>${svgIco(BALL_P,14)} Escuela</b><small class="cs-name">de tenis</small></div>`; return `<div class="slot s-clase" title="Clase con el profesor${res.name?' · '+res.name:''}"><b>${HOUSE_ICON}${houseNum(res.house)}</b><small class="cs-name">${res.name||'Clase'}</small></div>`; }
-  if(cat==='availclass') return `<div class="slot s-availclass" title="Clase disponible · el profesor no tiene alumno asignado a esta hora"><b>${svgIco(BALL_P,13)} Clase</b><small class="cs-name">disponible</small></div>`;
+  if(cat==='availclass') return `<div class="slot s-availclass" onclick="openAvailClassInfo()" title="Clase disponible · el profesor no tiene alumno asignado a esta hora"><b>${svgIco(BALL_P,13)} Clase</b><small class="cs-name">disponible</small></div>`;
   if(cat==='profclass') return `<div class="slot s-prof" title="Profesor" ${state.role==='prof'?`onclick="openProfRes(${res.id})" style="cursor:pointer"`:''}><b><span class="cdot cdot-black"></span>Profesor</b></div>`;
   if(cat==='mine') return `<div class="slot s-mine" onclick="openMyRes(${res.id})"><b>${HOUSE_ICON}${houseNum(res.house)}</b><span class="mtime${slotRain(date,h)?' rn':''}">${rangeLabel(res.h,res.min,res.dur)}</span>${slotRain(date,h)?RAINMARK:''}</div>`;
   if(cat==='reserved') return `<div class="slot s-reserved" ${(isStaff()||profCanRelease(res.type))?`onclick="openAdminRes(${res.id})" style="cursor:pointer"`:''}><b>${HOUSE_ICON}${houseNum(res.house)}</b>${res.name?`<small>${res.name}</small>`:''}${slotRain(date,h)?RAINMARK:''}</div>`;
@@ -2767,7 +2776,7 @@ function mHalf(date,h,half,s){
   if(k==='mine'){const r=s.res;return msRow('mine',T,`${HOUSE_ICON}${houseNum(r.house)}${r.name?' · '+r.name:''}`,`onclick="openMyRes(${r.id})"`,true);}
   if(k==='reserved'){const r=s.res;const st=isStaff()||profCanRelease(r.type);return msRow('reserved',T,`${HOUSE_ICON}${houseNum(r.house)}${r.name?' · '+r.name:''}`,st?`onclick="openAdminRes(${r.id})"`:'',st);}
   if(k==='classinfo'){const r=s.res;return r.school?msRow('clasem',T,'Escuela de tenis','',false):msRow('clasem',T,`${HOUSE_ICON}${houseNum(r.house)}${r.name?' · '+r.name:''} (clase)`,'',false);}
-  if(k==='availclass') return msRow('availclass',T,'Clase disponible','',false);
+  if(k==='availclass') return msRow('availclass',T,'Clase disponible','onclick="openAvailClassInfo()"',true);
   if(k==='prof') return msRow('prof',T,'Profesor','',false);
   if(k==='flex'){ if(!canBookFree(date,h)) return msRow('prof',T,'Profesor','',false); return msRow('flex',T,'Profesor · reservar',`onclick="openBook('${date}',${h},'flexh${half}')"`,true); }
   if(k==='class'||k==='open'){ if(!canBookFree(date,h)) return ''; return msRow('bonus',T,'<span class="bstar">★</span> Libre',`onclick="openBook('${date}',${h},'h${half}')"`,true); }
@@ -2791,7 +2800,7 @@ function mSlot(date,h,sc){
   if(cat==='mine') return msRow('mine',T,`${HOUSE_ICON}${houseNum(res.house)}${res.name?' · '+res.name:''}`,`onclick="openMyRes(${res.id})"`,true);
   if(cat==='reserved'){const st=isStaff()||profCanRelease(res.type);return msRow('reserved',T,`${HOUSE_ICON}${houseNum(res.house)}${res.name?' · '+res.name:''}`,st?`onclick="openAdminRes(${res.id})"`:'',st);}
   if(cat==='classinfo') return res.school?msRow('clasem',T,'Escuela de tenis','',false):msRow('clasem',T,`${HOUSE_ICON}${houseNum(res.house)}${res.name?' · '+res.name:''} (clase)`,'',false);
-  if(cat==='availclass') return msRow('availclass',T,'Clase disponible','',false);
+  if(cat==='availclass') return msRow('availclass',T,'Clase disponible','onclick="openAvailClassInfo()"',true);
   if(cat==='prof') return msRow('prof',T,'Profesor','',false);
   if(cat==='flex') return msRow('flex',T,'Profesor · reservar',canBookFree(date,h)?`onclick="openBook('${date}',${h},'flexfull')"`:'',canBookFree(date,h));
   if(cat==='class') return msRow('bonus',T,'<span class="bstar">★</span> Libre',canBookFree(date,h)?`onclick="openBook('${date}',${h},'classfull')"`:'',canBookFree(date,h));
