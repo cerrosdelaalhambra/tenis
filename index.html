@@ -1255,7 +1255,7 @@ if('serviceWorker' in navigator){
 /* ======================= DATA ======================= */
 let NOW = new Date(); // hora real. Se re-sincroniza al volver a la app (syncClock) para no quedar congelada.
 let APP_START = Date.now(); // base de liveNow(); DEBE existir antes del primer _computeOWS() (si no, TDZ y la app se cuelga en el splash)
-const APP_VERSION = '2026-10-27j'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
+const APP_VERSION = '2026-10-27k'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
 const DOW = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
 const DOWL = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const MON = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
@@ -2132,6 +2132,7 @@ function render(){
   const immersive = isProf && !!state.profAction;   // pantalla de acción del profesor: a pantalla completa
   document.getElementById('nav').style.display = soloUna ? 'none' : '';
   document.getElementById('tabbar').style.display = (soloUna || immersive) ? 'none' : '';
+  reanchorSoon(60);   // tras repintar (refresco de cada minuto, calendario en vivo) iOS puede dejarla flotando
   const mHead=document.getElementById('mobileHead'); if(mHead){ mHead.style.display = immersive ? 'none' : ''; mHead.classList.toggle('no-strip', isProf); }
   // Barra superior del profesor (Notificaciones + Salir) y de portería (Menú + íconos), en vez de la normal
   const mtn=document.getElementById('mhTopNormal'), mtp=document.getElementById('mhTopProf'), mtpo=document.getElementById('mhTopPorter');
@@ -4948,6 +4949,13 @@ function reanchorTabbar(){
   tb.style.display='none'; void tb.offsetHeight; tb.style.display='';
 }
 if(window.visualViewport) window.visualViewport.addEventListener('resize', reanchorTabbar);
+// También se re-ancla después de cada repintado, al terminar de desplazarse y al volver a la app:
+// si la página cambia de alto con la vista bajada, iOS deja la barra a media pantalla.
+function reanchorSoon(ms){ clearTimeout(reanchorSoon.t); reanchorSoon.t=setTimeout(reanchorTabbar, ms||0); }
+window.addEventListener('scroll', ()=>reanchorSoon(180), {passive:true});
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) reanchorSoon(250); });
+window.addEventListener('pageshow', ()=>reanchorSoon(250));
+window.addEventListener('orientationchange', ()=>reanchorSoon(400));
 function closeModal(){
   const bg=document.getElementById('modalBg'), m=document.getElementById('modal');
   if(!bg || !bg.classList.contains('show')) return;
