@@ -845,6 +845,9 @@
   .modal.pop p{font-size:16.5px;line-height:1.55;color:var(--muted);margin:0;max-width:340px}
   .modal.pop p b{color:var(--ink)}
   .modal.pop .btn-primary{width:100%;padding:15px;font-size:16px}
+  .modal.pop .pop-ic.warn{background:#fdf1dc;color:#b7791f}
+  .modal.pop .pop-tip{background:var(--court-soft);border-radius:16px;padding:14px 16px;font-size:15.5px;color:var(--court-dark)}
+  .modal.pop .pop-tip b{color:var(--court-dark)}
   .modal.fb .fb-x{position:absolute;top:12px;right:12px;width:36px;height:36px;border-radius:50%;background:var(--court-soft);color:var(--court);display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;z-index:2}
   .fb-head{text-align:center;margin:8px 0 16px}
   .fb-day{font-size:23px;font-weight:800;color:var(--ink);line-height:1.2}
@@ -1225,7 +1228,7 @@ if('serviceWorker' in navigator){
 /* ======================= DATA ======================= */
 let NOW = new Date(); // hora real. Se re-sincroniza al volver a la app (syncClock) para no quedar congelada.
 let APP_START = Date.now(); // base de liveNow(); DEBE existir antes del primer _computeOWS() (si no, TDZ y la app se cuelga en el splash)
-const APP_VERSION = '2026-10-27h'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
+const APP_VERSION = '2026-10-27i'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
 const DOW = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
 const DOWL = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const MON = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
@@ -1761,6 +1764,43 @@ function openAvailClassInfo(){
     </div>
     <button class="btn-primary" onclick="closeModal()">Entendido</button>`;
   bg.classList.add('show');
+}
+/* ===== Cultura de cancelación: al cancelar, el residente ve con cuánta anticipación lo hizo ===== */
+function leadTxt(min){   // 290 → "4 horas y media", 45 → "45 minutos", 1700 → "1 día y 4 horas"
+  const pl=(n,a,b)=>n+' '+(n===1?a:b);
+  if(min<60) return pl(Math.max(1,min),'minuto','minutos');
+  if(min<1440){ const H=Math.floor(min/60); return pl(H,'hora','horas')+(min%60>=30?' y media':''); }
+  const D=Math.floor(min/1440), H=Math.floor((min%1440)/60);
+  return pl(D,'día','días')+(H?' y '+pl(H,'hora','horas'):'');
+}
+// startMs = cuándo empezaba lo cancelado (si fue una parte, la primera media hora cancelada)
+function openCancelNote(startMs, partial){
+  const min=Math.floor((startMs-liveNow().getTime())/60000), ok=min>=1440;
+  const what=partial?'parte de tu reserva':'tu reserva';
+  const m=document.getElementById('modal'), bg=document.getElementById('modalBg');
+  m.classList.remove('fb'); m.classList.add('pop'); bg.classList.add('center'); m.style.pointerEvents='';
+  m.innerHTML=ok
+    ? `<div class="pop-body">
+        <div class="pop-ic">${svgIco('<path d="M20 6 9 17l-5-5"/>',40)}</div>
+        <h3>¡Gracias por cancelar a tiempo!</h3>
+        <p>Cancelaste ${what} con <b>${leadTxt(min)}</b> de anticipación.</p>
+        <p>Así otros propietarios tienen tiempo de programarse y aprovechar ese horario.</p>
+      </div>
+      <button class="btn-primary" onclick="closeModal()">Listo</button>`
+    : `<div class="pop-body">
+        <div class="pop-ic warn">${svgIco(ICONS.clock,40)}</div>
+        <h3>Cancelaste con ${leadTxt(min)} de anticipación</h3>
+        <p>${min<180?'Cuando se cancela a última hora es muy difícil que alguien más alcance a usar la cancha.':'Ese horario ya quedó disponible, pero con poco tiempo para que alguien más lo aproveche.'}</p>
+        <p class="pop-tip">Recuerda: lo ideal es cancelar con <b>mínimo 24 horas</b> de anticipación, para que otros propietarios tengan tiempo de programarse y reservar ese horario.</p>
+        <p>¡Gracias por ayudarnos a aprovechar mejor la cancha!</p>
+      </div>
+      <button class="btn-primary" onclick="closeModal()">Entendido</button>`;
+  bg.classList.add('show');
+}
+function unlockModal(){ const m=document.getElementById('modal'); if(m) m.style.pointerEvents=''; }
+// Solo para el residente que cancela lo suyo (no admin/portería/profesor, ni cancelaciones por lluvia)
+function wantsCancelNote(r){
+  return isMember() && !notifs.some(n=>n.type==='rain' && n.status==='pending' && n.resId===r.id);
 }
 /* ===== Profesor: cancelar el mantenimiento de un día (supabase_mant_cancelar.sql) ===== */
 function maintDayTxt(date){ return date===ymd(NOW) ? 'de hoy' : 'del '+DOWL[dateAt(date,0).getDay()].toLowerCase(); }
@@ -2350,7 +2390,7 @@ function regReservas(){
     ${regItem(ICONS.clock,'Máximo 2 horas seguidas',`<p>El sistema no permite que una misma casa tenga <b class="hl">más de dos horas seguidas</b>, aunque junte horas pico y horas libres (ej.: de 7:00 a 10:00 no se puede).</p>`)}
     ${regItem(ICONS.phone,'Solo por la aplicación',`<p>Todas las reservas se hacen por la aplicación. La portería ya no toma reservas.</p>`)}
     ${regItem(ICONS.cal,'Cuándo se reservan',`<p>Las reservas de la semana se habilitan cada <b class="hl">domingo a las ${rhLong()}</b>. Antes de esa hora de corte no puedes reservar horas de la semana siguiente.</p>`)}
-    ${regItem(ICONS.clock,'Cancelaciones',`<p>Puedes cancelar hasta <b class="hl">20 minutos antes</b> de tu reserva. Puedes cancelar <b class="hl">toda la reserva o solo algunas medias horas</b> y conservar el resto. Al cancelar, se envía una notificación a <b class="hl">todos los residentes</b> informando el horario en que la cancha quedó libre y quién fue el que canceló.</p>`)}
+    ${regItem(ICONS.clock,'Cancelaciones',`<p>Puedes cancelar hasta <b class="hl">20 minutos antes</b> de tu reserva. Puedes cancelar <b class="hl">toda la reserva o solo algunas medias horas</b> y conservar el resto. Al cancelar, se envía una notificación a <b class="hl">todos los residentes</b> informando el horario en que la cancha quedó libre y quién fue el que canceló.</p><p>Lo recomendable es cancelar con <b class="hl">mínimo 24 horas de anticipación</b>, para que otros propietarios tengan tiempo de programarse y aprovechar ese horario.</p>`)}
     ${regItem(ICONS.bell,'Sanciones administrativas',`<p>Si no asistes a tu reserva, la administración puede aplicar medidas o sanciones. Esto lo maneja la <b class="hl">administración</b>, no la aplicación.</p>`)}
     ${regItem(ICONS.check,'Debes estar presente',`<p>La persona que reserva <b class="hl">debe estar</b> en la cancha durante su turno.</p>`)}
     ${regItem(ICONS.clock,'Sal a tiempo',`<p>Termina y sal <b class="hl">puntual</b> para no interrumpir el turno del siguiente.</p>`)}
@@ -4719,16 +4759,24 @@ async function doCancelPick(){
   if(mins===r.dur){ state.cancelPick=null; return cancelRes(r.id); }
   try{
     // del último tramo al primero: así la reserva original siempre conserva los tramos anteriores
+    const note=wantsCancelNote(r), startMs=dateAt(r.date,0).getTime()+g[0].st*60000;
+    document.getElementById('modal').style.pointerEvents='none';   // sin doble toque mientras se cancela
     for(const x of g.slice().reverse()) await DB.cancelPart(r.id, r.date, x.st, x.en);
-    state.cancelPick=null; closeModal(); await loadData(); render();
-    toast('Cancelaste '+g.map(x=>cpClock(x.st)+' a '+cpClock(x.en)).join(' y ')+' · recuperaste '+durLabel(mins));
-  }catch(e){ state.cancelPick=null; closeModal(); await loadData(); render(); toast(e.message,'warn'); }
+    state.cancelPick=null; if(!note) closeModal(); await loadData(); render();
+    if(note) openCancelNote(startMs, true);
+    else toast('Cancelaste '+g.map(x=>cpClock(x.st)+' a '+cpClock(x.en)).join(' y ')+' · recuperaste '+durLabel(mins));
+  }catch(e){ unlockModal(); state.cancelPick=null; closeModal(); await loadData(); render(); toast(e.message,'warn'); }
 }
 async function cancelRes(id){
+  const r=reservations.find(x=>x.id===id), note=!!r && wantsCancelNote(r);
+  const startMs=r ? dateAt(r.date,0).getTime()+(r.h*60+(r.min||0))*60000 : 0;
   try{
+    document.getElementById('modal').style.pointerEvents='none';   // sin doble toque mientras se cancela
     await DB.cancel(id);
-    closeModal(); await loadData(); render(); toast('Reserva cancelada · recuperaste la hora');
+    if(!note){ unlockModal(); closeModal(); } await loadData(); render();
+    if(note) openCancelNote(startMs, false); else toast('Reserva cancelada · recuperaste la hora');
   }catch(e){
+    unlockModal();
     if(e.code==='PEDIR_A_ADMIN'){ openRequestCancel(id); return; }   // pasó su límite → ofrecer solicitud
     closeModal(); toast(e.message,'warn');
   }
@@ -4880,7 +4928,7 @@ function closeModal(){
   let done=false, a1=null, a2=null;
   const finish=()=>{ if(done) return; done=true;
     try{ a1&&a1.cancel(); a2&&a2.cancel(); }catch(_){}
-    bg.classList.remove('show','center'); if(m){ m.classList.remove('fb','pop'); m.style.transform=''; m.style.opacity=''; } bg.style.opacity='';
+    bg.classList.remove('show','center'); if(m){ m.classList.remove('fb','pop'); m.style.transform=''; m.style.opacity=''; m.style.pointerEvents=''; } bg.style.opacity='';
     reanchorTabbar();
     if(state.liveStale){ state.liveStale=false; scheduleLive(); } };   // llegó un cambio en vivo mientras estaba abierto
   if(!m || !m.animate){ finish(); return; }                 // respaldo sin Web Animations
