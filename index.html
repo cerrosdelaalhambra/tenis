@@ -1203,7 +1203,7 @@ if('serviceWorker' in navigator){
 /* ======================= DATA ======================= */
 let NOW = new Date(); // hora real. Se re-sincroniza al volver a la app (syncClock) para no quedar congelada.
 let APP_START = Date.now(); // base de liveNow(); DEBE existir antes del primer _computeOWS() (si no, TDZ y la app se cuelga en el splash)
-const APP_VERSION = '2026-10-27c'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
+const APP_VERSION = '2026-10-27d'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
 const DOW = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
 const DOWL = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const MON = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
@@ -2795,14 +2795,16 @@ function mHalf(date,h,half,s){
   if(k==='availclass') return msRow('availclass',T,'Clase disponible','onclick="openAvailClassInfo()"',true);
   if(k==='prof') return msRow('prof',T,'Profesor','',false);
   if(k==='flex'){ if(!canBookFree(date,h)) return msRow('prof',T,'Profesor','',false); return msRow('flex',T,'Profesor · reservar',`onclick="openBook('${date}',${h},'flexh${half}')"`,true); }
-  if(k==='class'||k==='open'){ if(!canBookFree(date,h)) return ''; return msRow('bonus',T,'<span class="bstar">★</span> Libre',`onclick="openBook('${date}',${h},'h${half}')"`,true); }
+  // Quien no reserva (admin, profesor fuera de su ventana) igual VE las medias horas libres, sin poder tocarlas.
+  const cb=canBookFree(date,h), bk=`onclick="openBook('${date}',${h},'h${half}')"`;
+  if(k==='class'||k==='open') return msRow('bonus',T,'<span class="bstar">★</span> Libre',cb?bk:'',cb);
   if(k==='maint') return msRow('maint',T,`${svgIco(ICONS.tool,16,'#fff')} Mantenimiento`,'',false);
+  if(k==='profclass'){const r=s.res;return msRow('prof',T,'Profesor',state.role==='prof'?`onclick="openProfRes(${r.id})"`:'',state.role==='prof');}
+  if(k==='rain') return msRow('rain',T,'Cerrada por lluvia','',false);
   if(k!=='free') return '';
-  if(!canBookFree(date,h)) return '';
-  const hs=h*60+half*30;
-  if(isLibre(date,hs,hs+30)) return libreRow(T,hs,30,true,`onclick="openBook('${date}',${h},'h${half}')"`);   // no gasta cupo
-  if(isMember() && !hasHoursForDate(date)) return msRow('free nofit',T,'Sin horas en este tramo','',false);
-  return msRow('free',T,'Disponible',`onclick="openBook('${date}',${h},'h${half}')"`,true);
+  if(isLibre(date,s0,s0+30)) return libreRow(T,s0,30,cb,bk);   // no gasta cupo
+  if(cb && isMember() && !hasHoursForDate(date)) return msRow('free nofit',T,'Sin horas en este tramo','',false);
+  return msRow('free',T,'Disponible',cb?bk:'',cb);
 }
 function mSlot(date,h,sc){
   const cat=sc.cat,res=sc.res,mc=sc.mc, T=amRange(h);
