@@ -97,6 +97,8 @@ function relTime(iso){
 /* ===== Errores del servidor → mensajes amables ===== */
 const ERR_MSG = {
   SIN_CUPO:'Esa casa ya no tiene horas en este tramo de la semana. Las horas de un tramo no se pasan a otro. Puedes reservar las horas marcadas ★ Libre: esas no consumen horas.',
+  MANT_YA_PASO:'Ese mantenimiento ya terminó.',
+  MANT_YA_RESERVADO:'Alguien ya reservó en ese horario: el mantenimiento no se puede volver a activar.',
   MAS_DE_2_HORAS:'Tu casa quedaría con más de 2 horas seguidas. El máximo son 2 horas seguidas por casa, aunque se junten horas pico y horas libres.',
   SIN_HORAS_LIBRES:'Ya tienes el máximo de horas libres reservadas a la vez. Cuando juegues una, puedes reservar otra.',
   YA_RESERVADO:'Ese horario ya está reservado.',
@@ -299,6 +301,17 @@ async function getPeakSchedule(){
     return (data||[]).map(r=>({dow:r.dow, startMin:r.start_min, endMin:r.end_min}));
   }catch(e){ return []; }
 }
+// Mantenimientos cancelados por día (supabase_mant_cancelar.sql). Resiliente: sin tabla => [].
+async function getMaintSkips(){
+  try{
+    const since=new Date(Date.now()-2*24*60*60*1000).toISOString().slice(0,10);
+    const {data,error}=await sb.from('maint_skips').select('day,start_min,end_min').gte('day',since);
+    if(error) return [];
+    return (data||[]).map(r=>({day:r.day, startMin:r.start_min, endMin:r.end_min}));
+  }catch(e){ return []; }
+}
+async function cancelMaintDay(day,startMin,endMin){ const {error}=await sb.rpc('cancel_maint_day',{p_day:day,p_start_min:startMin,p_end_min:endMin}); if(error) throw mapError(error); }
+async function restoreMaintDay(day,startMin,endMin){ const {error}=await sb.rpc('restore_maint_day',{p_day:day,p_start_min:startMin,p_end_min:endMin}); if(error) throw mapError(error); }
 async function getMaintSchedule(){
   const {data}=await sb.from('maint_schedule').select('dow,start_min,end_min').order('dow').order('start_min');
   return (data||[]).map(r=>({dow:r.dow, startMin:r.start_min, endMin:r.end_min}));
@@ -432,7 +445,7 @@ async function fetchAll(profile){
   const staff  = profile.role==='admin' || profile.role==='portero';
   const isProf = profile.role==='prof';
   // TODO en un solo lote paralelo (antes había hasta 3 fases secuenciales)
-  const [myHouses, reservations, releases, closures, holidays, houses, cfg, notifs, profSchedule, recurring, activity, users, profClasses, absences, maintSchedule, classTemplate, quotaBlocks, matches, matchRejections, peakSchedule] = await Promise.all([
+  const [myHouses, reservations, releases, closures, holidays, houses, cfg, notifs, profSchedule, recurring, activity, users, profClasses, absences, maintSchedule, classTemplate, quotaBlocks, matches, matchRejections, peakSchedule, maintSkips] = await Promise.all([
     member ? getMyHouses(profile.id) : Promise.resolve([]),
     getCalendar(profile.role), getReleases(), getClosures(), getHolidays(),
     getHouses(), getConfig(), getNotifications(profile.role, profile.id, profile.notif_seen_at, profile.notif_cleared_at),
@@ -445,20 +458,21 @@ async function fetchAll(profile){
     getQuotaBlocks(),    // tramos de cupo (vacío si aún no se corre el SQL -> se comporta como hoy)
     member ? getMatches() : Promise.resolve([]),          // contrincante: estado de mis matches
     member ? getMatchRejections() : Promise.resolve([]),  // avisos de match que rechacé
-    getPeakSchedule()    // horas pico (vacío si aún no se corre supabase_horas_libres.sql)
+    getPeakSchedule(),   // horas pico (vacío si aún no se corre supabase_horas_libres.sql)
+    getMaintSkips()      // mantenimientos cancelados por día
   ]);
   return { profile, myHouses, reservations, releases, closures, holidays, houses,
     cupo:cfg.cupo, profFlexible:cfg.profFlexible, permEnabled:cfg.permEnabled, permRoute:'both',
     openStart:cfg.openStart, openEnd:cfg.openEnd, halfHours:cfg.halfHours, resetHour:cfg.resetHour,
-    freeEnabled:cfg.freeEnabled, freeMax:cfg.freeMax, peakSchedule,
+    freeEnabled:cfg.freeEnabled, freeMax:cfg.freeMax, peakSchedule, maintSkips,
     notifs, profSchedule, recurring, activity, users, profClasses, absences, maintSchedule, classTemplate,
     blocks: quotaBlocks, matches, matchRejections };
 }
 function isMemberRole(role){ return role==='member' || role==='master'; }
 // Solo lo que cambia en vivo (reservas, liberaciones, cierres): para el refresco por Realtime, más liviano que fetchAll.
 async function fetchLive(role){
-  const [reservations, releases, closures] = await Promise.all([getCalendar(role), getReleases(), getClosures()]);
-  return { reservations, releases, closures };
+  const [reservations, releases, closures, maintSkips] = await Promise.all([getCalendar(role), getReleases(), getClosures(), getMaintSkips()]);
+  return { reservations, releases, closures, maintSkips };
 }
 // Calendario en vivo: escucha la fila calendar_ping (supabase_realtime_ping.sql), que se toca cada vez que
 // cambian reservas/liberaciones/cierres. Devuelve la función para dejar de escuchar. Si Realtime no está, no hace nada.
@@ -727,7 +741,7 @@ async function clearNotifs(profileId){
 /* ===== API pública del módulo ===== */
 window.DB = {
   Auth, Admin, Rain, Meeting,
-  fetchAll, fetchLive, onCalendarChange, book, updateReservation, cancel, cancelPart, requestCancel, decideCancel, markNotif, markAllRead, clearNotifs,
+  fetchAll, fetchLive, onCalendarChange, book, updateReservation, cancel, cancelPart, cancelMaintDay, restoreMaintDay, requestCancel, decideCancel, markNotif, markAllRead, clearNotifs,
   requestMatch, acceptMatch, rejectMatch, cancelMatch,
   getProfClasses, changeClassHouse, releaseClass, markAbsence, unmarkAbsence, setClassTemplate,
   requestRecurring, decideRecurring, cancelRecurring, materializeRecurring, materializeClasses,

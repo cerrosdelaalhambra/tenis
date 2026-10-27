@@ -550,6 +550,14 @@
   .ccard .cc-endpill{font-size:13px;font-weight:700;color:var(--gray);background:#eef1f0;padding:7px 12px;border-radius:9px;flex:none}
   .ccard.live{border-color:var(--court)}
   .ccard .cc-endpill.live{color:var(--court);background:var(--court-soft)}
+  .ccard.mnt{gap:10px}
+  .ccard.mnt .cc-time{background:var(--clay);color:#fff;font-size:13.5px;padding:10px 10px}
+  .ccard.mnt .cc-who b{font-size:15.5px;color:var(--clay);overflow:visible}
+  .ccard.mnt .cc-who small{font-size:13px;white-space:normal;line-height:1.25}
+  .ccard.mnt.off{border-style:dashed}
+  .ccard.mnt.off .cc-time{background:#eef1f0;color:var(--muted);text-decoration:line-through}
+  .ccard.mnt.off .cc-who b{color:var(--muted)}
+  .ccard .cc-endpill.mnt-off{color:var(--court);background:var(--court-soft)}
   /* Profesor · pantalla de acción (celular) — ocupa TODA la altura, sin scroll */
   .pa-fill{display:flex;flex-direction:column;min-height:calc(100dvh - 42px);max-width:480px;margin:0 auto}
   .pa-choose{flex:1;display:flex;flex-direction:column;justify-content:center;gap:16px;min-height:0}
@@ -1204,7 +1212,7 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<script src="data.js?v=20261027b"></script>
+<script src="data.js?v=20261027c"></script>
 <script>
 /* PWA: registra el service worker (ruta relativa para que funcione bajo /tenis/) */
 if('serviceWorker' in navigator){
@@ -1217,7 +1225,7 @@ if('serviceWorker' in navigator){
 /* ======================= DATA ======================= */
 let NOW = new Date(); // hora real. Se re-sincroniza al volver a la app (syncClock) para no quedar congelada.
 let APP_START = Date.now(); // base de liveNow(); DEBE existir antes del primer _computeOWS() (si no, TDZ y la app se cuelga en el splash)
-const APP_VERSION = '2026-10-27g'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
+const APP_VERSION = '2026-10-27h'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
 const DOW = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
 const DOWL = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const MON = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
@@ -1291,16 +1299,18 @@ function isProfessor(dow,h){
   return false;
 }
 // Horario base del profesor (por media hora). Lunes: no viene. Mar–Vie: 6:00–12:30 y 1:30–5:00. Sáb: 6:00–12:00. Dom: libre.
-function isMaintHalf(dow,h,half){
+// ¿El mantenimiento semanal 'm' se canceló ese día? (cancel_maint_day)
+function maintSkipped(date,m){ return !!date && (MAINT_SKIPS||[]).some(k=>k.day===date && k.startMin===m.startMin && k.endMin===m.endMin); }
+function isMaintHalf(dow,h,half,date){
   if(!MAINT_SCHEDULE||!MAINT_SCHEDULE.length) return false;
   const sStart=h*60+half*30, sEnd=sStart+30;
-  return MAINT_SCHEDULE.some(r=>r.dow===dow && r.startMin<sEnd && r.endMin>sStart);
+  return MAINT_SCHEDULE.some(r=>r.dow===dow && r.startMin<sEnd && r.endMin>sStart && !maintSkipped(date,r));
 }
 // Mantenimiento que arranca a mitad de una media hora (p. ej. 6:40): esa media hora (6:30–7:00) queda
 // bloqueada, y quien reserva la media hora anterior (6:00–6:30) paga 30 min pero juega hasta las 6:40.
-function maintCutStart(dow,s){ const m=(MAINT_SCHEDULE||[]).filter(r=>r.dow===dow && r.startMin>s && r.startMin<s+30).map(r=>r.startMin); return m.length?Math.min(...m):null; }
-function playEndMin(date,endMin){ return maintCutStart(dateAt(date,0).getDay(), endMin) || endMin; }   // hasta cuándo se juega lo que termina en endMin
-function maintStartInHalf(date,s){ const d=dateAt(date,0).getDay(); const m=(MAINT_SCHEDULE||[]).filter(r=>r.dow===d && r.startMin<s+30 && r.endMin>s).map(r=>Math.max(s,r.startMin)); return m.length?Math.min(...m):s; }
+function maintCutStart(dow,s,date){ const m=(MAINT_SCHEDULE||[]).filter(r=>r.dow===dow && r.startMin>s && r.startMin<s+30 && !maintSkipped(date,r)).map(r=>r.startMin); return m.length?Math.min(...m):null; }
+function playEndMin(date,endMin){ return maintCutStart(dateAt(date,0).getDay(), endMin, date) || endMin; }   // hasta cuándo se juega lo que termina en endMin
+function maintStartInHalf(date,s){ const d=dateAt(date,0).getDay(); const m=(MAINT_SCHEDULE||[]).filter(r=>r.dow===d && r.startMin<s+30 && r.endMin>s && !maintSkipped(date,r)).map(r=>Math.max(s,r.startMin)); return m.length?Math.min(...m):s; }
 function isProfHalf(dow,h,half){
   const sStart=h*60+half*30, sEnd=sStart+30;
   // Horario editable (mismo criterio de solape que el servidor). Si está vacío, usa el respaldo fijo.
@@ -1386,6 +1396,7 @@ let PROF_FLEX = false;    // modo flexible: horas del profesor reservables por e
 let PROF_CLASSES = [];    // clases del profesor (casa + nombre del alumno), solo en el rol 'prof'
 let ABSENCES = [];        // ausencias del profesor (rangos por fecha); esas horas quedan libres (gastan cupo)
 let MAINT_SCHEDULE = [];  // mantenimiento recurrente (semanal); esas franjas no se pueden reservar
+let MAINT_SKIPS = [];     // mantenimientos cancelados un día puntual (el profesor desde "Mis clases"): esa franja queda reservable
 let PEAK_SCHEDULE = [];   // horas pico (semanal): con las horas libres activas, solo estas gastan cupo
 let FREE_ENABLED = false; // horas libres (apagado por defecto: todo gasta cupo, como antes)
 let FREE_MAX = 2;         // horas libres pendientes a la vez, por residente
@@ -1540,6 +1551,7 @@ function applyLive(b){
   closures=allClos.filter(c=>c.kind!=='rain');                         // mantenimiento → maintAt
   state.rainUntil = rainC ? rainC.endTs : null;                        // lluvia → marca/banner
   state.rainHours = rainC ? Math.max(1,Math.round((rainC.endTs-rainC.startTs)/3600000)) : 0;
+  if(b.maintSkips) MAINT_SKIPS=b.maintSkips;
 }
 async function loadData(){
   const prof=state.profile;
@@ -1749,6 +1761,36 @@ function openAvailClassInfo(){
     </div>
     <button class="btn-primary" onclick="closeModal()">Entendido</button>`;
   bg.classList.add('show');
+}
+/* ===== Profesor: cancelar el mantenimiento de un día (supabase_mant_cancelar.sql) ===== */
+function maintDayTxt(date){ return date===ymd(NOW) ? 'de hoy' : 'del '+DOWL[dateAt(date,0).getDay()].toLowerCase(); }
+function openMaintPop(iconPath,title,texts,btnLabel,btnAction,danger){
+  const m=document.getElementById('modal'), bg=document.getElementById('modalBg');
+  m.classList.remove('fb'); m.classList.add('pop'); bg.classList.add('center');
+  m.innerHTML=`<div class="pop-body"><div class="pop-ic">${svgIco(iconPath,40)}</div><h3>${title}</h3>${texts.map(t=>`<p>${t}</p>`).join('')}</div>
+    <button class="btn-primary" ${danger?'style="background:var(--danger)"':''} onclick="${btnAction}">${btnLabel}</button>
+    <button class="btn-soft cp-back" onclick="closeModal()">Volver</button>`;
+  bg.classList.add('show');
+}
+function openMaintCancel(date,s,e){
+  openMaintPop(ICONS.tool,'¿Cancelar el mantenimiento?',
+    [`Mantenimiento ${maintDayTxt(date)} de <b>${amRangeMin(s,e)}</b>`,
+     'La cancha queda disponible para reservar y se avisa a <b>todos los residentes</b>.'],
+    'Cancelar mantenimiento',`doCancelMaint('${date}',${s},${e})`,true);
+}
+async function doCancelMaint(date,s,e){
+  try{ await DB.cancelMaintDay(date,s,e); closeModal(); await loadData(); render(); toast('Mantenimiento cancelado · se avisó a todos los residentes'); }
+  catch(err){ closeModal(); toast(err.message,'warn'); }
+}
+function openMaintRestore(date,s,e){
+  openMaintPop(ICONS.tool,'¿Volver a hacer el mantenimiento?',
+    [`Mantenimiento ${maintDayTxt(date)} de <b>${amRangeMin(s,e)}</b>`,
+     'Ese horario deja de estar disponible para reservar. Solo se puede si nadie lo ha reservado.'],
+    'Volver a activarlo',`doRestoreMaint('${date}',${s},${e})`,false);
+}
+async function doRestoreMaint(date,s,e){
+  try{ await DB.restoreMaintDay(date,s,e); closeModal(); await loadData(); render(); toast('Mantenimiento activado de nuevo'); }
+  catch(err){ closeModal(); toast(err.message,'warn'); }
 }
 /* ===== Calendario en vivo (Supabase Realtime, ver supabase_realtime_ping.sql) ===== */
 let _liveTimer=null, _liveLast=0;
@@ -2099,7 +2141,7 @@ function resAtHalf(date,h,half){
 function halfState(date,h,half){
   const dow=dateAt(date,h).getDay();
   const mc=maintAt(date,h); if(mc) return {kind:'maint',mc};
-  if(isMaintHalf(dow,h,half)) return {kind:'maint'};   // mantenimiento recurrente (semanal)
+  if(isMaintHalf(dow,h,half,date)) return {kind:'maint'};   // mantenimiento recurrente (semanal), salvo que se haya cancelado ese día
   const _slotpc=h*60+half*30;                    // profclass también puede durar >1h → buscar por rango
   const pc=reservations.find(r=>r.type==='profclass'&&r.date===date&&(r.h*60+(r.min||0))<=_slotpc&&(r.h*60+(r.min||0)+r.dur)>_slotpc); if(pc) return {kind:'profclass',res:pc};
   const r=resAtHalf(date,h,half);
@@ -2942,7 +2984,13 @@ function viewMine(){
 /* ---- PROFESOR: Mis clases (por día) ---- */
 function setClassDay(date){ state.classDay=date; render(); scrollTop(); fadeContent(); }
 function classEndMs(c){ return dateAt(c.date,c.h).getTime()+((c.min||0)+c.dur)*60000; }
-function classHasUpcoming(date){ return PROF_CLASSES.some(c=>c.date===date && classEndMs(c)>NOW.getTime()); }
+function classHasUpcoming(date){ return PROF_CLASSES.some(c=>c.date===date && classEndMs(c)>NOW.getTime()) || maintOfDay(date).some(m=>!m.ended); }
+// Mantenimientos semanales de ese día, con su estado (cancelado ese día / ya terminó)
+function maintOfDay(date){
+  const dow=dateAt(date,0).getDay(), base=dateAt(date,0).getTime(), now=liveNow().getTime();
+  return (MAINT_SCHEDULE||[]).filter(m=>m.dow===dow).sort((a,b)=>a.startMin-b.startMin)
+    .map(m=>({startMin:m.startMin, endMin:m.endMin, skipped:maintSkipped(date,m), started:base+m.startMin*60000<=now, ended:base+m.endMin*60000<=now}));
+}
 function classDaysUpcoming(){                       // días de esta semana con clases por venir (los pasados desaparecen)
   const out=[], g=NOW.getDay(), toSat=(6-g+7)%7;
   for(let i=0;i<=toSat;i++){ const date=ymd(addDays(NOW,i)); if(classHasUpcoming(date)) out.push(date); }
@@ -2964,10 +3012,21 @@ function viewClasses(){
   if(!chips) return emptyState('No tienes clases próximas esta semana.');
   const date=state.classDay, d=dateAt(date,0);
   const list=PROF_CLASSES.filter(c=>c.date===date).sort((a,b)=>(a.h*60+(a.min||0))-(b.h*60+(b.min||0)));
-  const head=`<div class="cchead">${cap1(DOWL[d.getDay()])} ${d.getDate()} de ${MON[d.getMonth()]} · ${list.length} clase${list.length===1?'':'s'}</div>`;
+  const mnts=maintOfDay(date);
+  const head=`<div class="cchead">${cap1(DOWL[d.getDay()])} ${d.getDate()} de ${MON[d.getMonth()]} · ${list.length} clase${list.length===1?'':'s'}${mnts.length?` · ${mnts.length} mantenimiento${mnts.length===1?'':'s'}`:''}</div>`;
   let rows;
-  if(!list.length){ rows=`<div class="empty" style="padding:30px">No hay clases este día.</div>`; }
-  else rows=list.map(c=>{
+  if(!list.length && !mnts.length){ rows=`<div class="empty" style="padding:30px">No hay clases este día.</div>`; }
+  else rows=[...list.map(c=>({t:c.h*60+(c.min||0), c})), ...mnts.map(m=>({t:m.startMin, m}))].sort((a,b)=>a.t-b.t).map(({c,m})=>{
+    if(m){   // mantenimiento del día: se puede cancelar (y deshacer) mientras no haya terminado
+      const tag = m.ended ? '<span class="cc-endpill">Terminado</span>'
+        : '<svg class="cc-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>';
+      const act = m.ended ? '' : `onclick="${m.skipped?'openMaintRestore':'openMaintCancel'}('${date}',${m.startMin},${m.endMin})"`;
+      return `<div class="ccard mnt${m.skipped?' off':''}${m.ended?' ended':''}" ${act}>
+        <span class="cc-time">${rangeLabel(Math.floor(m.startMin/60),m.startMin%60,m.endMin-m.startMin)}</span>
+        <span class="cc-who"><b>Mantenimiento</b><small>${m.ended?'':m.skipped?'Cancelado · cancha libre':'Toca para cancelar'}</small></span>
+        ${tag}
+      </div>`;
+    }
     const casa=c.house||'Sin casa', nombre=c.student_name||'';
     const started=dateAt(c.date,c.h).getTime()<=NOW.getTime();
     const ended=classEndMs(c)<=NOW.getTime();
