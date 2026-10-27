@@ -97,6 +97,7 @@ function relTime(iso){
 /* ===== Errores del servidor → mensajes amables ===== */
 const ERR_MSG = {
   SIN_CUPO:'Esa casa ya no tiene horas en este tramo de la semana. Las horas de un tramo no se pasan a otro. Puedes reservar las horas marcadas ★ Libre: esas no consumen horas.',
+  MAS_DE_2_HORAS:'Tu casa quedaría con más de 2 horas seguidas. El máximo son 2 horas seguidas por casa, aunque se junten horas pico y horas libres.',
   SIN_HORAS_LIBRES:'Ya tienes el máximo de horas libres reservadas a la vez. Cuando juegues una, puedes reservar otra.',
   YA_RESERVADO:'Ese horario ya está reservado.',
   HORARIO_DEL_PROFESOR:'Ese horario es del profesor.',
