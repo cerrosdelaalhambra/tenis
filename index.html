@@ -1255,7 +1255,7 @@ if('serviceWorker' in navigator){
 /* ======================= DATA ======================= */
 let NOW = new Date(); // hora real. Se re-sincroniza al volver a la app (syncClock) para no quedar congelada.
 let APP_START = Date.now(); // base de liveNow(); DEBE existir antes del primer _computeOWS() (si no, TDZ y la app se cuelga en el splash)
-const APP_VERSION = '2026-10-27k'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
+const APP_VERSION = '2026-10-30a'; // sello de versión visible (en "Mi cuenta") para confirmar qué build está cargado tras un despliegue
 const DOW = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
 const DOWL = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const MON = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
@@ -1265,6 +1265,15 @@ function ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'
 function addDays(d,n){const x=new Date(d);x.setDate(x.getDate()+n);return x}
 function startOfWeek(d){const x=new Date(d);const g=(x.getDay()+6)%7;x.setDate(x.getDate()-g);x.setHours(0,0,0,0);return x}
 function dateAt(dateStr,h){const[Y,M,D]=dateStr.split('-').map(Number);return new Date(Y,M-1,D,h,0)}
+function resStartAt(r){ return new Date(dateAt(r.date,0).getTime()+(r.h*60+(r.min||0))*60000); }   // inicio real de la reserva (con sus minutos)
+// ¿Aún se puede cancelar algo? Clase: hasta 1 h antes. Normal/abierta de más de media hora: mientras a la ÚLTIMA media hora
+// le falten más de 20 min (se cancela por partes). Lo demás: hasta 20 min antes de empezar.
+function resCancelable(r){
+  const left=resStartAt(r)-NOW;
+  if(r.type==='class') return left>3600000;
+  const byParts=['normal','open'].includes(r.type) && r.dur>30;
+  return left+(byParts?(r.dur-30)*60000:0)>1200000;
+}
 // Apertura semanal: reset domingo a la hora configurada (RESET_HOUR) abre la semana siguiente (lun–dom) + reinicia cupo
 let RESET_HOUR=20;   // hora del domingo en que se reinician los cupos (configurable en Ajustes)
 function rhLong(){const h=RESET_HOUR,ap=h<12?'a.m.':'p.m.',hh=(h%12)||12;return hh+':00 '+ap;}   // "8:00 p.m."
@@ -2989,21 +2998,22 @@ function viewMine(){
   const isFixedClass=(r)=>{ if(r.type!=='class') return false; const dw=dateAt(r.date,r.h).getDay(); const sm=r.h*60+(r.min||0);
     return (CLASS_TEMPLATE||[]).some(c=>normHouseKey(c.house)===normHouseKey(r.house) && c.dow===dw && c.startMin===sm); };
   const mine=reservations.filter(r=>r.mine && !isFixedClass(r));   // casa compartida: aquí solo van MIS reservas (las clases fijas van aparte)
-  const up=mine.filter(r=>dateAt(r.date,r.h)>=NOW).sort((a,b)=>dateAt(a.date,a.h)-dateAt(b.date,b.h));
+  const isUp=r=>resStartAt(r)>=NOW || resCancelable(r);   // ya empezada, sigue en Próximas si aún se puede cancelar una parte
+  const up=mine.filter(isUp).sort((a,b)=>resStartAt(a)-resStartAt(b));
   const ws=ymd(OPEN_WEEK_START);
-  const past=mine.filter(r=>dateAt(r.date,r.h)<NOW && r.date>=ws && r.date<=OPEN_WEEK_END).sort((a,b)=>dateAt(b.date,b.h)-dateAt(a.date,a.h));
+  const past=mine.filter(r=>!isUp(r) && r.date>=ws && r.date<=OPEN_WEEK_END).sort((a,b)=>resStartAt(b)-resStartAt(a));
   const DIAS_FULL=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
   const resRangeTxt=(r)=>{ const eTot=playEndMin(r.date, r.h*60+(r.min||0)+r.dur), eH=Math.floor(eTot/60), eM=eTot%60;
     const ap=x=>x<12?'a.m.':'p.m.', hh=x=>x%12||12, fmt=(H,M)=>hh(H)+':'+String(M).padStart(2,'0');
     return ap(r.h)===ap(eH) ? `${fmt(r.h,r.min||0)} a ${fmt(eH,eM)} ${ap(eH)}` : `${fmt(r.h,r.min||0)} ${ap(r.h)} a ${fmt(eH,eM)} ${ap(eH)}`; };
   const card=(r)=>{
-    const d=dateAt(r.date,r.h);const fut=d>=NOW;const cancelable=(d-NOW)>(r.type==='class'?1:0.5)*3600000;
+    const d=resStartAt(r);const fut=isUp(r);const cancelable=resCancelable(r);
     const dateLine=`${cap1(DIAS_FULL[d.getDay()])} ${d.getDate()} de ${MESES[d.getMonth()]}`;
     let actions='';
     if(fut){
       const cancelBtn = cancelable ? `<button class="mr-cancel" onclick="startCancel(${r.id})">Cancelar</button>` : `<span class="mr-nocancel">No cancelable</span>`;
       let right='';
-      if(r.type==='normal'){
+      if(r.type==='normal' && d>=NOW){
         const m=matchFor(r.id);
         if(m && m.status==='matched'){
           const first=(m.otherName||'—').split(' ')[0];
@@ -4688,9 +4698,9 @@ function openHouseResInfo(r){
 function openMyRes(id){
   const r=reservations.find(x=>x.id===id);if(!r)return;
   if(isMember() && !r.mine) return openHouseResInfo(r);   // reserva de otro miembro de la casa: solo lectura (2B)
-  const d=dateAt(r.date,r.h);
+  const d=resStartAt(r);
   const isClass=(r.type==='class');
-  const cancelable = isClass ? (d-NOW)>3600000 : (d-NOW)>1200000;   // clase: 1 h antes; normal: hasta 20 min antes
+  const cancelable = resCancelable(r);
   const fut = d.getTime() > NOW.getTime();
   const canEdit = r.type==='normal' && fut;                          // solo reservas normales futuras cambian duración
   state.editRes = canEdit ? {id:r.id, date:r.date, h:r.h, min:r.min||0, curDur:r.dur, house:r.house} : null;
